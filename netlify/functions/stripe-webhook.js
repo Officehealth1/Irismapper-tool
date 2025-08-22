@@ -101,8 +101,8 @@ async function handleCheckoutComplete(session) {
     subscriptionStatus: subscription.status,
     subscriptionTier: subscription.metadata.tier || 'practitioner',
     subscriptionPlan: subscription.metadata.plan || 'monthly',
-    trialEndsAt: new Date(subscription.trial_end * 1000),
-    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
+    currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
   
@@ -165,7 +165,7 @@ async function updateSubscription(subscription) {
     
     await userDoc.ref.update({
       subscriptionStatus: subscription.status,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     });
