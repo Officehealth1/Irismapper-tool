@@ -224,8 +224,6 @@
         }
     </script>
 
-    <!-- Firebase Configuration -->
-    <script src="js/firebase-config.js"></script>
     <!-- Subscription Gate -->
     <script src="js/auth-redirect.js"></script>
     
@@ -291,6 +289,10 @@
                         return;
                     }
                     
+                    // Show loading state
+                    manageSubscription.style.opacity = '0.5';
+                    manageSubscription.style.pointerEvents = 'none';
+                    
                     // Create a portal session via Netlify function
                     const response = await fetch('/.netlify/functions/create-portal-session', {
                         method: 'POST',
@@ -302,17 +304,36 @@
                         })
                     });
                     
+                    // Reset button state
+                    manageSubscription.style.opacity = '1';
+                    manageSubscription.style.pointerEvents = 'auto';
+                    
+                    if (!response.ok) {
+                        console.error('Portal session response not ok:', response.status);
+                        // For now, redirect to pricing page as fallback
+                        if (confirm('Would you like to view subscription options?')) {
+                            window.location.href = 'pricing.html';
+                        }
+                        return;
+                    }
+                    
                     const data = await response.json();
                     
                     if (data.url) {
                         // Redirect to Stripe Customer Portal
                         window.location.href = data.url;
                     } else {
-                        alert('Unable to access subscription management. Please try again later.');
+                        // Fallback to pricing page
+                        if (confirm('Unable to access portal. View subscription options?')) {
+                            window.location.href = 'pricing.html';
+                        }
                     }
                 } catch (error) {
                     console.error('Error accessing subscription portal:', error);
-                    alert('Error accessing subscription management. Please contact support.');
+                    // Fallback to pricing page
+                    if (confirm('Error accessing portal. View subscription options?')) {
+                        window.location.href = 'pricing.html';
+                    }
                 }
             });
             
