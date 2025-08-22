@@ -13,14 +13,6 @@
     // Check if user has active subscription
     async function checkSubscriptionStatus() {
         try {
-<<<<<<< HEAD
-            // TEMPORARY: Skip authentication for testing
-            // TODO: Enable Firebase authentication before production
-            console.log('Testing mode: Skipping authentication, allowing access');
-            return;
-            
-=======
->>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
             // First check if user is authenticated
             if (typeof firebase === 'undefined' || !firebase.auth) {
                 console.log('Firebase not loaded, redirecting to pricing');
