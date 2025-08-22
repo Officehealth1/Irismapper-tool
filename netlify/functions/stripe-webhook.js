@@ -89,12 +89,17 @@ async function handleCheckoutComplete(session) {
   const customer = await stripe.customers.retrieve(session.customer);
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
   
+<<<<<<< HEAD
   // Get user by email
+=======
+  // Check if user already exists in Firestore
+>>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
   const userQuery = await db.collection('users')
     .where('email', '==', customer.email)
     .limit(1)
     .get();
   
+<<<<<<< HEAD
   if (!userQuery.empty) {
     const userDoc = userQuery.docs[0];
     
@@ -111,6 +116,61 @@ async function handleCheckoutComplete(session) {
     });
     
     console.log(`Subscription activated for user: ${customer.email}`);
+=======
+  const userData = {
+    stripeCustomerId: customer.id,
+    subscriptionId: subscription.id,
+    subscriptionStatus: subscription.status,
+    subscriptionTier: subscription.metadata.tier || 'practitioner',
+    subscriptionPlan: subscription.metadata.plan || 'monthly',
+    trialEndsAt: new Date(subscription.trial_end * 1000),
+    currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+  
+  if (!userQuery.empty) {
+    // Update existing user
+    const userDoc = userQuery.docs[0];
+    await userDoc.ref.update(userData);
+    console.log(`Subscription updated for existing user: ${customer.email}`);
+  } else {
+    // Create new Firebase user and Firestore record
+    try {
+      // Generate a temporary password for new user
+      const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+      
+      // Create Firebase Auth user
+      const userRecord = await admin.auth().createUser({
+        email: customer.email,
+        password: tempPassword,
+        emailVerified: false
+      });
+      
+      // Create Firestore user record
+      await db.collection('users').doc(userRecord.uid).set({
+        email: customer.email,
+        uid: userRecord.uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        needsPasswordReset: true,
+        ...userData
+      });
+      
+      // Send password reset email so user can set their password
+      await admin.auth().generatePasswordResetLink(customer.email);
+      
+      console.log(`New user created and subscription activated: ${customer.email}`);
+      
+    } catch (error) {
+      console.error('Error creating user:', error);
+      // If user creation fails, still create Firestore record for manual cleanup
+      await db.collection('users').add({
+        email: customer.email,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        authCreationFailed: true,
+        ...userData
+      });
+    }
+>>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
   }
 }
 
