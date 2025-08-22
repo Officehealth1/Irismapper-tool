@@ -5,6 +5,8 @@
     <title>Welcome to Iris Mapper Pro!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
@@ -12,19 +14,21 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1c262f;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            color: #ffffff;
+            line-height: 1.6;
         }
         
         .success-container {
             background: white;
-            border-radius: 20px;
-            padding: 50px;
+            border-radius: 12px;
+            padding: 50px 40px;
             max-width: 600px;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
@@ -34,7 +38,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: #28a745;
+            background: #0dc5a1;
             margin: 0 auto 30px;
             display: flex;
             align-items: center;
@@ -93,18 +97,20 @@
         .cta-button {
             display: inline-block;
             padding: 15px 40px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: #0dc5a1;
             color: white;
             text-decoration: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 1.1rem;
             font-weight: 600;
             transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
         }
         
         .cta-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 30px rgba(13, 197, 161, 0.4);
+            background: #0ba085;
         }
         
         .next-steps {
@@ -135,7 +141,7 @@
             content: '→';
             position: absolute;
             left: 0;
-            color: #667eea;
+            color: #0dc5a1;
         }
         
         /* Auto-login status styling */
@@ -209,7 +215,7 @@
         
         /* Success state for login status */
         .login-status.success {
-            background: #28a745;
+            background: #0dc5a1;
         }
         
         /* Error state for login status */
@@ -250,11 +256,6 @@
         
         <a href="#" class="cta-button" id="startUsingBtn">Start Using Iris Mapper Pro</a>
         
-        <!-- Email notice -->
-        <div id="emailNotice" class="email-notice" style="display: none;">
-            <p>📧 We've sent you a welcome email to: <strong id="userEmailDisplay"></strong></p>
-            <p class="small-text">Check your inbox to set up your password for future logins</p>
-        </div>
         
         <div class="next-steps">
             <h3>What's Next?</h3>
@@ -291,15 +292,7 @@
         // UI elements
         const loginStatus = document.getElementById('loginStatus');
         const statusText = document.getElementById('statusText');
-        const emailNotice = document.getElementById('emailNotice');
-        const userEmailDisplay = document.getElementById('userEmailDisplay');
         const startBtn = document.getElementById('startUsingBtn');
-        
-        // Show email notice if we have email
-        if (userEmail) {
-            userEmailDisplay.textContent = userEmail;
-            emailNotice.style.display = 'block';
-        }
         
         // Handle "Start Using" button click
         startBtn.addEventListener('click', async (e) => {
@@ -319,24 +312,37 @@
                 if (userEmail) {
                     statusText.textContent = '🔐 Signing you in securely...';
                     
-                    // Try to create auto-login token
-                    const response = await fetch('/.netlify/functions/create-auto-login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ email: userEmail })
-                    });
+                    // Start both auto-login and welcome email in parallel
+                    const [autoLoginResponse, welcomeEmailResponse] = await Promise.all([
+                        // Auto-login attempt
+                        fetch('/.netlify/functions/create-auto-login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: userEmail })
+                        }),
+                        // Send welcome email for password setup
+                        fetch('/.netlify/functions/send-welcome-email', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email: userEmail })
+                        })
+                    ]);
                     
-                    const data = await response.json();
+                    const data = await autoLoginResponse.json();
+                    const welcomeResult = await welcomeEmailResponse.json();
                     
                     if (data.success && data.customToken) {
                         // Sign in with custom token
                         await firebase.auth().signInWithCustomToken(data.customToken);
                         
-                        // Success feedback
+                        // Success feedback with welcome email info
                         loginStatus.classList.add('success');
-                        statusText.textContent = '✅ Perfect! Taking you to your dashboard...';
+                        if (welcomeResult.success) {
+                            statusText.textContent = '✅ Perfect! Welcome email sent & taking you to your dashboard...';
+                        } else {
+                            statusText.textContent = '✅ Perfect! Taking you to your dashboard...';
+                            console.log('Welcome email failed but auto-login succeeded');
+                        }
                         
                         // Clear stored email
                         localStorage.removeItem('userEmail');
@@ -350,9 +356,13 @@
                     }
                 }
                 
-                // If auto-login not available, show helpful message
+                // If auto-login not available, show helpful message with welcome email info
                 loginStatus.classList.add('info');
-                statusText.innerHTML = '📧 Please check your email for login instructions';
+                if (welcomeResult && welcomeResult.success) {
+                    statusText.innerHTML = '📧 Welcome email sent! Check your inbox to set up your password';
+                } else {
+                    statusText.innerHTML = '📧 Please check your email for login instructions';
+                }
                 startBtn.textContent = 'Go to Login Page';
                 startBtn.style.opacity = '1';
                 startBtn.style.pointerEvents = 'auto';
@@ -365,9 +375,9 @@
             } catch (error) {
                 console.error('Auto-login error:', error);
                 
-                // Show friendly error message
+                // Show friendly error message (welcome email may still have been sent)
                 loginStatus.classList.add('info');
-                statusText.innerHTML = '📧 Almost there! Check your email to complete setup';
+                statusText.innerHTML = '📧 Welcome email sent! Check your inbox to set up your password';
                 startBtn.textContent = 'Go to Login Page';
                 startBtn.style.opacity = '1';
                 startBtn.style.pointerEvents = 'auto';
