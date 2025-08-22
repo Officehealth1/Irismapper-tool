@@ -14,12 +14,47 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase Configuration and Auth Check -->
+    <script src="js/firebase-config.js"></script>
+    <script src="js/auth-check.js"></script>
 </head>
 <body>
     <div class="app-container">
         <div class="logo-container">
             <img src="grids/watermark.png" alt="Logo" class="logo">
             <span class="version-text">v5.1</span>
+        </div>
+
+        <!-- Profile Container -->
+        <div class="profile-container">
+            <div class="profile-icon" id="profileIcon">
+                👤
+            </div>
+            <div class="profile-dropdown" id="profileDropdown">
+                <div class="profile-header">
+                    <span class="user-email" id="userEmail">Loading...</span>
+                </div>
+                <div class="profile-menu">
+                    <div class="profile-menu-item" id="accountSettings">
+                        <span class="menu-icon">⚙️</span>
+                        <span class="menu-text">Account Settings</span>
+                    </div>
+                    <div class="profile-menu-item" id="manageSubscription">
+                        <span class="menu-icon">💳</span>
+                        <span class="menu-text">Manage Subscription</span>
+                    </div>
+                    <div class="profile-menu-item" id="changePassword">
+                        <span class="menu-icon">🔑</span>
+                        <span class="menu-text">Change Password</span>
+                    </div>
+                    <div class="profile-menu-divider"></div>
+                    <div class="profile-menu-item logout-item" id="logoutBtn">
+                        <span class="menu-icon">🚪</span>
+                        <span class="menu-text">Logout</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="controls eye-selection-panel">
@@ -193,6 +228,128 @@
     <script src="js/firebase-config.js"></script>
     <!-- Subscription Gate -->
     <script src="js/auth-redirect.js"></script>
+    
+    <!-- Profile Dropdown Functionality -->
+    <script>
+        // Profile Dropdown Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileIcon = document.getElementById('profileIcon');
+            const profileDropdown = document.getElementById('profileDropdown');
+            const userEmailElement = document.getElementById('userEmail');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const manageSubscription = document.getElementById('manageSubscription');
+            const changePassword = document.getElementById('changePassword');
+            const accountSettings = document.getElementById('accountSettings');
+            
+            // Check authentication and update profile
+            firebase.auth().onAuthStateChanged((user) => {
+                if (user) {
+                    // User is signed in - update email display
+                    userEmailElement.textContent = user.email || 'User';
+                    console.log('User authenticated:', user.email);
+                } else {
+                    // No user signed in - redirect to login
+                    console.log('No user authenticated, redirecting to login');
+                    window.location.href = 'login.html';
+                }
+            });
+            
+            // Toggle dropdown on profile icon click
+            profileIcon.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('show');
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!profileDropdown.contains(e.target) && !profileIcon.contains(e.target)) {
+                    profileDropdown.classList.remove('show');
+                }
+            });
+            
+            // Logout functionality
+            logoutBtn.addEventListener('click', async function() {
+                try {
+                    await firebase.auth().signOut();
+                    console.log('User logged out successfully');
+                    window.location.href = 'login.html';
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('Error logging out. Please try again.');
+                }
+            });
+            
+            // Manage Subscription - Opens Stripe Customer Portal
+            manageSubscription.addEventListener('click', async function() {
+                try {
+                    profileDropdown.classList.remove('show');
+                    
+                    // Get current user
+                    const user = firebase.auth().currentUser;
+                    if (!user) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    // Create a portal session via Netlify function
+                    const response = await fetch('/.netlify/functions/create-portal-session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            email: user.email 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.url) {
+                        // Redirect to Stripe Customer Portal
+                        window.location.href = data.url;
+                    } else {
+                        alert('Unable to access subscription management. Please try again later.');
+                    }
+                } catch (error) {
+                    console.error('Error accessing subscription portal:', error);
+                    alert('Error accessing subscription management. Please contact support.');
+                }
+            });
+            
+            // Change Password functionality
+            changePassword.addEventListener('click', async function() {
+                try {
+                    profileDropdown.classList.remove('show');
+                    
+                    const user = firebase.auth().currentUser;
+                    if (user && user.email) {
+                        // Send password reset email
+                        await firebase.auth().sendPasswordResetEmail(user.email);
+                        alert(`Password reset email sent to ${user.email}. Please check your inbox.`);
+                    } else {
+                        alert('Unable to send password reset email. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('Error sending password reset:', error);
+                    alert('Error sending password reset email. Please try again.');
+                }
+            });
+            
+            // Account Settings (placeholder for now)
+            accountSettings.addEventListener('click', function() {
+                profileDropdown.classList.remove('show');
+                alert('Account settings page coming soon!');
+                // In the future, this could navigate to a dedicated settings page
+                // window.location.href = 'settings.html';
+            });
+            
+            // Prevent dropdown from closing when clicking inside it
+            profileDropdown.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
+    
     <!-- Main JavaScript -->
     <script src="script.js"></script>
 </body>
