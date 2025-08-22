@@ -181,8 +181,8 @@ async function handleSubscribe() {
                 plan: currentPeriod,
                 tier: currentTier,
                 email: email,
-                successUrl: window.location.origin + '/success.html',
-                cancelUrl: window.location.origin + '/pricing.html'
+                successUrl: window.location.origin + '/success',
+                cancelUrl: window.location.origin + '/pricing'
             })
         });
         

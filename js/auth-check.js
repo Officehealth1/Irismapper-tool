@@ -32,7 +32,7 @@
             if (!user) {
                 console.log("User not logged in, redirecting to login page");
                 const basePath = getBasePath();
-                window.location.href = basePath + 'login.html';
+                window.location.href = basePath + 'login';
             } else {
                 console.log("User authenticated:", user.email);
             }

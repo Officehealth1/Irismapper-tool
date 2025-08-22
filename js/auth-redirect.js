@@ -4,9 +4,9 @@
     
     // Skip redirect if we're already on pricing or success pages
     const currentPath = window.location.pathname;
-    if (currentPath.includes('pricing.html') || 
-        currentPath.includes('success.html') || 
-        currentPath.includes('login.html')) {
+    if (currentPath.includes('pricing') || 
+        currentPath.includes('success') || 
+        currentPath.includes('login')) {
         return;
     }
     
@@ -60,7 +60,7 @@
     
     function redirectToPricing() {
         const basePath = getBasePath();
-        window.location.href = basePath + 'pricing.html';
+        window.location.href = basePath + 'pricing';
     }
     
     function getBasePath() {
@@ -96,7 +96,7 @@
         `;
         banner.innerHTML = `
             <strong>Free Trial:</strong> ${daysRemaining} days remaining 
-            <a href="pricing.html" style="color: white; text-decoration: underline; margin-left: 15px;">
+            <a href="/pricing" style="color: white; text-decoration: underline; margin-left: 15px;">
                 Upgrade Now
             </a>
         `;
