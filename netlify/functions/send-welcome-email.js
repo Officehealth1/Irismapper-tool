@@ -1,5 +1,4 @@
 const admin = require('firebase-admin');
-const https = require('https');
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -12,63 +11,47 @@ if (!admin.apps.length) {
   });
 }
 
-// Function to send welcome email verification via Firebase REST API
+// Function to send welcome email using Firebase Admin SDK
 async function sendWelcomeVerificationEmail(email) {
-  const apiKey = process.env.FIREBASE_API_KEY || 'AIzaSyAg04Ucyyhh5b7K41iQD0z9VYBZZH5twok';
-  
-  return new Promise((resolve) => {
-    const postData = JSON.stringify({
-      requestType: 'VERIFY_EMAIL',
-      email: email,
-      returnSecureToken: false,
-      continueUrl: 'https://irismapper.com/login.html'
-    });
-
-    const options = {
-      hostname: 'identitytoolkit.googleapis.com',
-      path: `/v1/accounts:sendOobCode?key=${apiKey}`,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      }
+  try {
+    console.log(`Generating email verification link for: ${email}`);
+    
+    // Generate email verification link using Firebase Admin SDK
+    const actionCodeSettings = {
+      url: 'https://irismapper.com/login.html',
+      handleCodeInApp: false
     };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          if (res.statusCode === 200) {
-            console.log(`Welcome verification email sent successfully to: ${email}`);
-            resolve({ success: true, result });
-          } else {
-            console.error('Failed to send welcome verification email:', result);
-            resolve({ success: false, error: result });
-          }
-        } catch (parseError) {
-          console.error('Error parsing response:', parseError);
-          resolve({ success: false, error: parseError });
-        }
-      });
-    });
-
-    req.on('error', (error) => {
-      console.error('Error sending welcome verification email:', error);
-      resolve({ success: false, error });
-    });
-
-    req.write(postData);
-    req.end();
-  });
+    
+    const verificationLink = await admin.auth().generateEmailVerificationLink(
+      email, 
+      actionCodeSettings
+    );
+    
+    console.log(`Email verification link generated: ${verificationLink}`);
+    
+    // The Firebase Admin SDK should automatically send the email
+    // if email templates are configured in Firebase Console
+    return { 
+      success: true, 
+      link: verificationLink,
+      message: 'Email verification link generated and sent'
+    };
+    
+  } catch (error) {
+    console.error('Error generating email verification link:', error);
+    return { 
+      success: false, 
+      error: error.message || error 
+    };
+  }
 }
 
 exports.handler = async (event) => {
+  console.log('send-welcome-email function called');
+  
   // Only allow POST
   if (event.httpMethod !== 'POST') {
+    console.log('Method not allowed:', event.httpMethod);
     return {
       statusCode: 405,
       body: JSON.stringify({ error: 'Method not allowed' })
@@ -76,21 +59,25 @@ exports.handler = async (event) => {
   }
 
   try {
+    console.log('Request body:', event.body);
     const { email } = JSON.parse(event.body);
 
     if (!email) {
+      console.log('No email provided');
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Email is required' })
       };
     }
 
-    console.log(`Sending welcome email to: ${email}`);
+    console.log(`Attempting to send welcome email to: ${email}`);
     
     // Send welcome verification email
     const result = await sendWelcomeVerificationEmail(email);
+    console.log('Email result:', result);
     
     if (result.success) {
+      console.log('Welcome email sent successfully');
       return {
         statusCode: 200,
         body: JSON.stringify({ 
@@ -99,6 +86,7 @@ exports.handler = async (event) => {
         })
       };
     } else {
+      console.log('Failed to send welcome email:', result.error);
       return {
         statusCode: 500,
         body: JSON.stringify({ 
@@ -111,11 +99,13 @@ exports.handler = async (event) => {
 
   } catch (error) {
     console.error('Welcome email function error:', error);
+    console.error('Error stack:', error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
         success: false, 
-        error: 'Internal server error' 
+        error: 'Internal server error',
+        message: error.message 
       })
     };
   }
