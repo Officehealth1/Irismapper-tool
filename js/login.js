@@ -2,6 +2,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Login page loaded');
     
+    // Check for email verification link in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    const oobCode = urlParams.get('oobCode');
+    const continueUrl = urlParams.get('continueUrl');
+    
+    if (mode === 'verifyEmail' && oobCode) {
+        handleEmailVerification(oobCode, continueUrl);
+        return;
+    }
+    
     // DOM elements
     const loginForm = document.getElementById('loginForm');
     const emailInput = document.getElementById('email');
@@ -181,4 +192,92 @@ document.addEventListener('DOMContentLoaded', function() {
             hideErrorModal();
         }
     });
+
+    // Handle email verification from welcome email
+    async function handleEmailVerification(oobCode, continueUrl) {
+        console.log('Handling email verification...');
+        
+        // Show welcome message
+        showError('🎉 Welcome to Iris Mapper Pro! Verifying your email...', false);
+        
+        try {
+            // Apply the email verification code
+            await firebase.auth().applyActionCode(oobCode);
+            
+            // Get the current user info
+            const result = await firebase.auth().checkActionCode(oobCode);
+            const email = result.data.email;
+            
+            console.log(`Email verified for: ${email}`);
+            
+            // Show success message with login options
+            showWelcomeVerificationSuccess(email);
+            
+        } catch (error) {
+            console.error('Email verification failed:', error);
+            showError('Email verification failed. The link may be expired or invalid.');
+        }
+    }
+    
+    // Show welcome verification success with login options
+    function showWelcomeVerificationSuccess(email) {
+        const modalContent = errorModal.querySelector('.modal-content');
+        modalContent.innerHTML = `
+            <h3 style="color: #0dc5a1; margin-bottom: 20px;">🎉 Welcome to Iris Mapper Pro!</h3>
+            <div style="text-align: left; margin: 20px 0;">
+                <p style="margin-bottom: 15px;"><strong>Your email has been verified successfully!</strong></p>
+                <p style="margin-bottom: 15px;">Email: <strong style="color: #0dc5a1;">${email}</strong></p>
+                <p style="margin-bottom: 20px;">You can now set your password and start using the app:</p>
+            </div>
+            <div style="display: flex; gap: 10px; flex-direction: column;">
+                <button id="setPasswordBtn" style="background: #0dc5a1; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                    Set Password & Login
+                </button>
+                <button id="directLoginBtn" style="background: transparent; color: #0dc5a1; border: 2px solid #0dc5a1; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 16px;">
+                    Continue to App (Set Password Later)
+                </button>
+            </div>
+        `;
+        
+        // Add event listeners for the new buttons
+        document.getElementById('setPasswordBtn').addEventListener('click', () => {
+            hideErrorModal();
+            emailInput.value = email;
+            passwordInput.focus();
+            showError('Please enter a password for your account:', false);
+        });
+        
+        document.getElementById('directLoginBtn').addEventListener('click', async () => {
+            hideErrorModal();
+            try {
+                // Create auto-login token
+                const response = await fetch('/.netlify/functions/create-auto-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.customToken) {
+                    await firebase.auth().signInWithCustomToken(data.customToken);
+                    showError('🎉 Welcome! Taking you to the app...', false);
+                    setTimeout(() => {
+                        window.location.href = 'app.html';
+                    }, 1500);
+                } else {
+                    showError('Please set a password to continue:');
+                    emailInput.value = email;
+                    passwordInput.focus();
+                }
+            } catch (error) {
+                console.error('Auto-login failed:', error);
+                showError('Please set a password to continue:');
+                emailInput.value = email;
+                passwordInput.focus();
+            }
+        });
+        
+        errorModal.classList.add('show');
+    }
 });
