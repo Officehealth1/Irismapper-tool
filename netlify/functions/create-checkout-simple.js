@@ -75,8 +75,8 @@ exports.handler = async (event) => {
           plan: plan
         }
       },
-      success_url: successUrl ? `${successUrl}?email=${encodeURIComponent(email)}` : `https://irismapper.com/success.html?email=${encodeURIComponent(email)}`,
-      cancel_url: cancelUrl || 'https://irismapper.com/pricing.html',
+      success_url: successUrl ? `${successUrl}?email=${encodeURIComponent(email)}` : `https://irismapper.com/success?email=${encodeURIComponent(email)}`,
+      cancel_url: cancelUrl || 'https://irismapper.com/pricing',
       allow_promotion_codes: true
     });
 

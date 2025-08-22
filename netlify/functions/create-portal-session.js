@@ -63,7 +63,7 @@ exports.handler = async (event) => {
           // Create portal session with Stripe customer
           const session = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
-            return_url: 'https://irismapper.com/app.html'
+            return_url: 'https://irismapper.com/app'
           });
           
           return {
@@ -114,7 +114,7 @@ exports.handler = async (event) => {
           // Create portal session
           const session = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
-            return_url: 'https://irismapper.com/app.html'
+            return_url: 'https://irismapper.com/app'
           });
           
           return {
@@ -138,7 +138,7 @@ exports.handler = async (event) => {
     // Create Stripe Customer Portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: stripeCustomerId,
-      return_url: 'https://irismapper.com/app.html',
+      return_url: 'https://irismapper.com/app',
       configuration: undefined // Uses default configuration
     });
 
