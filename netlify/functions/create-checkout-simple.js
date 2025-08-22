@@ -75,11 +75,7 @@ exports.handler = async (event) => {
           plan: plan
         }
       },
-<<<<<<< HEAD
-      success_url: successUrl || 'https://irismapper.com/success.html',
-=======
       success_url: successUrl ? `${successUrl}?email=${encodeURIComponent(email)}` : `https://irismapper.com/success.html?email=${encodeURIComponent(email)}`,
->>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
       cancel_url: cancelUrl || 'https://irismapper.com/pricing.html',
       allow_promotion_codes: true
     });

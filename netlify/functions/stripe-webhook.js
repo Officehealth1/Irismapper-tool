@@ -89,34 +89,12 @@ async function handleCheckoutComplete(session) {
   const customer = await stripe.customers.retrieve(session.customer);
   const subscription = await stripe.subscriptions.retrieve(session.subscription);
   
-<<<<<<< HEAD
-  // Get user by email
-=======
   // Check if user already exists in Firestore
->>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
   const userQuery = await db.collection('users')
     .where('email', '==', customer.email)
     .limit(1)
     .get();
   
-<<<<<<< HEAD
-  if (!userQuery.empty) {
-    const userDoc = userQuery.docs[0];
-    
-    // Update user subscription info
-    await userDoc.ref.update({
-      stripeCustomerId: customer.id,
-      subscriptionId: subscription.id,
-      subscriptionStatus: subscription.status,
-      subscriptionTier: subscription.metadata.tier || 'practitioner',
-      subscriptionPlan: subscription.metadata.plan || 'monthly',
-      trialEndsAt: new Date(subscription.trial_end * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    console.log(`Subscription activated for user: ${customer.email}`);
-=======
   const userData = {
     stripeCustomerId: customer.id,
     subscriptionId: subscription.id,
@@ -170,7 +148,6 @@ async function handleCheckoutComplete(session) {
         ...userData
       });
     }
->>>>>>> 15f58fa (Add complete subscription system with Firebase authentication)
   }
 }
 
