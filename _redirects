@@ -3,5 +3,19 @@
 # API routes
 /api/* /.netlify/functions/:splat 200
 
+# Clean URLs - serve HTML files without extension
+/app /app.html 200
+/login /login.html 200
+/pricing /pricing.html 200
+/success /success.html 200
+/admin /admin.html 200
+
 # Redirect root to pricing page for new visitors
-/ /pricing.html 302
+/ /pricing 302
+
+# Redirect .html extensions to clean URLs
+/app.html /app 301
+/login.html /login 301
+/pricing.html /pricing 301
+/success.html /success 301
+/admin.html /admin 301

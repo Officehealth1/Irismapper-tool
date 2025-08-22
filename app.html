@@ -248,7 +248,7 @@
                 } else {
                     // No user signed in - redirect to login
                     console.log('No user authenticated, redirecting to login');
-                    window.location.href = 'login.html';
+                    window.location.href = '/login';
                 }
             });
             
@@ -270,7 +270,7 @@
                 try {
                     await firebase.auth().signOut();
                     console.log('User logged out successfully');
-                    window.location.href = 'login.html';
+                    window.location.href = '/login';
                 } catch (error) {
                     console.error('Logout error:', error);
                     alert('Error logging out. Please try again.');
@@ -285,7 +285,7 @@
                     // Get current user
                     const user = firebase.auth().currentUser;
                     if (!user) {
-                        window.location.href = 'login.html';
+                        window.location.href = '/login';
                         return;
                     }
                     
@@ -312,7 +312,7 @@
                         console.error('Portal session response not ok:', response.status);
                         // For now, redirect to pricing page as fallback
                         if (confirm('Would you like to view subscription options?')) {
-                            window.location.href = 'pricing.html';
+                            window.location.href = '/pricing';
                         }
                         return;
                     }
@@ -325,14 +325,14 @@
                     } else {
                         // Fallback to pricing page
                         if (confirm('Unable to access portal. View subscription options?')) {
-                            window.location.href = 'pricing.html';
+                            window.location.href = '/pricing';
                         }
                     }
                 } catch (error) {
                     console.error('Error accessing subscription portal:', error);
                     // Fallback to pricing page
                     if (confirm('Error accessing portal. View subscription options?')) {
-                        window.location.href = 'pricing.html';
+                        window.location.href = '/pricing';
                     }
                 }
             });
@@ -361,7 +361,7 @@
                 profileDropdown.classList.remove('show');
                 alert('Account settings page coming soon!');
                 // In the future, this could navigate to a dedicated settings page
-                // window.location.href = 'settings.html';
+                // window.location.href = '/settings';
             });
             
             // Prevent dropdown from closing when clicking inside it
