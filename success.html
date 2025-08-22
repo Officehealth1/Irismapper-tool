@@ -137,6 +137,90 @@
             left: 0;
             color: #667eea;
         }
+        
+        /* Auto-login status styling */
+        .login-status {
+            background: #0dc5a1;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 25px 0;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .status-message {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .spinner-small {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Email notice styling */
+        .email-notice {
+            background: rgba(13, 197, 161, 0.1);
+            border: 1px solid #0dc5a1;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            animation: slideIn 0.5s ease;
+        }
+        
+        .email-notice p {
+            color: #333;
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+        
+        .email-notice strong {
+            color: #0dc5a1;
+            font-weight: 600;
+        }
+        
+        .email-notice .small-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 8px;
+        }
+        
+        /* Success state for login status */
+        .login-status.success {
+            background: #28a745;
+        }
+        
+        /* Error state for login status */
+        .login-status.info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        
+        .login-status.info .status-message {
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -146,17 +230,31 @@
         <h1>Welcome to Iris Mapper Pro!</h1>
         
         <p class="message">
-            Your subscription has been activated successfully.
-            Thank you for choosing Iris Mapper Pro!
+            🎉 Fantastic! Your subscription is active and ready to go.
+            We're thrilled to have you join the Iris Mapper Pro community!
         </p>
         
         <div class="trial-info">
-            <h3>🎉 Your 14-Day Trial Has Started</h3>
-            <p>You have full access to all features. Your card will be charged after the trial period ends.</p>
+            <h3>✨ Your 14-Day Trial Has Started</h3>
+            <p>Explore all premium features completely free. No charges until after your trial ends.</p>
             <p><strong>Trial ends on: <span id="trial-end-date"></span></strong></p>
         </div>
         
-        <a href="index.html" class="cta-button">Start Using Iris Mapper Pro</a>
+        <!-- Auto-login status message -->
+        <div id="loginStatus" class="login-status" style="display: none;">
+            <div class="status-message">
+                <span class="spinner-small"></span>
+                <span id="statusText">Setting up your account...</span>
+            </div>
+        </div>
+        
+        <a href="#" class="cta-button" id="startUsingBtn">Start Using Iris Mapper Pro</a>
+        
+        <!-- Email notice -->
+        <div id="emailNotice" class="email-notice" style="display: none;">
+            <p>📧 We've sent you a welcome email to: <strong id="userEmailDisplay"></strong></p>
+            <p class="small-text">Check your inbox to set up your password for future logins</p>
+        </div>
         
         <div class="next-steps">
             <h3>What's Next?</h3>
@@ -170,6 +268,13 @@
         </div>
     </div>
     
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+    
     <script>
         // Calculate and display trial end date
         const trialEndDate = new Date();
@@ -177,6 +282,106 @@
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('trial-end-date').textContent = 
             trialEndDate.toLocaleDateString('en-GB', options);
+        
+        // Get user email from URL parameters (passed from Stripe)
+        const urlParams = new URLSearchParams(window.location.search);
+        const userEmail = urlParams.get('email') || localStorage.getItem('userEmail');
+        
+        // UI elements
+        const loginStatus = document.getElementById('loginStatus');
+        const statusText = document.getElementById('statusText');
+        const emailNotice = document.getElementById('emailNotice');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
+        const startBtn = document.getElementById('startUsingBtn');
+        
+        // Show email notice if we have email
+        if (userEmail) {
+            userEmailDisplay.textContent = userEmail;
+            emailNotice.style.display = 'block';
+        }
+        
+        // Handle "Start Using" button click
+        startBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            // Show friendly loading status
+            loginStatus.style.display = 'block';
+            statusText.textContent = '✨ Getting everything ready for you...';
+            startBtn.textContent = 'One moment please...';
+            startBtn.style.opacity = '0.7';
+            startBtn.style.pointerEvents = 'none';
+            
+            // Small delay for better UX
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            try {
+                if (userEmail) {
+                    statusText.textContent = '🔐 Signing you in securely...';
+                    
+                    // Try to create auto-login token
+                    const response = await fetch('/.netlify/functions/create-auto-login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email: userEmail })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.customToken) {
+                        // Sign in with custom token
+                        await firebase.auth().signInWithCustomToken(data.customToken);
+                        
+                        // Success feedback
+                        loginStatus.classList.add('success');
+                        statusText.textContent = '✅ Perfect! Taking you to your dashboard...';
+                        
+                        // Clear stored email
+                        localStorage.removeItem('userEmail');
+                        
+                        // Short delay for user to see success message
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        // Redirect to app
+                        window.location.href = 'app.html';
+                        return;
+                    }
+                }
+                
+                // If auto-login not available, show helpful message
+                loginStatus.classList.add('info');
+                statusText.innerHTML = '📧 Please check your email for login instructions';
+                startBtn.textContent = 'Go to Login Page';
+                startBtn.style.opacity = '1';
+                startBtn.style.pointerEvents = 'auto';
+                
+                // Update button to go to login
+                startBtn.onclick = () => {
+                    window.location.href = 'login.html';
+                };
+                
+            } catch (error) {
+                console.error('Auto-login error:', error);
+                
+                // Show friendly error message
+                loginStatus.classList.add('info');
+                statusText.innerHTML = '📧 Almost there! Check your email to complete setup';
+                startBtn.textContent = 'Go to Login Page';
+                startBtn.style.opacity = '1';
+                startBtn.style.pointerEvents = 'auto';
+                
+                // Update button to go to login
+                startBtn.onclick = () => {
+                    window.location.href = 'login.html';
+                };
+            }
+        });
+        
+        // Store email for potential future use
+        if (userEmail) {
+            localStorage.setItem('userEmail', userEmail);
+        }
     </script>
 </body>
 </html>

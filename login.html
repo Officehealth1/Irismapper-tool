@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Iris Mapper Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/login.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="header">
+                <img src="grids/watermark.png" alt="IrisLAB" class="logo">
+                <h1>Iris Mapper Pro</h1>
+                <p class="subtitle">Sign in to your account</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="email">Email address</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span class="btn-text">Sign In</span>
+                    <div class="spinner" style="display: none;"></div>
+                </button>
+
+                <div class="form-links">
+                    <a href="#" id="forgotPassword">Forgot your password?</a>
+                </div>
+            </form>
+
+            <div class="divider">
+                <span>Don't have an account?</span>
+            </div>
+
+            <button class="signup-btn" id="signupBtn">Start Free Trial</button>
+
+            <div class="trust-badges">
+                <p>🔒 Secure login</p>
+                <p>✓ 14-day free trial</p>
+                <p>↻ Cancel anytime</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <h3>Authentication Error</h3>
+            <p id="errorMessage"></p>
+            <button class="modal-btn" id="closeErrorModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+    <!-- Login Logic -->
+    <script src="js/login.js"></script>
+</body>
+</html>
