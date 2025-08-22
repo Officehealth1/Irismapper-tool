@@ -189,24 +189,9 @@ async function handleCheckoutComplete(session) {
         ...userData
       });
       
-      // Send welcome verification email using Firebase REST API
-      console.log(`Attempting to send welcome verification email to: ${customer.email}`);
-      const emailResult = await sendWelcomeVerificationEmail(customer.email);
-      
-      if (emailResult.success) {
-        console.log(`✅ Welcome verification email sent successfully to: ${customer.email}`);
-      } else {
-        console.log(`❌ Failed to send welcome verification email to: ${customer.email}`, emailResult.error);
-        // Fallback: Generate verification link using Admin SDK
-        try {
-          const verificationLink = await admin.auth().generateEmailVerificationLink(customer.email, {
-            url: 'https://irismapper.com/login.html'
-          });
-          console.log(`🔗 Manual welcome verification link: ${verificationLink}`);
-        } catch (linkError) {
-          console.error('Failed to generate backup verification link:', linkError);
-        }
-      }
+      // Note: Welcome email will be sent from success.html when user clicks "Start Using" button
+      // This provides better UX - user gets email exactly when they need it
+      console.log(`User account created successfully: ${customer.email}`);
       
       console.log(`New user created and subscription activated: ${customer.email}`);
       
