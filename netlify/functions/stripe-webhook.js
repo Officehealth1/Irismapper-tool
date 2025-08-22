@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const admin = require('firebase-admin');
+const https = require('https');
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -13,6 +14,59 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+
+// Function to trigger password reset email via Firebase REST API
+async function sendPasswordResetEmail(email) {
+  const apiKey = process.env.FIREBASE_API_KEY || 'AIzaSyAg04Ucyyhh5b7K41iQD0z9VYBZZH5twok';
+  
+  return new Promise((resolve) => {
+    const postData = JSON.stringify({
+      requestType: 'PASSWORD_RESET',
+      email: email,
+      returnSecureToken: false
+    });
+
+    const options = {
+      hostname: 'identitytoolkit.googleapis.com',
+      path: `/v1/accounts:sendOobCode?key=${apiKey}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (res.statusCode === 200) {
+            console.log(`Password reset email sent successfully to: ${email}`);
+            resolve({ success: true, result });
+          } else {
+            console.error('Failed to send password reset email:', result);
+            resolve({ success: false, error: result });
+          }
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          resolve({ success: false, error: parseError });
+        }
+      });
+    });
+
+    req.on('error', (error) => {
+      console.error('Error sending password reset email:', error);
+      resolve({ success: false, error });
+    });
+
+    req.write(postData);
+    req.end();
+  });
+}
 
 exports.handler = async (event) => {
   // Only allow POST
@@ -117,11 +171,12 @@ async function handleCheckoutComplete(session) {
       // Generate a temporary password for new user
       const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
       
-      // Create Firebase Auth user
+      // Create Firebase Auth user  
       const userRecord = await admin.auth().createUser({
         email: customer.email,
         password: tempPassword,
-        emailVerified: false
+        emailVerified: false,
+        disabled: false
       });
       
       // Create Firestore user record
@@ -133,8 +188,22 @@ async function handleCheckoutComplete(session) {
         ...userData
       });
       
-      // Send password reset email so user can set their password
-      await admin.auth().generatePasswordResetLink(customer.email);
+      // Send password reset email using Firebase REST API
+      console.log(`Attempting to send welcome password reset email to: ${customer.email}`);
+      const emailResult = await sendPasswordResetEmail(customer.email);
+      
+      if (emailResult.success) {
+        console.log(`✅ Welcome email sent successfully to: ${customer.email}`);
+      } else {
+        console.log(`❌ Failed to send welcome email to: ${customer.email}`, emailResult.error);
+        // Fallback: Generate reset link for manual sending
+        try {
+          const resetLink = await admin.auth().generatePasswordResetLink(customer.email);
+          console.log(`🔗 Manual password reset link: ${resetLink}`);
+        } catch (linkError) {
+          console.error('Failed to generate backup reset link:', linkError);
+        }
+      }
       
       console.log(`New user created and subscription activated: ${customer.email}`);
       
