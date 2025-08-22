@@ -1,0 +1,10 @@
+# Netlify redirects file
+
+# Redirect root to pricing page for new visitors
+/ /pricing.html 200
+
+# API routes
+/api/* /.netlify/functions/:splat 200
+
+# SPA fallback for client-side routing
+/* /index.html 200

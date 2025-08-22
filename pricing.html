@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Iris Mapper Pro - Pricing</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/pricing.css">
+</head>
+<body>
+    <div class="pricing-container">
+        <div class="header">
+            <img src="grids/watermark.png" alt="Iris Mapper Pro" class="logo">
+            <h1>Choose Your Plan</h1>
+            <p class="subtitle">14-day free trial included with all plans</p>
+        </div>
+
+        <!-- Plan Type Toggle -->
+        <div class="plan-toggle">
+            <button class="toggle-btn active" data-tier="practitioner">Practitioner</button>
+            <button class="toggle-btn" data-tier="clinic">Clinic</button>
+        </div>
+
+        <!-- Billing Period Toggle -->
+        <div class="billing-toggle">
+            <button class="period-btn active" data-period="monthly">Monthly</button>
+            <button class="period-btn" data-period="yearly">Yearly <span class="badge">Save 33%</span></button>
+            <button class="period-btn" data-period="2year">2 Years <span class="badge">Save 50%</span></button>
+        </div>
+
+        <!-- Pricing Display -->
+        <div class="pricing-display">
+            <div class="price-card">
+                <h2 id="plan-name">Practitioner Plan</h2>
+                <div class="price">
+                    <span class="currency">£</span>
+                    <span id="price-amount">10</span>
+                    <span id="price-period">/month</span>
+                </div>
+                <div class="savings" id="savings-text" style="display: none;"></div>
+                
+                <div class="features" id="practitioner-features">
+                    <h3>Everything you need:</h3>
+                    <ul>
+                        <li>All iris mapping templates</li>
+                        <li>Unlimited image uploads</li>
+                        <li>Advanced image adjustments</li>
+                        <li>Export high-resolution images</li>
+                        <li>Save & manage patient records</li>
+                        <li>14-day free trial</li>
+                        <li>Cancel anytime</li>
+                    </ul>
+                </div>
+
+                <div class="features" id="clinic-features" style="display: none;">
+                    <h3>Everything in Practitioner plus:</h3>
+                    <ul>
+                        <li>Multi-user access (up to 5 users)</li>
+                        <li>Clinic branding options</li>
+                        <li>Priority support</li>
+                        <li>Bulk export features</li>
+                        <li>Advanced analytics</li>
+                        <li>API access (coming soon)</li>
+                        <li>14-day free trial</li>
+                        <li>Cancel anytime</li>
+                    </ul>
+                </div>
+
+                <button class="subscribe-btn" id="subscribe-btn">
+                    Start 14-Day Free Trial
+                </button>
+
+                <p class="trial-info">No credit card required for trial</p>
+            </div>
+        </div>
+
+        <div class="trust-badges">
+            <p>🔒 Secure payment via Stripe</p>
+            <p>💳 All major cards accepted</p>
+            <p>↻ Cancel or change plan anytime</p>
+        </div>
+
+        <div class="faq">
+            <h3>Frequently Asked Questions</h3>
+            
+            <details>
+                <summary>What's included in the free trial?</summary>
+                <p>Full access to all features for 14 days. No credit card required to start.</p>
+            </details>
+
+            <details>
+                <summary>Can I switch plans later?</summary>
+                <p>Yes, you can upgrade or downgrade at any time. Changes take effect at the next billing cycle.</p>
+            </details>
+
+            <details>
+                <summary>What's the difference between Practitioner and Clinic?</summary>
+                <p>Clinic plans include multi-user access (up to 5 users), priority support, and additional features for managing a practice.</p>
+            </details>
+
+            <details>
+                <summary>How do I cancel?</summary>
+                <p>You can cancel anytime from your account dashboard. You'll maintain access until the end of your billing period.</p>
+            </details>
+
+            <details>
+                <summary>Do you offer refunds?</summary>
+                <p>Yes, we offer a 30-day money-back guarantee for annual and 2-year plans.</p>
+            </details>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div id="emailModal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <h3>Start Your Free Trial</h3>
+            <p>Enter your email address to begin your 14-day free trial. No credit card required.</p>
+            
+            <input type="email" id="emailInput" class="email-input" placeholder="Enter your email address" required>
+            
+            <div class="modal-buttons">
+                <button class="modal-btn primary" id="startTrialBtn">Start Free Trial</button>
+                <button class="modal-btn secondary" id="cancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stripe -->
+    <script src="https://js.stripe.com/v3/"></script>
+    <!-- Pricing Logic -->
+    <script src="js/pricing.js"></script>
+</body>
+</html>

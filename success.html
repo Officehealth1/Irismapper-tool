@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Iris Mapper Pro!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .success-container {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 600px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+        
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #28a745;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            from {
+                transform: scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 48px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .message {
+            color: #666;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        
+        .trial-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .trial-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .trial-info p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        
+        .next-steps {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .next-steps h3 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .steps-list {
+            text-align: left;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .steps-list li {
+            color: #666;
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .steps-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="success-container">
+        <div class="checkmark"></div>
+        
+        <h1>Welcome to Iris Mapper Pro!</h1>
+        
+        <p class="message">
+            Your subscription has been activated successfully.
+            Thank you for choosing Iris Mapper Pro!
+        </p>
+        
+        <div class="trial-info">
+            <h3>🎉 Your 14-Day Trial Has Started</h3>
+            <p>You have full access to all features. Your card will be charged after the trial period ends.</p>
+            <p><strong>Trial ends on: <span id="trial-end-date"></span></strong></p>
+        </div>
+        
+        <a href="index.html" class="cta-button">Start Using Iris Mapper Pro</a>
+        
+        <div class="next-steps">
+            <h3>What's Next?</h3>
+            <ul class="steps-list">
+                <li>Upload your first iris image</li>
+                <li>Select an iris mapping template</li>
+                <li>Adjust and analyze the image</li>
+                <li>Save or export your work</li>
+                <li>Manage your subscription in Account Settings</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Calculate and display trial end date
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 14);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('trial-end-date').textContent = 
+            trialEndDate.toLocaleDateString('en-GB', options);
+    </script>
+</body>
+</html>

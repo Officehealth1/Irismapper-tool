@@ -11,12 +11,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="warpControlsContainer" class="controls warp-controls" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 100; background-color: rgba(40, 40, 40, 0.85); padding: 8px; border-radius: 5px; gap: 8px;">
-        <button class="btn" id="warpModeBtn" title="Toggle warp grid visibility">Warp</button>
-        <button class="btn" id="undoWarpBtn" title="Undo last warp change" disabled>Undo</button>
-        <button class="btn" id="redoWarpBtn" title="Redo last warp change" disabled>Redo</button>
-        <button class="btn" id="resetWarpBtn" title="Reset warp to default grid">Reset Warp</button>
-    </div>
     <div class="app-container">
         <div class="logo-container">
             <img src="grids/watermark.png" alt="Logo" class="logo">
@@ -60,7 +54,6 @@
     <div class="rotation-buttons">
         <button class="btn" id="rotateLeft">↺</button>
         <button class="btn" id="rotateRight">↻</button>
-        <button class="btn" id="toggleStretchLockBtn">🔓</button> 
     </div>
     
     <div class="direction-buttons">
@@ -155,6 +148,17 @@
         </div>
     </div>
 
+    <!-- Notes Modal -->
+    <div id="notesModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <span class="close" id="closeNotesModal">&times;</span>
+            <h2>Notes for Current Image</h2>
+            <textarea id="notesInput" rows="10" cols="50" placeholder="Enter your notes here..."></textarea>
+            <div id="savedNotesArea"></div>
+            <button class="btn" id="saveNoteBtn">Save Note</button>
+        </div>
+    </div>
+
     <!-- Web Worker Script -->
     <script id="workerScript" type="javascript/worker">
         self.addEventListener('message', function(e) {
@@ -180,6 +184,8 @@
         }
     </script>
 
+    <!-- Subscription Gate (disabled for testing) -->
+    <!-- <script src="js/auth-redirect.js"></script> -->
     <!-- Main JavaScript -->
     <script src="script.js"></script>
 </body>

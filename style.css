@@ -253,6 +253,33 @@ body, html {
     margin-bottom: 10px;
 }
 
+.gallery-item-controls {
+    flex-shrink: 0; /* Prevent controls from shrinking */
+    display: flex; /* Use flex to align buttons */
+    gap: 5px; /* Add space between buttons */
+    align-items: center; /* Vertically align buttons */
+}
+
+.gallery-item-controls .btn {
+    padding: 4px 8px; /* Reduced padding */
+    font-size: 11px; /* Slightly smaller font size */
+    background-color: #4A90E2; /* Primary blue background */
+    color: white; /* White text color */
+    border: none; /* Remove border */
+    width: auto; /* Allow buttons to size based on content */
+}
+
+.gallery-item-controls .btn:hover {
+    background-color: #3A80D2; /* Darker blue on hover */
+}
+
+.gallery-item-header .image-name {
+    flex-grow: 1; /* Allow filename to take available space */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Show ellipsis for truncated text */
+    white-space: nowrap; /* Prevent text wrapping */
+}
+
 .add-image-btn {
     width: 30px;
     height: 30px;
@@ -280,6 +307,7 @@ body, html {
 }
 
 .gallery-item-header {
+    position: relative;
     padding: 8px;
     background-color: #f5f5f5;
     cursor: pointer;
@@ -291,18 +319,55 @@ body, html {
 .gallery-item-content {
     padding: 8px;
     display: none;
+    position: relative;
 }
 
 .gallery-item-content.active {
     display: block;
 }
 
+.gallery-item-content .gallery-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: background 0.2s, box-shadow 0.2s, transform 0.1s, opacity 0.2s;
+    opacity: 0;
+    pointer-events: none;
+}
+.gallery-item-content:hover .gallery-delete-btn,
+.gallery-item-content.active .gallery-delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+.gallery-delete-btn:hover, .gallery-delete-btn:focus {
+    background: #c0392b;
+    box-shadow: 0 4px 12px rgba(231,76,60,0.15);
+    outline: none;
+    transform: scale(1.08);
+}
+.gallery-delete-btn:active {
+    background: #a93226;
+    transform: scale(0.95);
+}
 .gallery-item img {
     width: 100%;
     height: auto;
     border-radius: 4px;
 }
-
 
 .adjustment-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -781,6 +846,14 @@ body, html {
     margin: 0;
     border-radius: 0;
   }
+
+  .gallery-item-content .gallery-delete-btn {
+    top: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    font-size: 22px;
+  }
 }
 
 /* Touch Device Optimizations */
@@ -925,17 +998,4 @@ body, html {
   padding: 0 2px; /* Minimal padding */
   margin: 0; /* Remove margin */
   gap: 4px; /* Reduced gap between elements */
-}
-
-/* Warp Controls Container Buttons */
-#warpControlsContainer .btn {
-    width: auto; /* Allow buttons to size based on content */
-    padding: 6px 10px; /* Slightly more horizontal padding for better spacing */
-    flex-grow: 0; /* Prevent buttons from growing */
-    flex-shrink: 0; /* Prevent buttons from shrinking */
-}
-
-/* Top-Left Controls Specific */
-.controls.top-left .btn {
-    width: 100%; /* Ensure all buttons have the same width */
 }

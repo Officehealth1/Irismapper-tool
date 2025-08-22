@@ -19,14 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const controls = document.querySelectorAll('.controls');
     const galleryAccordion = document.getElementById('galleryAccordion');
     const addImageBtn = document.getElementById('addImageBtn');
-    const warpControlsContainer = document.getElementById('warpControlsContainer');
-    const undoWarpBtn = document.getElementById('undoWarpBtn');
-    const redoWarpBtn = document.getElementById('redoWarpBtn');
-    const resetWarpBtn = document.getElementById('resetWarpBtn');
-
-    let undoStack = [];
-    let redoStack = [];
-
     const availableMaps = [
         'Angerer_Map_DE_V1',
         'Bourdiol_Map_FR_V1',
@@ -143,7 +135,7 @@ function findPercentilePoint(cdf, percentile) {
 }
 
     // State Management
-    let currentEye = 'L';
+    let currentEye = 'R';
     let isDualViewActive = false;
     let images = { 'L': null, 'R': null };
     let imageSettings = {
@@ -155,11 +147,13 @@ function findPercentilePoint(cdf, percentile) {
             svgContent: '',
             mapColor: '#000000',
             opacity: 0.7,
+            cachedMap: '',
         },
         'R': {
             svgContent: '',
             mapColor: '#000000',
             opacity: 0.7,
+            cachedMap: '',
         }
     };
     const resetButton = document.getElementById('resetAdjustments');
@@ -181,8 +175,6 @@ function findPercentilePoint(cdf, percentile) {
         return {
             rotation: 0,
             scale: 1,
-            scaleX: 1,
-            scaleY: 1,
             translateX: 0,
             translateY: 0,
             skewX: 0,
@@ -353,231 +345,49 @@ function updateHistogram() {
         let startTranslateX, startTranslateY;
         let startRotation = 0;
 
-        let activeHandle = null; // For stretch handles
-        let initialMouseX, initialMouseY; 
-        let initialScaleX, initialScaleY;
-        let initialTranslateX_Handle, initialTranslateY_Handle; // Renamed to avoid conflict
-        let initialImgNaturalWidth, initialImgNaturalHeight;
-
         canvas.style.cursor = 'grab';
 
-        // Helper function for stretch handles
-        function getHandleAtPoint(canvasElementMouseX, canvasElementMouseY, currentEyeSettings) {
-            if (!currentEyeSettings || !currentEyeSettings.canvas || !currentEyeSettings.image || !isImagePositionLocked) return null;
-
-            const img = currentEyeSettings.image;
-            const imgBaseWidth = img.naturalWidth;
-            const imgBaseHeight = img.naturalHeight;
-            
-            // Mouse coords relative to the canvas element origin (top-left)
-            // Handles are drawn in the image's natural coordinate system on the canvas context.
-            // The canvas element itself is scaled by CSS transform (settings.scaleX, settings.scaleY).
-            // So, to check for hits, we need to convert mouse point from canvas element space
-            // to the image's internal drawing space (scaled by 1/settings.scaleX, 1/settings.scaleY).
-            const mouseXInImageNaturalSpace = canvasElementMouseX / currentEyeSettings.scaleX;
-            const mouseYInImageNaturalSpace = canvasElementMouseY / currentEyeSettings.scaleY;
-
-            const avgScale = (currentEyeSettings.scaleX + currentEyeSettings.scaleY) / 2;
-            const safeAvgScale = Math.max(0.1, avgScale); 
-            const effectiveHandleSizeInImageNaturalSpace = HANDLE_SIZE / safeAvgScale; 
-
-            const handlesPositions = {
-                tl: { x: 0, y: 0 }, tm: { x: imgBaseWidth / 2, y: 0 }, tr: { x: imgBaseWidth, y: 0 },
-                lm: { x: 0, y: imgBaseHeight / 2 }, rm: { x: imgBaseWidth, y: imgBaseHeight / 2 },
-                bl: { x: 0, y: imgBaseHeight }, bm: { x: imgBaseWidth / 2, y: imgBaseHeight }, br: { x: imgBaseWidth, y: imgBaseHeight }
-            };
-
-            for (const key in handlesPositions) {
-                const pos = handlesPositions[key];
-                const handleRect = {
-                    left: pos.x - effectiveHandleSizeInImageNaturalSpace / 2,
-                    top: pos.y - effectiveHandleSizeInImageNaturalSpace / 2,
-                    right: pos.x + effectiveHandleSizeInImageNaturalSpace / 2,
-                    bottom: pos.y + effectiveHandleSizeInImageNaturalSpace / 2
-                };
-
-                if (mouseXInImageNaturalSpace >= handleRect.left && mouseXInImageNaturalSpace <= handleRect.right &&
-                    mouseYInImageNaturalSpace >= handleRect.top && mouseYInImageNaturalSpace <= handleRect.bottom) {
-                    return key; 
-                }
-            }
-            return null;
-        }
-
         function handleDragStart(e) {
-            const settings = imageSettings[eye]; // Moved up to be accessible for handle logic
-            if (!settings || !settings.image) return; // Ensure settings and image exist
-
-            if (isImagePositionLocked) {
-                const rect = canvas.getBoundingClientRect();
-                // Mouse position relative to the canvas element's top-left origin
-                const mouseCanvasX = e.clientX - rect.left;
-                const mouseCanvasY = e.clientY - rect.top;
-                
-                activeHandle = getHandleAtPoint(mouseCanvasX, mouseCanvasY, settings);
-
-                if (activeHandle) {
             e.preventDefault();
-                    e.stopPropagation();
-                    isDragging = true; // Use existing flag, signifies any kind of drag on canvas
-                    canvas.style.cursor = 'grabbing';
-                    
-                    initialMouseX = e.clientX;
-                    initialMouseY = e.clientY;
-                    initialScaleX = settings.scaleX;
-                    initialScaleY = settings.scaleY;
-                    initialTranslateX_Handle = settings.translateX; // Store initial translate for anchor calculations
-                    initialTranslateY_Handle = settings.translateY;
-                    initialImgNaturalWidth = settings.image.naturalWidth;
-                    initialImgNaturalHeight = settings.image.naturalHeight;
-                    // console.log('Starting drag on handle:', activeHandle);
-                    return; // Crucial: stop further processing in handleDragStart if handle is active
-                }
-                // If no handle is active but image is locked, pan is already prevented by earlier logic. So, do nothing more here.
-            }
-            
-            // Existing pan/rotate logic (only runs if not locked or no handle was grabbed when locked)
-            e.preventDefault(); // Keep this for general canvas interaction prevention
             if (e.button === 2) { // Right-click for rotation
                 isRotating = true;
                 startX = e.clientX;
+                const settings = imageSettings[eye];
                 startRotation = settings.rotation;
-            } else if (e.button === 0) { // Left-click for dragging (panning)
-                // This pan logic is now effectively conditional due to the isImagePositionLocked check earlier in the main function
-                // and the activeHandle check specific to isImagePositionLocked case above.
-                if (isImagePositionLocked) return; // Double-check to prevent pan if somehow reached here while locked
-                
+            } else if (e.button === 0) { // Left-click for dragging
                 isDragging = true;
                 startX = e.clientX;
                 startY = e.clientY;
+                const settings = imageSettings[eye];
                 startTranslateX = settings.translateX;
                 startTranslateY = settings.translateY;
             }
-            canvas.style.cursor = isRotating ? 'crosshair' : (isDragging ? 'grabbing' : 'grab');
+            canvas.style.cursor = isRotating ? 'crosshair' : 'grabbing';
         }
 
         function handleDragMove(e) {
-            const currentSettings = imageSettings[eye]; // Get current settings
-            if (!currentSettings || !currentSettings.image) return;
-
-            if (isDragging && activeHandle && isImagePositionLocked) {
-                e.preventDefault();
-                e.stopPropagation();
-                canvas.style.cursor = 'grabbing';
-                // --- Stretch logic ---
-                // Calculate mouse delta in canvas element space
-                const dx = e.clientX - initialMouseX;
-                const dy = e.clientY - initialMouseY;
-                let newScaleX = initialScaleX;
-                let newScaleY = initialScaleY;
-                let newTranslateX = initialTranslateX_Handle;
-                let newTranslateY = initialTranslateY_Handle;
-                const imgW = initialImgNaturalWidth;
-                const imgH = initialImgNaturalHeight;
-
-                // For each handle, determine which axes to stretch and which corner/side to anchor
-                // tl: anchor br, tr: anchor bl, bl: anchor tr, br: anchor tl
-                // tm: anchor bm, bm: anchor tm, lm: anchor rm, rm: anchor lm
-                // We'll use the sign of dx/dy to determine stretch direction
-                switch (activeHandle) {
-                    case 'tr': // Top-right, anchor bottom-left
-                        newScaleX = Math.max(0.1, initialScaleX + dx / imgW);
-                        newScaleY = Math.max(0.1, initialScaleY - dy / imgH);
-                        // Adjust translation so bottom-left stays put
-                        newTranslateX = initialTranslateX_Handle - (imgW * (newScaleX - initialScaleX)) / 2;
-                        newTranslateY = initialTranslateY_Handle + (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'tl': // Top-left, anchor bottom-right
-                        newScaleX = Math.max(0.1, initialScaleX - dx / imgW);
-                        newScaleY = Math.max(0.1, initialScaleY - dy / imgH);
-                        newTranslateX = initialTranslateX_Handle + (imgW * (newScaleX - initialScaleX)) / 2;
-                        newTranslateY = initialTranslateY_Handle + (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'bl': // Bottom-left, anchor top-right
-                        newScaleX = Math.max(0.1, initialScaleX - dx / imgW);
-                        newScaleY = Math.max(0.1, initialScaleY + dy / imgH);
-                        newTranslateX = initialTranslateX_Handle + (imgW * (newScaleX - initialScaleX)) / 2;
-                        newTranslateY = initialTranslateY_Handle - (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'br': // Bottom-right, anchor top-left
-                        newScaleX = Math.max(0.1, initialScaleX + dx / imgW);
-                        newScaleY = Math.max(0.1, initialScaleY + dy / imgH);
-                        newTranslateX = initialTranslateX_Handle - (imgW * (newScaleX - initialScaleX)) / 2;
-                        newTranslateY = initialTranslateY_Handle - (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'tm': // Top-middle, anchor bottom-middle
-                        newScaleY = Math.max(0.1, initialScaleY - dy / imgH);
-                        newTranslateY = initialTranslateY_Handle + (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'bm': // Bottom-middle, anchor top-middle
-                        newScaleY = Math.max(0.1, initialScaleY + dy / imgH);
-                        newTranslateY = initialTranslateY_Handle - (imgH * (newScaleY - initialScaleY)) / 2;
-                        break;
-                    case 'lm': // Left-middle, anchor right-middle
-                        newScaleX = Math.max(0.1, initialScaleX - dx / imgW);
-                        newTranslateX = initialTranslateX_Handle + (imgW * (newScaleX - initialScaleX)) / 2;
-                        break;
-                    case 'rm': // Right-middle, anchor left-middle
-                        newScaleX = Math.max(0.1, initialScaleX + dx / imgW);
-                        newTranslateX = initialTranslateX_Handle - (imgW * (newScaleX - initialScaleX)) / 2;
-                        break;
-                }
-                currentSettings.scaleX = Math.min(10, newScaleX);
-                currentSettings.scaleY = Math.min(10, newScaleY);
-                currentSettings.translateX = newTranslateX;
-                currentSettings.translateY = newTranslateY;
-                updateCanvasTransform(eye);
-                return; // Done with handle move
-            }
-            
-            // Existing rotation and pan logic
-            if (!isDragging && !isRotating) {
-                 // Handle cursor change on hover when not dragging anything
-                if (isImagePositionLocked) {
-                    const rect = canvas.getBoundingClientRect();
-                    const mouseCanvasX = e.clientX - rect.left;
-                    const mouseCanvasY = e.clientY - rect.top;
-                    const hoveredHandle = getHandleAtPoint(mouseCanvasX, mouseCanvasY, currentSettings);
-                    canvas.style.cursor = hoveredHandle ? 'grab' : 'default'; // 'default' or 'not-allowed'
-                } else {
-                    // canvas.style.cursor = 'grab'; // Already set or handled by dragStart/End
-                }
-                return;
-            }
+            if (!isDragging && !isRotating) return;
             e.preventDefault();
 
             if (isRotating) {
                 const dx = e.clientX - startX;
-                currentSettings.rotation = startRotation + dx * 0.5;
+                const settings = imageSettings[eye];
+                settings.rotation = startRotation + dx * 0.5;
                 updateCanvasTransform(eye);
-            } else if (isDragging) { // This implies general canvas drag (pan) or previously non-handled handle drag
-                if (isImagePositionLocked) return; // Should not pan if locked
-                
+            } else if (isDragging) {
                 const dx = e.clientX - startX;
                 const dy = e.clientY - startY;
-                currentSettings.translateX = startTranslateX + dx;
-                currentSettings.translateY = startTranslateY + dy;
+                const settings = imageSettings[eye];
+                settings.translateX = startTranslateX + dx;
+                settings.translateY = startTranslateY + dy;
                 updateCanvasTransform(eye);
             }
         }
 
         function handleDragEnd() {
-            if (isDragging && activeHandle && isImagePositionLocked) {
-                // console.log(`Finished dragging handle: ${activeHandle}`);
-                // Finalize stretch, if any debouncing or state commit is needed later
-            }
-            
+            if (isDragging || isRotating) {
                 isDragging = false;
                 isRotating = false;
-            activeHandle = null;
-            
-            // Determine cursor after drag ends
-            if (isImagePositionLocked) {
-                // Check if mouse is now over a handle to set to 'grab', otherwise 'default'
-                // This requires knowing current mouse position, which isn't directly available in dragend.
-                // A simple solution is to set to default and let next mousemove handle hover.
-                canvas.style.cursor = 'default'; 
-            } else {
                 canvas.style.cursor = 'grab';
             }
         }
@@ -585,45 +395,18 @@ function updateHistogram() {
         function handleWheel(e) {
             e.preventDefault();
             const delta = e.deltaY * -0.0005;
-            const settings = imageSettings[eye]; // 'eye' is from the setupImageInteraction scope
-            const zoomMultiplier = Math.exp(delta);
+            const settings = imageSettings[eye];
 
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            let newScaleX, newScaleY;
+            const newScale = Math.max(0.1, Math.min(10, settings.scale * Math.exp(delta)));
+            const scaleChange = newScale / settings.scale;
 
-            if (isImagePositionLocked) {
-                newScaleX = settings.scaleX * zoomMultiplier;
-                newScaleY = settings.scaleY * zoomMultiplier;
-            } else {
-                const newUniformScale = settings.scale * zoomMultiplier;
-                newScaleX = newUniformScale;
-                newScaleY = newUniformScale;
-                settings.scale = Math.max(0.1, Math.min(10, newUniformScale)); // Update base scale
-            }
-
-            newScaleX = Math.max(0.1, Math.min(10, newScaleX));
-            newScaleY = Math.max(0.1, Math.min(10, newScaleY));
-            
-            const scaleChangeX = newScaleX / settings.scaleX;
-            const scaleChangeY = newScaleY / settings.scaleY;
-
-            // Adjust translation to zoom towards mouse pointer
-            // This needs to be thought through carefully for non-uniform scaling if desired
-            // For now, let's assume it scales relative to the current center for simplicity when locked, or adjust based on X for uniform
-            if (!isImagePositionLocked || (scaleChangeX === scaleChangeY)) { // Uniform or locked uniform zoom
-                 settings.translateX = x - (x - settings.translateX) * scaleChangeX; 
-                 settings.translateY = y - (y - settings.translateY) * (isImagePositionLocked ? scaleChangeX : scaleChangeY); // use scaleChangeX for locked uniform
-            } else {
-                // For non-uniform stretch zoom from center, translateX/Y might not change, or change differently
-                // This part might need more sophisticated handling if zooming into pointer with non-uniform scale is a hard requirement.
-                // Defaulting to centered zoom for now when stretch-zooming non-uniformly.
-            }
-
-            settings.scaleX = newScaleX;
-            settings.scaleY = newScaleY;
+            settings.translateX = x - (x - settings.translateX) * scaleChange;
+            settings.translateY = y - (y - settings.translateY) * scaleChange;
+            settings.scale = newScale;
 
             updateCanvasTransform(eye);
         }
@@ -654,154 +437,13 @@ function updateHistogram() {
         settings.canvas.style.left = '50%';
         settings.canvas.style.transform = 'translate(-50%, -50%)';
         setupImageInteraction(settings.canvas, eye);
-        setupMeshPointDragging(settings.canvas, eye);
-    }
-
-    // Helper: Get pixel data using bilinear interpolation
-    function getInterpolatedPixel(imageData, x, y) {
-        const w = imageData.width;
-        const h = imageData.height;
-        const x_floor = Math.floor(x);
-        const y_floor = Math.floor(y);
-        const x_ceil = Math.min(w - 1, x_floor + 1);
-        const y_ceil = Math.min(h - 1, y_floor + 1);
-
-        if (x_floor < 0 || x_floor >= w || y_floor < 0 || y_floor >= h) {
-            return [0, 0, 0, 0]; // Out of bounds, return transparent black
-        }
-
-        const dx = x - x_floor;
-        const dy = y - y_floor;
-
-        const p1_offset = (y_floor * w + x_floor) * 4;
-        const p2_offset = (y_floor * w + x_ceil) * 4;
-        const p3_offset = (y_ceil * w + x_floor) * 4;
-        const p4_offset = (y_ceil * w + x_ceil) * 4;
-        const data = imageData.data;
-
-        const interpolatedPixel = [0, 0, 0, 0];
-        for (let i = 0; i < 4; i++) { // r, g, b, a
-            const val1 = data[p1_offset + i] * (1 - dx) + data[p2_offset + i] * dx;
-            const val2 = data[p3_offset + i] * (1 - dx) + data[p4_offset + i] * dx;
-            interpolatedPixel[i] = val1 * (1 - dy) + val2 * dy;
-        }
-        return interpolatedPixel;
-    }
-
-    // Helper: Inverse bilinear interpolation for a point within a quad
-    // Given a point (x, y) inside the destination quad defined by p1, p2, p3, p4,
-    // find the normalized coordinates (s, t) within that quad.
-    // p1=(x0,y0) top-left, p2=(x1,y0) top-right, p3=(x0,y1) bottom-left, p4=(x1,y1) bottom-right (in source)
-    // Here, p1-p4 are the *actual* coordinates of the mesh points defining the DESTINATION quad.
-    function inverseBilinearInterpolation(x, y, p1, p2, p3, p4) {
-        // --- Simplified Linear Approximation --- 
-        // This is less accurate for non-rectangular quads but more stable than the previous solver.
-        let s = 0, t = 0;
-        
-        // Approximate s based on horizontal position relative to top edge points
-        const topWidth = p2.x - p1.x;
-        if (Math.abs(topWidth) > 1e-6) {
-            s = (x - p1.x) / topWidth;
-        } else {
-            // Fallback: Estimate based on bottom edge or average?
-             const bottomWidth = p4.x - p3.x;
-             if (Math.abs(bottomWidth) > 1e-6) {
-                 s = (x - p3.x) / bottomWidth;
-             } else {
-                 s = 0; // Degenerate case
-             }
-        }
-
-        // Approximate t based on vertical position relative to left edge points
-        const leftHeight = p3.y - p1.y;
-         if (Math.abs(leftHeight) > 1e-6) {
-            t = (y - p1.y) / leftHeight;
-        } else {
-             // Fallback: Estimate based on right edge or average?
-             const rightHeight = p4.y - p2.y;
-             if (Math.abs(rightHeight) > 1e-6) {
-                 t = (y - p2.y) / rightHeight;
-             } else {
-                 t = 0; // Degenerate case
-             }
-        }
-
-        // Clamp results to [0, 1] range
-        s = Math.max(0, Math.min(1, s));
-        t = Math.max(0, Math.min(1, t));
-
-        return { s, t };
-        // --- End Simplified Linear Approximation ---
-    }
-
-    // Function to draw the warped image based on mesh points
-    function drawWarpedImage(ctx, srcImageData, meshPoints) {
-        const destWidth = ctx.canvas.width;
-        const destHeight = ctx.canvas.height;
-        const destImageData = ctx.createImageData(destWidth, destHeight);
-        const destData = destImageData.data;
-
-        const rows = meshPoints.length - 1;
-        const cols = meshPoints[0].length - 1;
-        const srcWidth = srcImageData.width;
-        const srcHeight = srcImageData.height;
-
-        for (let r = 0; r < rows; r++) {
-            for (let c = 0; c < cols; c++) {
-                // Get the four corner points of the destination quad
-                const p1_dest = meshPoints[r][c];     // top-left
-                const p2_dest = meshPoints[r][c + 1];   // top-right
-                const p3_dest = meshPoints[r + 1][c];   // bottom-left
-                const p4_dest = meshPoints[r + 1][c + 1]; // bottom-right
-
-                // Get the four corner points of the corresponding source quad (always rectangular)
-                const p1_src = { x: (srcWidth / cols) * c, y: (srcHeight / rows) * r };
-                const p2_src = { x: (srcWidth / cols) * (c + 1), y: (srcHeight / rows) * r };
-                const p3_src = { x: (srcWidth / cols) * c, y: (srcHeight / rows) * (r + 1) };
-                const p4_src = { x: (srcWidth / cols) * (c + 1), y: (srcHeight / rows) * (r + 1) };
-
-                // Estimate bounds of the destination quad for iteration
-                const minX = Math.floor(Math.min(p1_dest.x, p2_dest.x, p3_dest.x, p4_dest.x));
-                const maxX = Math.ceil(Math.max(p1_dest.x, p2_dest.x, p3_dest.x, p4_dest.x));
-                const minY = Math.floor(Math.min(p1_dest.y, p2_dest.y, p3_dest.y, p4_dest.y));
-                const maxY = Math.ceil(Math.max(p1_dest.y, p2_dest.y, p3_dest.y, p4_dest.y));
-
-                // Iterate over pixels within the bounding box of the destination quad
-                for (let y = Math.max(0, minY); y < Math.min(destHeight, maxY); y++) {
-                    for (let x = Math.max(0, minX); x < Math.min(destWidth, maxX); x++) {
-                        
-                        // Check if pixel (x,y) is roughly inside the quad (optional optimization)
-                        // A more robust check involves point-in-polygon test
-
-                        // Find normalized coordinates (s, t) within the destination quad
-                        const { s, t } = inverseBilinearInterpolation(x, y, p1_dest, p2_dest, p3_dest, p4_dest);
-                        
-                        // Use (s, t) to find the corresponding absolute coordinates (srcX, srcY) in the source quad
-                        const srcX = p1_src.x * (1 - s) * (1 - t) + p2_src.x * s * (1 - t) + p3_src.x * (1 - s) * t + p4_src.x * s * t;
-                        const srcY = p1_src.y * (1 - s) * (1 - t) + p2_src.y * s * (1 - t) + p3_src.y * (1 - s) * t + p4_src.y * s * t;
-
-                        // Get the interpolated pixel color from the source image
-                        const pixelData = getInterpolatedPixel(srcImageData, srcX, srcY);
-
-                        // Set the pixel data in the destination image data
-                        const destOffset = (y * destWidth + x) * 4;
-                        destData[destOffset] = pixelData[0];     // R
-                        destData[destOffset + 1] = pixelData[1]; // G
-                        destData[destOffset + 2] = pixelData[2]; // B
-                        destData[destOffset + 3] = pixelData[3]; // A
-                    }
-                }
-            }
-        }
-        // Draw the warped image data onto the canvas
-        ctx.putImageData(destImageData, 0, 0);
     }
 
     function updateCanvasImage(eye) {
         const settings = imageSettings[eye];
         if (!settings.canvas || !settings.context || !settings.image) return;
     
-        // Use offscreen canvas for filters
+        // Create or get offscreen canvas
         if (!settings.offscreenCanvas) {
             settings.offscreenCanvas = new OffscreenCanvas(
                 settings.image.naturalWidth,
@@ -812,13 +454,14 @@ function updateHistogram() {
             });
         }
     
-        const ctx = settings.context; // Destination canvas context
-        const offCtx = settings.offscreenCtx; // Offscreen (source for warp) context
+        const ctx = settings.context;
+        const offCtx = settings.offscreenCtx;
         const canvas = settings.canvas;
-        const img = settings.image; // Original image
+        const img = settings.image;
         const width = img.naturalWidth;
         const height = img.naturalHeight;
     
+        // Only resize if dimensions changed
         if (canvas.width !== width || canvas.height !== height) {
             canvas.width = width;
             canvas.height = height;
@@ -829,75 +472,51 @@ function updateHistogram() {
         offCtx.clearRect(0, 0, width, height);
         offCtx.save();
     
-        // Apply filters to offscreen canvas
+        // Batch filters for better performance
         const filters = [
             `brightness(${(100 + settings.adjustments.exposure) / 100})`,
             `contrast(${(100 + settings.adjustments.contrast) / 100})`,
             `saturate(${(100 + settings.adjustments.saturation) / 100})`,
             `hue-rotate(${settings.adjustments.hue}deg)`
         ];
+    
+        // Only add conditional filters if needed
         if (settings.adjustments.temperature !== 0) {
             const temp = settings.adjustments.temperature;
             const warmFilter = temp > 0 ? `sepia(${temp}%)` : '';
             const coolFilter = temp < 0 ? `hue-rotate(180deg) saturate(${Math.abs(temp)}%)` : '';
             filters.push(warmFilter || coolFilter);
         }
+    
+    
         offCtx.filter = filters.join(' ');
     
-        // Draw original image to offscreen
-        offCtx.drawImage(img, 0, 0, width, height);
-        offCtx.restore(); // Filters are applied by drawImage
-        offCtx.filter = 'none'; // Reset filter for potential direct manipulations later
-
-        // Apply adjustments like shadows/highlights, sharpness to offscreen data
-        if (settings.adjustments.shadows !== 0 || settings.adjustments.highlights !== 0) {
-            // Need to re-implement applyShadowsHighlights to work with OffscreenCanvas/Context
-            // For now, skip these if warping is active?
-            // Alternatively, get/put ImageData from offCtx, modify, put back.
-            console.warn("Shadows/Highlights adjustment during warp not fully implemented yet.");
-        }
-        if (settings.adjustments.sharpness !== 0) {
-             applySharpness(offCtx, settings.adjustments.sharpness); // Assuming this modifies offCtx directly
-        }
-
+        // Use requestAnimationFrame for smoother rendering
         requestAnimationFrame(() => {
-            ctx.clearRect(0, 0, width, height);
-
-            // === WARPING LOGIC ===
-            if (meshPoints[eye]) {
-                try {
-                    // Get the ImageData from the offscreen canvas (which has filters applied)
-                    const sourceImageData = offCtx.getImageData(0, 0, width, height); 
-                    // Draw the warped image onto the main context
-                    drawWarpedImage(ctx, sourceImageData, meshPoints[eye]);
-                } catch (error) {
-                    console.error("Error during image warping:", error);
-                    // Fallback: draw the unwarped image from offscreen canvas
-                    ctx.drawImage(settings.offscreenCanvas, 0, 0);
-                }
+            if (settings.adjustments.shadows !== 0 || settings.adjustments.highlights !== 0) {
+                applyShadowsHighlights(offCtx, img, settings);
             } else {
-                // === ORIGINAL DRAWING LOGIC ===
-                // Draw the (filtered, adjusted) image from the offscreen canvas to the main canvas
-                ctx.drawImage(settings.offscreenCanvas, 0, 0); 
+                offCtx.drawImage(img, 0, 0, width, height);
             }
-            // ======================
+    
+            offCtx.restore();
             
-            // Draw resize handles OR warp grid on top
-            if (isImagePositionLocked) {
-                if (warpModeActive) {
-                    drawWarpGrid(eye); // Draw grid on top of warped image
-                } else {
-                    drawResizeHandles(eye); // Draw handles if locked but not warping
-                }
+            // Apply custom adjustments to offscreen canvas
+            if (settings.adjustments.sharpness !== 0) {
+                applySharpness(offCtx, settings.adjustments.sharpness);
             }
+    
+            // Copy to main canvas
+            ctx.clearRect(0, 0, width, height);
+            ctx.drawImage(settings.offscreenCanvas, 0, 0);
             
-            // Update CSS transform for pan/zoom/rotate (applies to the canvas element)
+            // Update transform
             updateCanvasTransform(eye);
             
             // Debounce histogram update
             if (!settings.histogramTimeout) {
                 settings.histogramTimeout = setTimeout(() => {
-                    updateHistogram(); // Consider if histogram should use warped or original data
+                    updateHistogram();
                     settings.histogramTimeout = null;
                 }, 100);
             }
@@ -1054,7 +673,7 @@ function updateHistogram() {
             translate(-50%, -50%)
             translate(${settings.translateX}px, ${settings.translateY}px)
             rotate(${settings.rotation}deg)
-            scale(${settings.scaleX}, ${settings.scaleY})
+            scale(${settings.scale})
             skew(${settings.skewX}deg, ${settings.skewY}deg)
         `;
     }
@@ -1120,32 +739,11 @@ function updateHistogram() {
         console.log('Resetting eyes:', eyesToReset); // Debug log
     
         eyesToReset.forEach(eye => {
-            // Reset histogram-related adjustments
+            // Reset only histogram-related adjustments
             imageSettings[eye].adjustments = { 
                 ...imageSettings[eye].adjustments,
                 ...defaultAdjustments
             };
-
-            // Reset transformations
-            imageSettings[eye].scale = 1;
-            imageSettings[eye].scaleX = 1;
-            imageSettings[eye].scaleY = 1;
-            imageSettings[eye].rotation = 0;
-            imageSettings[eye].translateX = 0;
-            imageSettings[eye].translateY = 0;
-            imageSettings[eye].isAutoFitted = false; // Allow autoFit again if needed
-
-            // === ADDED: Reset warp data ===
-            const storageKey = `warpPoints_${eye}`;
-            localStorage.removeItem(storageKey);
-            meshPoints[eye] = null; // Clear in-memory points
-            console.log(`Cleared saved warp points for eye ${eye}`);
-            // === END ADDED ===
-    
-            // Clear undo/redo stacks for warp
-            undoStack = [];
-            redoStack = [];
-            updateWarpActionButtons(); // Update button states
     
             // Update UI sliders
             Object.entries(adjustmentSliders).forEach(([adjustment, slider]) => {
@@ -1171,8 +769,7 @@ function updateHistogram() {
             // Update canvas display
             if (imageSettings[eye].canvas && imageSettings[eye].image) {
                 requestAnimationFrame(() => {
-                    autoFitImage(imageSettings[eye]); // Re-apply auto-fit after reset
-                    updateCanvasImage(eye); // Then update with adjustments (which are now reset)
+                    updateCanvasImage(eye);
                 });
             }
         });
@@ -1207,6 +804,8 @@ function updateHistogram() {
                 valueDisplay.textContent = value;
             }
         });
+        // Update notes area for the new eye
+        updateNotesArea();
     }
 
     function toggleDualView() {
@@ -1240,6 +839,8 @@ function updateHistogram() {
             if (imageSettings[currentEye].canvas) updateCanvasImage(currentEye);
         }
         updateHistogram();
+        // Update notes area for the current eye
+        updateNotesArea();
     }
 
     function updateSVGContainers(eye) {
@@ -1473,38 +1074,97 @@ function updateHistogram() {
         }
     });
 
-    // Notes functionality
-    document.getElementById('notes')?.addEventListener('click', () => {
-        const notes = prompt('Enter notes:');
-        if (notes) {
-            console.log('Notes saved:', notes);
-            alert('Notes saved successfully!');
-        }
-    });
+    // Notes Modal Logic
+    const notesBtn = document.getElementById('notes');
+    const notesModal = document.getElementById('notesModal');
+    const closeNotesModal = document.getElementById('closeNotesModal');
+    const notesInput = document.getElementById('notesInput');
+    const saveNoteBtn = document.getElementById('saveNoteBtn');
+    const savedNotesArea = document.getElementById('savedNotesArea');
+
+    // Utility: Generate a unique ID for an image (using base64 data)
+    function getImageId(imageDataUrl) {
+        // Use a hash or just a substring of the data URL for uniqueness
+        return 'img_' + btoa(imageDataUrl).substring(0, 16);
+    }
+
+    // --- Modified Notes Modal Logic ---
+    let currentImageId = null;
+
+    // Helper to get a unique key for the current image and eye
+    function getCurrentNotesKey() {
+        return currentImageId && currentEye ? 'notes_' + currentImageId + '_' + currentEye : null;
+    }
+
+    // Helper to update the notes area for the current image and eye
+    function updateNotesArea() {
+        const key = getCurrentNotesKey();
+        const saved = key ? localStorage.getItem(key) : '';
+        notesInput.value = saved || '';
+        savedNotesArea.textContent = saved ? 'Saved Note: ' + saved : '';
+    }
+
+    if (notesBtn && notesModal) {
+        notesBtn.addEventListener('click', function() {
+            notesModal.style.display = 'block';
+            updateNotesArea();
+        });
+    }
+
+    if (closeNotesModal && notesModal) {
+        closeNotesModal.addEventListener('click', function() {
+            notesModal.style.display = 'none';
+        });
+    }
+
+    if (saveNoteBtn) {
+        saveNoteBtn.addEventListener('click', function() {
+            const key = getCurrentNotesKey();
+            const note = notesInput.value.trim();
+            if (key) {
+                localStorage.setItem(key, note);
+                savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
+                updateGalleryNoteIcon(currentImageId, !!note);
+                updateGalleryNoteData(currentImageId, note);
+            }
+        });
+    }
 
     // SVG handling functions
     function loadSVG(svgFile, eye = currentEye) {
-        const container = isDualViewActive ? 
+        const container = isDualViewActive ?
             (eye === 'L' ? leftSvgContainer : rightSvgContainer) : svgContainer;
-        
+
         if (!container) return;
+
+        // Check if SVG content is already cached for the current map
+        if (svgSettings[eye].svgContent && svgSettings[eye].cachedMap === svgFile) {
+            container.innerHTML = svgSettings[eye].svgContent; // Use cached content
+            setupSvgElement(container, eye);
+            // Apply current color settings after loading from cache
+            changeMapColor(svgSettings[eye].mapColor, eye);
+            console.log(`Using cached SVG for ${eye} eye: ${svgFile}`); // Log which cached map is used
+            return; // Exit the function after using cache
+        }
 
         if (currentMap === 'custom') {
             container.innerHTML = customSvgContent;
             setupSvgElement(container, eye);
-            svgSettings[eye].svgContent = customSvgContent;
+            svgSettings[eye].svgContent = customSvgContent; // Cache custom SVG
+            svgSettings[eye].cachedMap = 'custom'; // Mark cached map as custom
             // Apply current color settings after loading
             changeMapColor(svgSettings[eye].mapColor, eye);
         } else {
-            fetch(`grids/${currentMap}_${eye}.svg`)
+            fetch(`grids/${svgFile}_${eye}.svg`) // Use svgFile here
                 .then(response => response.text())
                 .then(svgContent => {
                     if (!container) return;
-                    const sanitizedSVG = DOMPurify.sanitize(svgContent, { 
-                        USE_PROFILES: { svg: true, svgFilters: true } 
+                    const sanitizedSVG = DOMPurify.sanitize(svgContent, {
+                        USE_PROFILES: { svg: true, svgFilters: true }
                     });
                     container.innerHTML = sanitizedSVG;
-                    svgSettings[eye].svgContent = sanitizedSVG;
+                    svgSettings[eye].svgContent = sanitizedSVG; // Cache the fetched SVG
+                    svgSettings[eye].cachedMap = svgFile; // Store the map name with cached content
                     setupSvgElement(container, eye);
                     // Apply current color settings after loading
                     changeMapColor(svgSettings[eye].mapColor, eye);
@@ -1512,7 +1172,7 @@ function updateHistogram() {
                 .catch(error => {
                     console.error('Error loading SVG:', error);
                     if (container) container.innerHTML = '';
-                    alert(`Failed to load SVG: ${currentMap}_${eye}.svg`);
+                    alert(`Failed to load SVG: ${svgFile}_${eye}.svg`);
                 });
         }
     }
@@ -1715,8 +1375,10 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
             histogramCanvas.height = histogramCanvas.offsetHeight || 150;
         }
 
-        loadSVG(currentMap, 'L');
+        // Load the default SVG for the Right eye initially
         loadSVG(currentMap, 'R');
+        // Removed initial loading of Left eye SVG to improve startup performance
+
         setupAdjustmentSliders();
 
         class MobileUIManager {
@@ -1975,48 +1637,36 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
     imageUpload.addEventListener('change', function(e) {
         const files = e.target.files;
         if (!files.length) return;
-
+        let firstImageId = null;
+        let firstImageDataUrl = null;
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const reader = new FileReader();
-            
             reader.onload = function(event) {
                 const img = new Image();
                 img.onload = function() {
                     if (isDualViewActive) {
                         imageSettings['L'].image = img;
                         imageSettings['R'].image = img;
-                        // === ADDED: Clear warp for new image ===
-                        localStorage.removeItem('warpPoints_L');
-                        meshPoints['L'] = null;
-                        localStorage.removeItem('warpPoints_R');
-                        meshPoints['R'] = null;
-                        // === END ADDED ===
-                        // Clear undo/redo stacks for warp
-                        undoStack = [];
-                        redoStack = [];
-                        updateWarpActionButtons();
-
                         createCanvasForEye('L');
                         createCanvasForEye('R');
                         loadImageForSpecificEye('L');
                         loadImageForSpecificEye('R');
                     } else {
                         imageSettings[currentEye].image = img;
-                        // === ADDED: Clear warp for new image ===
-                        localStorage.removeItem(`warpPoints_${currentEye}`);
-                        meshPoints[currentEye] = null;
-                        // === END ADDED ===
-                        // Clear undo/redo stacks for warp
-                        undoStack = [];
-                        redoStack = [];
-                        updateWarpActionButtons();
-
                         createCanvasForEye(currentEye);
                         loadImageForSpecificEye(currentEye);
                     }
-                    resetAdjustments(); // This already calls autoFit and updates canvas
+                    resetAdjustments();
+                    const thisImageId = getImageId(event.target.result);
                     addToGallery(event.target.result, file.name);
+                    // Only set currentImageId and update notes for the first image
+                    if (firstImageId === null) {
+                        firstImageId = thisImageId;
+                        firstImageDataUrl = event.target.result;
+                        currentImageId = firstImageId;
+                        updateNotesArea();
+                    }
                 };
                 img.src = event.target.result;
             };
@@ -2026,6 +1676,10 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
 
 
     // Image transformation controls
+    const rotationStep = 1; // Define rotation step in degrees
+
+    const zoomStepMultiplier = 1.02; // Define zoom step multiplier (e.g., 1.02 for 2%)
+
     document.getElementById('rotateLeft')?.addEventListener('click', () => {
         if (isDualViewActive) {
             ['L', 'R'].forEach(eye => {
@@ -2051,70 +1705,44 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
     });
 
     document.getElementById('zoomIn')?.addEventListener('click', () => {
-        const zoomMultiplier = 1.02;
-        const eyesToUpdate = isDualViewActive ? ['L', 'R'] : [currentEye];
-        eyesToUpdate.forEach(eye => {
-            const settings = imageSettings[eye];
-            if (!settings) return;
-
-            if (isImagePositionLocked) {
-                settings.scaleX = Math.min(settings.scaleX * zoomMultiplier, 10);
-                settings.scaleY = Math.min(settings.scaleY * zoomMultiplier, 10);
-        } else {
-                settings.scale = Math.min(settings.scale * zoomMultiplier, 10);
-                settings.scaleX = settings.scale;
-                settings.scaleY = settings.scale;
-            }
-            updateCanvasTransform(eye);
-        });
-    });
-
-    document.getElementById('zoomOut')?.addEventListener('click', () => {
-        const zoomMultiplier = 1 / 1.02;
-        const eyesToUpdate = isDualViewActive ? ['L', 'R'] : [currentEye];
-        eyesToUpdate.forEach(eye => {
-            const settings = imageSettings[eye];
-            if (!settings) return;
-
-            if (isImagePositionLocked) {
-                settings.scaleX = Math.max(settings.scaleX * zoomMultiplier, 0.1);
-                settings.scaleY = Math.max(settings.scaleY * zoomMultiplier, 0.1);
-        } else {
-                settings.scale = Math.max(settings.scale * zoomMultiplier, 0.1);
-                settings.scaleX = settings.scale;
-                settings.scaleY = settings.scale;
-            }
-            updateCanvasTransform(eye);
-        });
-    });
-
-    // Movement controls
-    // Define movement function
-    function moveImage(direction) {
-        if (isImagePositionLocked) return; // Prevent movement if locked
-        const amount = 10;
         if (isDualViewActive) {
             ['L', 'R'].forEach(eye => {
-                const settings = imageSettings[eye];
-                if (!settings) return;
-                switch(direction) {
-                    case 'up':
-                        settings.translateY -= amount;
-                        break;
-                    case 'down':
-                        settings.translateY += amount;
-                        break;
-                    case 'left':
-                        settings.translateX -= amount;
-                        break;
-                    case 'right':
-                        settings.translateX += amount;
-                        break;
-                }
+                let newScale = (imageSettings[eye].scale || 1) * 1.02;
+                newScale = Math.min(newScale, 10);
+                imageSettings[eye].scale = newScale;
                 updateCanvasTransform(eye);
             });
         } else {
-            const settings = imageSettings[currentEye];
+            let newScale = (imageSettings[currentEye].scale || 1) * 1.02;
+            newScale = Math.min(newScale, 10);
+            imageSettings[currentEye].scale = newScale;
+            updateCanvasTransform(currentEye);
+        }
+    });
+
+    document.getElementById('zoomOut')?.addEventListener('click', () => {
+        if (isDualViewActive) {
+            ['L', 'R'].forEach(eye => {
+                let newScale = (imageSettings[eye].scale || 1) / 1.02;
+                newScale = Math.max(newScale, 0.1);
+                imageSettings[eye].scale = newScale;
+                updateCanvasTransform(eye);
+            });
+        } else {
+            let newScale = (imageSettings[currentEye].scale || 1) / 1.02;
+            newScale = Math.max(newScale, 0.1);
+            imageSettings[currentEye].scale = newScale;
+            updateCanvasTransform(currentEye);
+        }
+    });
+
+    // Movement controls
+// Define movement function
+function moveImage(direction) {
+    const amount = 10;
+    if (isDualViewActive) {
+        ['L', 'R'].forEach(eye => {
+            const settings = imageSettings[eye];
             if (!settings) return;
             switch(direction) {
                 case 'up':
@@ -2130,9 +1758,28 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
                     settings.translateX += amount;
                     break;
             }
-            updateCanvasTransform(currentEye);
+            updateCanvasTransform(eye);
+        });
+    } else {
+        const settings = imageSettings[currentEye];
+        if (!settings) return;
+        switch(direction) {
+            case 'up':
+                settings.translateY -= amount;
+                break;
+            case 'down':
+                settings.translateY += amount;
+                break;
+            case 'left':
+                settings.translateX -= amount;
+                break;
+            case 'right':
+                settings.translateX += amount;
+                break;
         }
+        updateCanvasTransform(currentEye);
     }
+}
 
     // Setup movement controls in initialize function
     function initialize() {
@@ -2242,11 +1889,16 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
 
     // Gallery Functions
     function addToGallery(imageDataUrl, name) {
+        const imageId = getImageId(imageDataUrl);
+        const noteKey = 'notes_' + imageId + '_' + currentEye;
+        const note = localStorage.getItem(noteKey) || '';
         const galleryItem = document.createElement('div');
         galleryItem.className = 'gallery-item';
+        galleryItem.dataset.imageId = imageId;
         galleryItem.innerHTML = `
             <div class="gallery-item-header">
                 <span class="image-name">${name}</span>
+                <span class="note-icon" style="display:${note ? 'inline' : 'none'};">📝</span>
                 <div class="gallery-item-controls">
                     <button class="btn rename-btn">Rename</button>
                     <button class="btn load-btn">Load</button>
@@ -2254,18 +1906,21 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
             </div>
             <div class="gallery-item-content">
                 <img src="${imageDataUrl}" alt="${name}" loading="lazy">
+                <button class="gallery-delete-btn" title="Delete image" tabindex="0" aria-label="Delete image">×</button>
             </div>
         `;
-
-        setupGalleryItemEvents(galleryItem, imageDataUrl);
+        setupGalleryItemEvents(galleryItem, imageDataUrl, note);
         galleryAccordion.appendChild(galleryItem);
     }
 
-    function setupGalleryItemEvents(galleryItem, imageDataUrl) {
+    function setupGalleryItemEvents(galleryItem, imageDataUrl, note) {
         const imageNameElement = galleryItem.querySelector('.image-name');
         const renameBtn = galleryItem.querySelector('.rename-btn');
         const loadBtn = galleryItem.querySelector('.load-btn');
-        
+        const noteIcon = galleryItem.querySelector('.note-icon');
+        const deleteBtn = galleryItem.querySelector('.gallery-delete-btn');
+        const imageId = galleryItem.dataset.imageId;
+
         renameBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             const currentName = imageNameElement.textContent;
@@ -2277,17 +1932,50 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
 
         loadBtn.addEventListener('click', function(e) {
             e.stopPropagation();
-            loadImageFromGallery(imageDataUrl);
+            loadImageFromGallery(imageDataUrl, imageId);
         });
 
+        // Delete button logic (click and keyboard)
+        function handleDelete(e) {
+            if (e.type === 'click' || (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' '))) {
+                e.stopPropagation();
+                if (!confirm('Are you sure you want to delete this image and its notes?')) return;
+                // Remove notes for both eyes
+                localStorage.removeItem('notes_' + imageId + '_L');
+                localStorage.removeItem('notes_' + imageId + '_R');
+                // Remove from DOM
+                galleryItem.remove();
+                // If this was the currently displayed image, switch to next or clear
+                if (currentImageId === imageId) {
+                    const nextGalleryItem = document.querySelector('.gallery-item');
+                    if (nextGalleryItem) {
+                        const nextImageId = nextGalleryItem.dataset.imageId;
+                        const nextImg = nextGalleryItem.querySelector('img');
+                        if (nextImg) {
+                            loadImageFromGallery(nextImg.src, nextImageId);
+                        }
+                    } else {
+                        // No images left, clear display and notes
+                        currentImageId = null;
+                        notesInput.value = '';
+                        savedNotesArea.textContent = '';
+                    }
+                }
+            }
+        }
+        deleteBtn.addEventListener('click', handleDelete);
+        deleteBtn.addEventListener('keydown', handleDelete);
+
         // Toggle gallery item content
-        galleryItem.querySelector('.gallery-item-header').addEventListener('click', function() {
+        galleryItem.querySelector('.gallery-item-header').addEventListener('click', function(e) {
+            // Prevent toggling if delete button was clicked
+            if (e.target === deleteBtn) return;
             const content = galleryItem.querySelector('.gallery-item-content');
             content.classList.toggle('active');
         });
     }
 
-    function loadImageFromGallery(imageDataUrl) {
+    function loadImageFromGallery(imageDataUrl, imageId) {
         const img = new Image();
         img.onload = function() {
             if (isDualViewActive) {
@@ -2303,386 +1991,24 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
                 loadImageForSpecificEye(currentEye);
             }
             resetAdjustments();
+            currentImageId = imageId;
+            updateNotesArea();
         };
         img.src = imageDataUrl;
     }
 
-    // Event listener for the new stretch lock button
-    const toggleStretchLockBtn = document.getElementById('toggleStretchLockBtn');
-    let isImagePositionLocked = false;
-    const warpModeBtn = document.getElementById('warpModeBtn');
-    let warpModeActive = false;
-
-    if (toggleStretchLockBtn) {
-        toggleStretchLockBtn.addEventListener('click', () => {
-            isImagePositionLocked = !isImagePositionLocked;
-
-            const eyesToUpdate = isDualViewActive ? ['L', 'R'] : [currentEye];
-
-            eyesToUpdate.forEach(eye => {
-                const settings = imageSettings[eye];
-                if (!settings) return;
-
-                if (isImagePositionLocked) {
-                    toggleStretchLockBtn.textContent = '🔒';
-                    console.log(`Image position LOCKED for eye: ${eye}. Stretch mode ENABLED.`);
-                    // Show Warp button container when locked
-                    if (warpControlsContainer) warpControlsContainer.style.display = 'flex';
-                    updateWarpActionButtons(); // Update button states when shown
-                } else {
-                    toggleStretchLockBtn.textContent = '🔓';
-                    console.log(`Image position UNLOCKED for eye: ${eye}. Stretch mode DISABLED.`);
-                    // Hide Warp button container when unlocked
-                    if (warpControlsContainer) warpControlsContainer.style.display = 'none'; // Hide the new container
-                    // Exit warp mode if active
-                    warpModeActive = false;
-                     // Also hide grid if it was active
-                    if (settings.canvas) updateCanvasImage(eye); 
-                }
-            });
-            // Refresh canvas state after lock toggle
-            const activeEyes = isDualViewActive ? ['L', 'R'] : [currentEye];
-            activeEyes.forEach(eye => updateCanvasImage(eye));
-        });
-    }
-
-    if (warpModeBtn) {
-        warpModeBtn.addEventListener('click', () => {
-            warpModeActive = !warpModeActive;
-            console.log('Warp mode toggled:', warpModeActive);
-             // Refresh canvas state after warp toggle
-            const activeEyes = isDualViewActive ? ['L', 'R'] : [currentEye];
-            activeEyes.forEach(eye => updateCanvasImage(eye));
-        });
-    }
-
-    const HANDLE_SIZE = 8; // pixels
-    const HANDLE_COLOR = 'rgba(255, 255, 255, 0.8)';
-    const HANDLE_STROKE_COLOR = 'rgba(0, 0, 0, 0.8)';
-
-    function drawResizeHandles(eye) {
-        const settings = imageSettings[eye];
-        if (!settings || !settings.canvas || !settings.image || !isImagePositionLocked) {
-            return;
-        }
-
-        const ctx = settings.context;
-        const img = settings.image;
-
-        const imgBaseWidth = img.naturalWidth;
-        const imgBaseHeight = img.naturalHeight;
-
-        const avgScale = (settings.scaleX + settings.scaleY) / 2;
-        // Prevent division by zero or extremely small scales causing huge handles
-        const safeAvgScale = Math.max(0.1, avgScale); 
-        const effectiveHandleSize = HANDLE_SIZE / safeAvgScale;
-        const effectiveLineWidth = 1 / safeAvgScale;
-
-        const handles = {
-            tl: { x: 0, y: 0 },
-            tm: { x: imgBaseWidth / 2, y: 0 },
-            tr: { x: imgBaseWidth, y: 0 },
-            lm: { x: 0, y: imgBaseHeight / 2 },
-            rm: { x: imgBaseWidth, y: imgBaseHeight / 2 },
-            bl: { x: 0, y: imgBaseHeight },
-            bm: { x: imgBaseWidth / 2, y: imgBaseHeight },
-            br: { x: imgBaseWidth, y: imgBaseHeight }
-        };
-
-        ctx.save();
-        ctx.fillStyle = HANDLE_COLOR;
-        ctx.strokeStyle = HANDLE_STROKE_COLOR;
-        ctx.lineWidth = Math.max(0.5, effectiveLineWidth); 
-
-        for (const key in handles) {
-            const pos = handles[key];
-            ctx.fillRect(
-                pos.x - effectiveHandleSize / 2,
-                pos.y - effectiveHandleSize / 2,
-                effectiveHandleSize,
-                effectiveHandleSize
-            );
-            ctx.strokeRect(
-                pos.x - effectiveHandleSize / 2,
-                pos.y - effectiveHandleSize / 2,
-                effectiveHandleSize,
-                effectiveHandleSize
-            );
-        }
-        ctx.restore();
-    }
-
-    // Mesh points for warp grid (per eye)
-    const meshGridRows = 4;
-    const meshGridCols = 4;
-    const meshPointRadius = 12; // Increased from 8 for easier hit test
-    let meshPoints = { L: null, R: null };
-    let draggingMeshPoint = null; // {row, col}
-    let dragOffset = { x: 0, y: 0 };
-
-    function initMeshPoints(eye) {
-        const settings = imageSettings[eye];
-        if (!settings || !settings.image) return;
-
-        // Try to load saved points from Local Storage
-        const storageKey = `warpPoints_${eye}`;
-        const savedPointsJson = localStorage.getItem(storageKey);
-
-        if (savedPointsJson) {
-            try {
-                const loadedPoints = JSON.parse(savedPointsJson);
-                // Basic validation: check if it's an array of arrays with the expected dimensions
-                if (Array.isArray(loadedPoints) && loadedPoints.length === (meshGridRows + 1) &&
-                    Array.isArray(loadedPoints[0]) && loadedPoints[0].length === (meshGridCols + 1) &&
-                    typeof loadedPoints[0][0].x === 'number' && typeof loadedPoints[0][0].y === 'number') 
-                {
-                    meshPoints[eye] = loadedPoints;
-                    console.log(`Loaded saved warp points for eye ${eye}`);
-                    return; // Points loaded, no need to initialize default
-                } else {
-                    console.warn(`Invalid warp points data found in localStorage for eye ${eye}. Ignoring.`);
-                    localStorage.removeItem(storageKey); // Remove invalid data
-                }
-            } catch (e) {
-                console.error(`Error parsing saved warp points for eye ${eye}:`, e);
-                localStorage.removeItem(storageKey); // Remove corrupted data
-            }
-        }
-
-        // If no valid saved points, initialize default grid
-        console.log(`Initializing default warp points for eye ${eye}`);
-        const width = settings.image.naturalWidth;
-        const height = settings.image.naturalHeight;
-        const points = [];
-        for (let r = 0; r <= meshGridRows; r++) { 
-            points[r] = [];
-            for (let c = 0; c <= meshGridCols; c++) {
-                points[r][c] = {
-                    x: (width / meshGridCols) * c,
-                    y: (height / meshGridRows) * r
-                };
-            }
-        }
-        meshPoints[eye] = points;
-    }
-
-    function drawWarpGrid(eye) {
-        const settings = imageSettings[eye];
-        if (!settings || !settings.canvas || !settings.image) return;
-        if (!isImagePositionLocked || !warpModeActive) return;
-        // Initialize mesh points if needed
-        if (!meshPoints[eye]) initMeshPoints(eye);
-        const points = meshPoints[eye];
-        const ctx = settings.context;
-        ctx.save();
-        ctx.strokeStyle = 'rgba(0, 200, 255, 0.7)';
-        ctx.lineWidth = 1;
-        // Draw grid lines
-        for (let r = 0; r <= meshGridRows; r++) {
-            ctx.beginPath();
-            for (let c = 0; c <= meshGridCols; c++) {
-                const pt = points[r][c];
-                if (c === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-            }
-            ctx.stroke();
-        }
-        for (let c = 0; c <= meshGridCols; c++) {
-            ctx.beginPath();
-            for (let r = 0; r <= meshGridRows; r++) {
-                const pt = points[r][c];
-                if (r === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-            }
-            ctx.stroke();
-        }
-        // Draw control points
-        ctx.fillStyle = 'rgba(0, 200, 255, 0.9)';
-        for (let r = 0; r <= meshGridRows; r++) {
-            for (let c = 0; c <= meshGridCols; c++) {
-                const pt = points[r][c];
-                ctx.beginPath();
-                ctx.arc(pt.x, pt.y, 5, 0, 2 * Math.PI);
-                ctx.fill();
-            }
-        }
-        ctx.restore();
-    }
-
-    // Add mesh point dragging to canvas interaction (single view only)
-    function setupMeshPointDragging(canvas, eye) {
-        canvas.addEventListener('pointerdown', function(e) {
-            if (!warpModeActive || !isImagePositionLocked) return;
-            const settings = imageSettings[eye];
-            if (!settings || !settings.image) return;
-            if (!meshPoints[eye]) initMeshPoints(eye);
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
-            
-            // Hit test mesh points using meshGridRows/Cols and meshPointRadius declared earlier
-            for (let r = 0; r <= meshGridRows; r++) {
-                for (let c = 0; c <= meshGridCols; c++) {
-                    const pt = meshPoints[eye][r][c];
-                    const dx = mouseX - pt.x;
-                    const dy = mouseY - pt.y;
-                    const distSq = dx * dx + dy * dy;
-                    const radiusSq = meshPointRadius * meshPointRadius; 
-
-                    if (distSq <= radiusSq) {
-                        // Save current state for Undo
-                        if (meshPoints[eye]) {
-                            undoStack.push(JSON.parse(JSON.stringify(meshPoints[eye])));
-                            redoStack = []; // Clear redo stack on new action
-                            updateWarpActionButtons();
-                        }
-
-                        draggingMeshPoint = { row: r, col: c }; // Assigns to draggingMeshPoint declared earlier
-                        dragOffset.x = dx; // Assigns to dragOffset declared earlier
-                        dragOffset.y = dy;
-                        canvas.setPointerCapture(e.pointerId);
-                        e.preventDefault();
-                        e.stopPropagation(); 
-                        return;
-                    }
-                }
-            }
-        });
-        canvas.addEventListener('pointermove', function(e) {
-            if (!warpModeActive || !isImagePositionLocked) return;
-            if (!draggingMeshPoint) return;
-            const settings = imageSettings[eye];
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
-            const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
-            const { row, col } = draggingMeshPoint;
-            meshPoints[eye][row][col].x = mouseX - dragOffset.x; // Updates meshPoints declared earlier
-            meshPoints[eye][row][col].y = mouseY - dragOffset.y;
-            updateCanvasImage(eye);
-        });
-        canvas.addEventListener('pointerup', function(e) {
-            if (!warpModeActive || !isImagePositionLocked) return;
-            if (draggingMeshPoint) {
-                const eye = currentEye; // Assuming warp only works in single view for now
-                const storageKey = `warpPoints_${eye}`;
-                try {
-                    // Save the current state of mesh points for this eye
-                    localStorage.setItem(storageKey, JSON.stringify(meshPoints[eye]));
-                    console.log(`Saved warp points for eye ${eye}`);
-                } catch (error) {
-                    console.error(`Error saving warp points for eye ${eye}:`, error);
-                    // Potentially handle quota exceeded error
-                }
-
-                draggingMeshPoint = null; 
-                canvas.releasePointerCapture(e.pointerId);
-            }
-        });
-    }
-
-    // Helper function to update Undo/Redo button states
-    function updateWarpActionButtons() {
-        if (undoWarpBtn) {
-            undoWarpBtn.disabled = undoStack.length === 0;
-        }
-        if (redoWarpBtn) {
-            redoWarpBtn.disabled = redoStack.length === 0;
+    // Update note icon in gallery
+    function updateGalleryNoteIcon(imageId, hasNote) {
+        const galleryItem = document.querySelector(`.gallery-item[data-image-id='${imageId}'] .note-icon`);
+        if (galleryItem) {
+            galleryItem.style.display = hasNote ? 'inline' : 'none';
         }
     }
 
-    // Patch createCanvasForEye to set up mesh point dragging for current eye
-    const originalCreateCanvasForEye = createCanvasForEye;
-    createCanvasForEye = function(eye) {
-        originalCreateCanvasForEye(eye);
-        const settings = imageSettings[eye];
-        if (settings && settings.canvas) {
-            setupMeshPointDragging(settings.canvas, eye);
-        }
-    };
-
-    // Add listener for the Undo button
-    if (undoWarpBtn) {
-        undoWarpBtn.addEventListener('click', () => {
-            if (undoStack.length === 0) return; // Nothing to undo
-
-            // Save current state to redo stack before undoing
-            if (meshPoints[currentEye]) {
-                redoStack.push(JSON.parse(JSON.stringify(meshPoints[currentEye])));
-            }
-
-            // Pop the previous state from the undo stack
-            const previousMeshState = undoStack.pop();
-
-            // Apply the previous state
-            meshPoints[currentEye] = previousMeshState;
-
-            // Update canvas and save to local storage
-            updateCanvasImage(currentEye);
-            try {
-                localStorage.setItem(`warpPoints_${currentEye}`, JSON.stringify(meshPoints[currentEye]));
-            } catch (error) {
-                console.error(`Error saving undone warp points for eye ${currentEye}:`, error);
-            }
-
-            // Update button states
-            updateWarpActionButtons();
-        });
-    }
-
-    // Add listener for the Redo button
-    if (redoWarpBtn) {
-        redoWarpBtn.addEventListener('click', () => {
-            if (redoStack.length === 0) return; // Nothing to redo
-
-            // Save current state to undo stack before redoing
-            if (meshPoints[currentEye]) {
-                undoStack.push(JSON.parse(JSON.stringify(meshPoints[currentEye])));
-            }
-
-            // Pop the next state from the redo stack
-            const nextMeshState = redoStack.pop();
-
-            // Apply the next state
-            meshPoints[currentEye] = nextMeshState;
-
-            // Update canvas and save to local storage
-            updateCanvasImage(currentEye);
-            try {
-                localStorage.setItem(`warpPoints_${currentEye}`, JSON.stringify(meshPoints[currentEye]));
-            } catch (error) {
-                console.error(`Error saving redone warp points for eye ${currentEye}:`, error);
-            }
-
-            // Update button states
-            updateWarpActionButtons();
-        });
-    }
-
-    // Add listener for the Reset Warp button
-    if (resetWarpBtn) {
-        resetWarpBtn.addEventListener('click', () => {
-            if (!meshPoints[currentEye] && undoStack.length === 0) {
-                // If there are no mesh points and nothing to undo, nothing to reset from or to.
-                return;
-            }
-
-            // Save current state to undo stack before resetting, if there are points
-            if (meshPoints[currentEye]) {
-                undoStack.push(JSON.parse(JSON.stringify(meshPoints[currentEye])));
-            }
-            redoStack = []; // Clear redo stack
-
-            // Clear current warp points from Local Storage and memory
-            localStorage.removeItem(`warpPoints_${currentEye}`);
-            meshPoints[currentEye] = null;
-
-            // Initialize to default mesh points (this also saves them to localStorage)
-            initMeshPoints(currentEye);
-
-            // Update canvas and button states
-            updateCanvasImage(currentEye);
-            updateWarpActionButtons();
-        });
+    // Update note data in gallery (if you have a gallery array, update it here)
+    function updateGalleryNoteData(imageId, note) {
+        // If you have a gallery array/object, update the note property here
+        // For now, this is a placeholder for future extensibility
     }
 });
 
