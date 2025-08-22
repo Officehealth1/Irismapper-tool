@@ -15,15 +15,16 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Function to trigger password reset email via Firebase REST API
-async function sendPasswordResetEmail(email) {
+// Function to send welcome email verification via Firebase REST API
+async function sendWelcomeVerificationEmail(email) {
   const apiKey = process.env.FIREBASE_API_KEY || 'AIzaSyAg04Ucyyhh5b7K41iQD0z9VYBZZH5twok';
   
   return new Promise((resolve) => {
     const postData = JSON.stringify({
-      requestType: 'PASSWORD_RESET',
+      requestType: 'VERIFY_EMAIL',
       email: email,
-      returnSecureToken: false
+      returnSecureToken: false,
+      continueUrl: 'https://irismapper.com/login.html'
     });
 
     const options = {
@@ -45,10 +46,10 @@ async function sendPasswordResetEmail(email) {
         try {
           const result = JSON.parse(data);
           if (res.statusCode === 200) {
-            console.log(`Password reset email sent successfully to: ${email}`);
+            console.log(`Welcome verification email sent successfully to: ${email}`);
             resolve({ success: true, result });
           } else {
-            console.error('Failed to send password reset email:', result);
+            console.error('Failed to send welcome verification email:', result);
             resolve({ success: false, error: result });
           }
         } catch (parseError) {
@@ -59,7 +60,7 @@ async function sendPasswordResetEmail(email) {
     });
 
     req.on('error', (error) => {
-      console.error('Error sending password reset email:', error);
+      console.error('Error sending welcome verification email:', error);
       resolve({ success: false, error });
     });
 
@@ -188,20 +189,22 @@ async function handleCheckoutComplete(session) {
         ...userData
       });
       
-      // Send password reset email using Firebase REST API
-      console.log(`Attempting to send welcome password reset email to: ${customer.email}`);
-      const emailResult = await sendPasswordResetEmail(customer.email);
+      // Send welcome verification email using Firebase REST API
+      console.log(`Attempting to send welcome verification email to: ${customer.email}`);
+      const emailResult = await sendWelcomeVerificationEmail(customer.email);
       
       if (emailResult.success) {
-        console.log(`✅ Welcome email sent successfully to: ${customer.email}`);
+        console.log(`✅ Welcome verification email sent successfully to: ${customer.email}`);
       } else {
-        console.log(`❌ Failed to send welcome email to: ${customer.email}`, emailResult.error);
-        // Fallback: Generate reset link for manual sending
+        console.log(`❌ Failed to send welcome verification email to: ${customer.email}`, emailResult.error);
+        // Fallback: Generate verification link using Admin SDK
         try {
-          const resetLink = await admin.auth().generatePasswordResetLink(customer.email);
-          console.log(`🔗 Manual password reset link: ${resetLink}`);
+          const verificationLink = await admin.auth().generateEmailVerificationLink(customer.email, {
+            url: 'https://irismapper.com/login.html'
+          });
+          console.log(`🔗 Manual welcome verification link: ${verificationLink}`);
         } catch (linkError) {
-          console.error('Failed to generate backup reset link:', linkError);
+          console.error('Failed to generate backup verification link:', linkError);
         }
       }
       
