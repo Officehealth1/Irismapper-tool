@@ -1,0 +1,527 @@
+@import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #1c262f;
+    min-height: 100vh;
+    padding: 40px 20px;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+.pricing-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.header {
+    text-align: center;
+    color: white;
+    margin-bottom: 60px;
+}
+
+.logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 30px;
+    filter: brightness(0) invert(1);
+}
+
+.header h1 {
+    font-size: 2.8rem;
+    font-weight: 300;
+    margin-bottom: 15px;
+    letter-spacing: 1px;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.8;
+    font-weight: 300;
+}
+
+/* Plan Toggle */
+.plan-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 30px;
+}
+
+.toggle-btn {
+    padding: 12px 24px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
+    flex: 1;
+    font-family: 'Josefin Sans', sans-serif;
+}
+
+.toggle-btn.active {
+    background: #0dc5a1;
+    color: white;
+    box-shadow: 0 2px 8px rgba(13, 197, 161, 0.3);
+}
+
+.toggle-btn:hover:not(.active) {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Billing Toggle */
+.billing-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 50px;
+    flex-wrap: wrap;
+}
+
+.period-btn {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    color: rgba(255, 255, 255, 0.8);
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 400;
+}
+
+.period-btn.active {
+    background: rgba(13, 197, 161, 0.2);
+    border-color: #0dc5a1;
+    color: #0dc5a1;
+    font-weight: 500;
+}
+
+.period-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.badge {
+    background: #0dc5a1;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+/* Price Card */
+.price-card {
+    background: white;
+    border-radius: 12px;
+    padding: 50px 40px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.price-card h2 {
+    font-size: 1.6rem;
+    margin-bottom: 30px;
+    color: #1c262f;
+    font-weight: 400;
+}
+
+.price {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.currency {
+    font-size: 1.8rem;
+    color: #666;
+    margin-right: 5px;
+    font-weight: 300;
+}
+
+#price-amount {
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: #1c262f;
+}
+
+#price-period {
+    font-size: 1.2rem;
+    color: #666;
+    margin-left: 8px;
+    font-weight: 300;
+}
+
+.savings {
+    color: #0dc5a1;
+    font-weight: 500;
+    margin-bottom: 35px;
+    font-size: 1rem;
+}
+
+/* Features */
+.features {
+    text-align: left;
+    margin: 35px 0;
+}
+
+.features h3 {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    text-align: center;
+    color: #1c262f;
+    font-weight: 500;
+}
+
+.features ul {
+    list-style: none;
+    max-width: 450px;
+    margin: 0 auto;
+}
+
+.features li {
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(28, 38, 47, 0.1);
+    font-size: 0.95rem;
+    color: #555;
+    font-weight: 400;
+    position: relative;
+    padding-left: 25px;
+}
+
+.features li:last-child {
+    border-bottom: none;
+}
+
+.features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #0dc5a1;
+    font-weight: 600;
+}
+
+/* Subscribe Button */
+.subscribe-btn {
+    width: 100%;
+    max-width: 400px;
+    padding: 16px 32px;
+    background: #0dc5a1;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Josefin Sans', sans-serif;
+    letter-spacing: 0.5px;
+}
+
+.subscribe-btn:hover {
+    background: #0ba688;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 25px rgba(13, 197, 161, 0.3);
+}
+
+.subscribe-btn:active {
+    transform: translateY(0);
+}
+
+.trial-info {
+    margin-top: 20px;
+    color: #666;
+    font-size: 0.9rem;
+    font-weight: 300;
+}
+
+/* Trust Badges */
+.trust-badges {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    margin: 50px 0;
+    flex-wrap: wrap;
+}
+
+.trust-badges p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* FAQ */
+.faq {
+    background: white;
+    border-radius: 12px;
+    padding: 50px 40px;
+    margin-top: 50px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.faq h3 {
+    text-align: center;
+    margin-bottom: 35px;
+    font-size: 1.8rem;
+    color: #1c262f;
+    font-weight: 400;
+}
+
+details {
+    margin-bottom: 15px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid rgba(28, 38, 47, 0.1);
+    transition: all 0.3s ease;
+}
+
+details:hover {
+    background: #f5f6f7;
+}
+
+summary {
+    font-weight: 500;
+    font-size: 1rem;
+    list-style: none;
+    position: relative;
+    padding-left: 25px;
+    color: #1c262f;
+}
+
+summary::before {
+    content: '▶';
+    position: absolute;
+    left: 0;
+    transition: transform 0.3s ease;
+    color: #0dc5a1;
+    font-size: 0.8rem;
+}
+
+details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+details p {
+    margin-top: 15px;
+    color: #666;
+    line-height: 1.6;
+    padding-left: 25px;
+    font-weight: 300;
+}
+
+/* Email Modal */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(28, 38, 47, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 40px;
+    max-width: 450px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease;
+}
+
+.modal h3 {
+    color: #1c262f;
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+.modal p {
+    color: #666;
+    margin-bottom: 25px;
+    font-weight: 300;
+}
+
+.email-input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 25px;
+    font-family: 'Josefin Sans', sans-serif;
+    transition: border-color 0.3s ease;
+}
+
+.email-input:focus {
+    outline: none;
+    border-color: #0dc5a1;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    font-family: 'Josefin Sans', sans-serif;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.modal-btn.primary {
+    background: #0dc5a1;
+    color: white;
+}
+
+.modal-btn.primary:hover {
+    background: #0ba688;
+}
+
+.modal-btn.secondary {
+    background: #f0f0f0;
+    color: #666;
+}
+
+.modal-btn.secondary:hover {
+    background: #e0e0e0;
+}
+
+.close-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #666;
+}
+
+/* Loading State */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    body {
+        padding: 20px 15px;
+    }
+    
+    .header h1 {
+        font-size: 2.2rem;
+    }
+    
+    #price-amount {
+        font-size: 3rem;
+    }
+    
+    .price-card {
+        padding: 40px 25px;
+    }
+    
+    .plan-toggle {
+        max-width: 100%;
+    }
+    
+    .billing-toggle {
+        flex-direction: column;
+        align-items: center;
+        max-width: 250px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .period-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .trust-badges {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .modal-content {
+        padding: 30px 25px;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .modal-btn {
+        width: 100%;
+    }
+}
