@@ -146,7 +146,7 @@ exports.handler = async (event) => {
         await handleCheckoutCompleted(session);
         break;
       case 'customer.subscription.created':
-      case 'customer.subscription.updated':
+      case 'customer.subscription.updated': // do not send verification here; guard prevents duplicates
         const subscription = stripeEvent.data.object;
         await updateSubscription(subscription);
         break;
@@ -162,7 +162,8 @@ exports.handler = async (event) => {
         break;
 
       default:
-        console.log(`Unhandled event type: ${stripeEvent.type}`);
+        // Intentionally ignored event
+        break;
     }
 
     return {
@@ -218,46 +219,41 @@ async function updateSubscription(subscription) {
 
     console.log(`Subscription updated for customer: ${customer.id}`);
     
-    // Send email verification for new subscriptions
+    // Idempotent verification send guard: only send if not sent in last 24h and not verified
     if (subscription.status === 'trialing' || subscription.status === 'active') {
       try {
-        // Check if user already has email verified
         const userData = userDoc.data();
-        console.log(`User data for ${customer.email}:`, { emailVerified: userData.emailVerified, uid: userData.uid });
-        
-        if (!userData.emailVerified) {
+        const sentAtTs = userData.verificationEmailSentAt;
+        const sentAtDate = sentAtTs?.toDate ? sentAtTs.toDate() : sentAtTs;
+        const sentRecently = userData.verificationEmailSent && sentAtDate && (Date.now() - new Date(sentAtDate).getTime() < 24 * 60 * 60 * 1000);
+
+        if (!userData.emailVerified && !sentRecently) {
           console.log(`Attempting to send email verification to: ${customer.email}`);
-          
-          // Get the Firebase user to check their verification status
           try {
             const firebaseUser = await admin.auth().getUserByEmail(customer.email);
-            console.log(`Firebase user verification status:`, { emailVerified: firebaseUser.emailVerified, uid: firebaseUser.uid });
-            
             if (!firebaseUser.emailVerified) {
-              // Send the verification email using SendGrid
               const emailVerificationResult = await sendVerificationEmail(customer.email);
-              
               if (emailVerificationResult.success) {
-                console.log(`✅ Email verification sent successfully to: ${customer.email}`);
                 await userDoc.ref.update({
                   verificationEmailSent: true,
                   verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
                 });
+                console.log(`✅ Verification email sent (guarded) to: ${customer.email}`);
               } else {
                 console.error(`Failed to send verification email to: ${customer.email}`, emailVerificationResult.error);
               }
             } else {
-              console.log(`User ${customer.email} already verified in Firebase Auth`);
               await userDoc.ref.update({ emailVerified: true });
+              console.log(`User ${customer.email} already verified in Firebase Auth`);
             }
           } catch (authError) {
             console.error(`Error checking Firebase Auth user:`, authError);
           }
         } else {
-          console.log(`User ${customer.email} already marked as verified in Firestore`);
+          console.log(`Skipping verification email for ${customer.email} (verified or recently sent)`);
         }
       } catch (emailError) {
-        console.error('Failed to send verification email:', emailError);
+        console.error('Failed verification email guard flow:', emailError);
       }
     }
   } else {
