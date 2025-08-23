@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <title>Welcome to Iris Mapper Pro!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap');
         
@@ -312,37 +320,24 @@
                 if (userEmail) {
                     statusText.textContent = '🔐 Signing you in securely...';
                     
-                    // Start both auto-login and welcome email in parallel
-                    const [autoLoginResponse, welcomeEmailResponse] = await Promise.all([
-                        // Auto-login attempt
-                        fetch('/.netlify/functions/create-auto-login', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: userEmail })
-                        }),
-                        // Send welcome email for password setup
-                        fetch('/.netlify/functions/send-welcome-email', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ email: userEmail })
-                        })
-                    ]);
+                    // Try to create auto-login token
+                    const response = await fetch('/.netlify/functions/create-auto-login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ email: userEmail })
+                    });
                     
-                    const data = await autoLoginResponse.json();
-                    const welcomeResult = await welcomeEmailResponse.json();
+                    const data = await response.json();
                     
                     if (data.success && data.customToken) {
                         // Sign in with custom token
                         await firebase.auth().signInWithCustomToken(data.customToken);
                         
-                        // Success feedback with welcome email info
+                        // Success feedback
                         loginStatus.classList.add('success');
-                        if (welcomeResult.success) {
-                            statusText.textContent = '✅ Perfect! Welcome email sent & taking you to your dashboard...';
-                        } else {
-                            statusText.textContent = '✅ Perfect! Taking you to your dashboard...';
-                            console.log('Welcome email failed but auto-login succeeded');
-                        }
+                        statusText.textContent = '✅ Perfect! Taking you to your dashboard...';
                         
                         // Clear stored email
                         localStorage.removeItem('userEmail');
@@ -356,13 +351,9 @@
                     }
                 }
                 
-                // If auto-login not available, show helpful message with welcome email info
+                // If auto-login not available, show helpful message
                 loginStatus.classList.add('info');
-                if (welcomeResult && welcomeResult.success) {
-                    statusText.innerHTML = '📧 Welcome email sent! Check your inbox to set up your password';
-                } else {
-                    statusText.innerHTML = '📧 Please check your email for login instructions';
-                }
+                statusText.innerHTML = '📧 Please check your email for login instructions';
                 startBtn.textContent = 'Go to Login Page';
                 startBtn.style.opacity = '1';
                 startBtn.style.pointerEvents = 'auto';
@@ -375,9 +366,9 @@
             } catch (error) {
                 console.error('Auto-login error:', error);
                 
-                // Show friendly error message (welcome email may still have been sent)
+                // Show friendly error message
                 loginStatus.classList.add('info');
-                statusText.innerHTML = '📧 Welcome email sent! Check your inbox to set up your password';
+                statusText.innerHTML = '📧 Please check your email for login instructions';
                 startBtn.textContent = 'Go to Login Page';
                 startBtn.style.opacity = '1';
                 startBtn.style.pointerEvents = 'auto';
