@@ -359,28 +359,66 @@ async function handleNewSubscriptionUser(customer, subscription) {
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
+  let userRecord = null;
+  let userAlreadyExisted = false;
+
   try {
-    // Generate a temporary password for new user
-    const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+    // First, check if user already exists in Firebase Auth
+    try {
+      userRecord = await admin.auth().getUserByEmail(customer.email);
+      userAlreadyExisted = true;
+      console.log(`User already exists in Firebase Auth: ${customer.email}`);
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        // User doesn't exist, create them
+        const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+        
+        userRecord = await admin.auth().createUser({
+          email: customer.email,
+          password: tempPassword,
+          emailVerified: false,
+          disabled: false
+        });
+        console.log(`Created new Firebase Auth user: ${customer.email}`);
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
+
+    // Check if Firestore document exists
+    const existingDoc = await db.collection('users').doc(userRecord.uid).get();
     
-    // Create Firebase Auth user  
-    const userRecord = await admin.auth().createUser({
-      email: customer.email,
-      password: tempPassword,
-      emailVerified: false,
-      disabled: false
-    });
-    
-    // Create Firestore user record with verification sent flag to prevent duplicates
-    await db.collection('users').doc(userRecord.uid).set({
-      email: customer.email,
-      uid: userRecord.uid,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      needsPasswordReset: true,
-      verificationEmailSent: true, // Mark as sent immediately to prevent race conditions
-      verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp(),
-      ...userData
-    });
+    if (existingDoc.exists) {
+      // Update existing document
+      await db.collection('users').doc(userRecord.uid).update({
+        ...userData,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      console.log(`Updated existing Firestore document for: ${customer.email}`);
+      
+      // Check if we already sent verification email recently
+      const existingData = existingDoc.data();
+      const sentAt = existingData.verificationEmailSentAt;
+      const sentDate = sentAt?.toDate ? sentAt.toDate() : sentAt;
+      const sentRecently = sentDate && (Date.now() - new Date(sentDate).getTime() < 24 * 60 * 60 * 1000);
+      
+      if (sentRecently) {
+        console.log(`Email already sent recently to ${customer.email}, skipping`);
+        return;
+      }
+    } else {
+      // Create new Firestore document
+      await db.collection('users').doc(userRecord.uid).set({
+        email: customer.email,
+        uid: userRecord.uid,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        needsPasswordReset: !userAlreadyExisted, // Only need reset if we just created the user
+        verificationEmailSent: true, // Mark as sent immediately to prevent race conditions
+        verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp(),
+        ...userData
+      });
+      console.log(`Created new Firestore document for: ${customer.email}`);
+    }
     
     // Send ONE combined email with both verification and password reset
     try {
@@ -403,136 +441,148 @@ async function handleNewSubscriptionUser(customer, subscription) {
         }
       }
       
-      // Generate password reset link (usually doesn't have as strict rate limits)
-      try {
-        passwordResetLink = await admin.auth().generatePasswordResetLink(
-          customer.email,
-          { url: 'https://irismapper.com/login' }
-        );
-        console.log(`✅ Password reset link generated for ${customer.email}`);
-      } catch (error) {
-        console.error('Error generating password reset link:', error);
+      // Only generate password reset if user is new or needs reset
+      if (!userAlreadyExisted || !existingDoc.exists) {
+        try {
+          passwordResetLink = await admin.auth().generatePasswordResetLink(
+            customer.email,
+            { url: 'https://irismapper.com/login' }
+          );
+          console.log(`✅ Password reset link generated for ${customer.email}`);
+        } catch (error) {
+          if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
+            console.log(`⚠️ Rate limited on password reset link for ${customer.email}`);
+          } else {
+            console.error('Error generating password reset link:', error);
+          }
+        }
       }
       
       // Send ONE combined email
       const combinedMsg = {
         to: customer.email,
         from: process.env.SENDGRID_FROM_EMAIL,
-        subject: 'Welcome to IrisMapper - Complete Your Setup',
+        subject: userAlreadyExisted ? 'Complete Your IrisMapper Setup' : 'Welcome to IrisMapper - Complete Your Setup',
         html: `
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
           </head>
-          <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+          <body style="margin: 0; padding: 0; background-color: #1c262f; font-family: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
             <table role="presentation" style="width: 100%; border-collapse: collapse;">
               <tr>
-                <td align="center" style="padding: 40px 0;">
-                  <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <td align="center" style="padding: 40px 20px;">
+                  <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
                     <tr>
-                      <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
-                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">IrisMapper</h1>
-                        <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">Welcome to Your Journey!</p>
+                      <td style="padding: 50px 40px; text-align: center; background: linear-gradient(135deg, #1c262f 0%, #2a3b47 100%); border-radius: 12px 12px 0 0;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 300; letter-spacing: 1px;">IrisMapper</h1>
+                        <p style="margin: 15px 0 0 0; color: #0dc5a1; font-size: 16px; font-weight: 400;">
+                          ${userAlreadyExisted ? 'Complete Your Setup' : 'Welcome to Your Journey!'}
+                        </p>
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 40px 30px;">
-                        <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px;">Welcome! Let's Get You Started</h2>
-                        <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.5;">
-                          Thank you for subscribing to IrisMapper! Your account has been created successfully. 
-                          Please complete these two quick steps to activate your account:
+                      <td style="padding: 40px;">
+                        <h2 style="margin: 0 0 20px 0; color: #1c262f; font-size: 26px; font-weight: 300; letter-spacing: 0.5px;">
+                          ${userAlreadyExisted ? 'Complete Your Account Setup' : 'Welcome! Let\'s Get You Started'}
+                        </h2>
+                        <p style="margin: 0 0 35px 0; color: #666; font-size: 16px; line-height: 1.6; font-weight: 300;">
+                          ${userAlreadyExisted 
+                            ? 'Your subscription is active! Please complete the setup steps below to access all features.' 
+                            : 'Thank you for subscribing to IrisMapper! Your account has been created successfully. Please complete these steps to activate your account:'}
                         </p>
                         
-                        <!-- Step 1: Set Password -->
-                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                          <h3 style="margin: 0 0 15px 0; color: #333333; font-size: 18px;">
-                            <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 10px;">1</span>
-                            Set Your Password
-                          </h3>
-                          ${passwordResetLink ? `
-                            <p style="margin: 0 0 15px 0; color: #666666; font-size: 14px;">
+                        ${passwordResetLink ? `
+                          <!-- Step 1: Set Password -->
+                          <div style="background-color: #f5f5f5; padding: 25px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #4A90E2;">
+                            <h3 style="margin: 0 0 15px 0; color: #1c262f; font-size: 18px; font-weight: 400; display: flex; align-items: center;">
+                              <span style="background: #4A90E2; color: white; padding: 4px 10px; border-radius: 50%; margin-right: 12px; font-size: 14px; font-weight: 600; min-width: 24px; text-align: center;">1</span>
+                              Set Your Password
+                            </h3>
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
                               First, create a secure password for your account:
                             </p>
                             <table role="presentation" style="margin: 0;">
                               <tr>
-                                <td style="border-radius: 6px; background: #667eea;">
+                                <td style="border-radius: 6px; background: #4A90E2; box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);">
                                   <a href="${passwordResetLink}"
                                      target="_blank"
-                                     style="display: inline-block; padding: 12px 24px; color: #ffffff; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 6px;">
+                                     style="display: inline-block; padding: 14px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; transition: all 0.2s ease;">
                                     Set Password
                                   </a>
                                 </td>
                               </tr>
                             </table>
-                          ` : `
-                            <p style="margin: 0; color: #666666; font-size: 14px;">
-                              You'll receive a separate email with instructions to set your password, or you can request one from the login page.
-                            </p>
-                          `}
-                        </div>
+                          </div>
+                        ` : ''}
                         
-                        <!-- Step 2: Verify Email -->
-                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
-                          <h3 style="margin: 0 0 15px 0; color: #333333; font-size: 18px;">
-                            <span style="background: #764ba2; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 10px;">2</span>
+                        <!-- Verify Email Section -->
+                        <div style="background-color: #f5f5f5; padding: 25px; border-radius: 8px; border-left: 4px solid #0dc5a1;">
+                          <h3 style="margin: 0 0 15px 0; color: #1c262f; font-size: 18px; font-weight: 400; display: flex; align-items: center;">
+                            <span style="background: #0dc5a1; color: white; padding: 4px 10px; border-radius: 50%; margin-right: 12px; font-size: 14px; font-weight: 600; min-width: 24px; text-align: center;">
+                              ${passwordResetLink ? '2' : '✓'}
+                            </span>
                             Verify Your Email
                           </h3>
                           ${verificationLink ? `
-                            <p style="margin: 0 0 15px 0; color: #666666; font-size: 14px;">
-                              Then, verify your email address to unlock all features:
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
+                              ${passwordResetLink ? 'Then, verify' : 'Please verify'} your email address to unlock all features:
                             </p>
                             <table role="presentation" style="margin: 0;">
                               <tr>
-                                <td style="border-radius: 6px; background: #764ba2;">
+                                <td style="border-radius: 6px; background: #0dc5a1; box-shadow: 0 2px 8px rgba(13, 197, 161, 0.3);">
                                   <a href="${verificationLink}"
                                      target="_blank"
-                                     style="display: inline-block; padding: 12px 24px; color: #ffffff; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 6px;">
+                                     style="display: inline-block; padding: 14px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; transition: all 0.2s ease;">
                                     Verify Email
                                   </a>
                                 </td>
                               </tr>
                             </table>
                           ` : `
-                            <p style="margin: 0; color: #666666; font-size: 14px;">
-                              After setting your password and logging in, you can request email verification from your account settings.
+                            <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
+                              After ${passwordResetLink ? 'setting your password and ' : ''}logging in, you can request email verification from your account settings.
                             </p>
                           `}
                         </div>
                         
-                        ${verificationLink ? `
-                          <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;">
-                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 13px; font-weight: bold;">
-                              Can't click the buttons?
+                        ${(verificationLink || passwordResetLink) ? `
+                          <div style="margin-top: 30px; padding: 20px; background-color: rgba(13, 197, 161, 0.1); border: 1px solid rgba(13, 197, 161, 0.2); border-radius: 8px;">
+                            <p style="margin: 0 0 15px 0; color: #1c262f; font-size: 13px; font-weight: 600;">
+                              Can't click the buttons? Copy these links:
                             </p>
-                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 12px;">
-                              Verification link:
-                              <span style="word-break: break-all; font-size: 11px;">${verificationLink}</span>
-                            </p>
+                            ${verificationLink ? `
+                              <p style="margin: 0 0 10px 0; color: #666; font-size: 12px; font-weight: 300;">
+                                <strong>Email verification:</strong><br>
+                                <span style="word-break: break-all; font-size: 11px; font-family: monospace; background: #f0f0f0; padding: 4px 6px; border-radius: 3px;">${verificationLink}</span>
+                              </p>
+                            ` : ''}
                             ${passwordResetLink ? `
-                              <p style="margin: 0; color: #856404; font-size: 12px;">
-                                Password reset link:
-                                <span style="word-break: break-all; font-size: 11px;">${passwordResetLink}</span>
+                              <p style="margin: 0; color: #666; font-size: 12px; font-weight: 300;">
+                                <strong>Password reset:</strong><br>
+                                <span style="word-break: break-all; font-size: 11px; font-family: monospace; background: #f0f0f0; padding: 4px 6px; border-radius: 3px;">${passwordResetLink}</span>
                               </p>
                             ` : ''}
                           </div>
                         ` : ''}
                         
-                        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eeeeee;">
+                        <hr style="margin: 35px 0; border: none; border-top: 1px solid #e0e0e0;">
                         
-                        <p style="margin: 0; color: #999999; font-size: 14px; line-height: 1.5;">
-                          These links will expire in 24 hours. If you didn't create an account with IrisMapper,
-                          you can safely ignore this email.
+                        <p style="margin: 0; color: #999; font-size: 13px; line-height: 1.5; font-weight: 300;">
+                          ${(verificationLink || passwordResetLink) ? 'These links will expire in 24 hours. ' : ''}
+                          If you didn't create an account with IrisMapper, you can safely ignore this email.
                         </p>
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding: 30px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
-                        <p style="margin: 0 0 10px 0; color: #999999; font-size: 12px;">
-                          Need help? Contact us at support@irismapper.com
+                      <td style="padding: 25px 40px; text-align: center; background-color: #f5f5f5; border-radius: 0 0 12px 12px;">
+                        <p style="margin: 0 0 8px 0; color: #999; font-size: 12px; font-weight: 300;">
+                          Need help? Contact us at <span style="color: #0dc5a1;">support@irismapper.com</span>
                         </p>
-                        <p style="margin: 0; color: #999999; font-size: 12px;">
+                        <p style="margin: 0; color: #999; font-size: 11px; font-weight: 300;">
                           © 2025 IrisMapper. All rights reserved.
                         </p>
                       </td>
@@ -550,6 +600,12 @@ async function handleNewSubscriptionUser(customer, subscription) {
       await sgMail.send(combinedMsg);
       console.log(`✅ Combined welcome email sent to: ${customer.email}`);
       
+      // Update that we sent the email
+      await db.collection('users').doc(userRecord.uid).update({
+        verificationEmailSent: true,
+        verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Reset the flag if email failed
@@ -558,17 +614,21 @@ async function handleNewSubscriptionUser(customer, subscription) {
       });
     }
     
-    console.log(`New user created and subscription activated: ${customer.email}`);
+    console.log(`User subscription activated: ${customer.email}`);
     
   } catch (error) {
-    console.error('Error creating user:', error);
-    // If user creation fails, still create Firestore record for manual cleanup
-    await db.collection('users').add({
-      email: customer.email,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      authCreationFailed: true,
-      ...userData
-    });
+    console.error('Error in handleNewSubscriptionUser:', error);
+    
+    // If everything failed, create a Firestore record for manual cleanup
+    if (!userRecord) {
+      await db.collection('users').add({
+        email: customer.email,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        authCreationFailed: true,
+        error: error.message,
+        ...userData
+      });
+    }
   }
 }
 
