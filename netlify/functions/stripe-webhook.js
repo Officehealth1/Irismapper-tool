@@ -441,6 +441,7 @@ async function handleCheckoutCompleted(session) {
 
     if (!userQuery.empty) {
       const userDoc = userQuery.docs[0];
+      const userData = userDoc.data();
       const updates = {
         stripeCustomerId: customerId,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -453,21 +454,9 @@ async function handleCheckoutCompleted(session) {
       }
       await userDoc.ref.set(updates, { merge: true });
 
-      // Send verification if needed
-      try {
-        const firebaseUser = await admin.auth().getUserByEmail(email);
-        if (!firebaseUser.emailVerified) {
-          const result = await sendVerificationEmail(email);
-          if (result.success) {
-            await userDoc.ref.update({
-              verificationEmailSent: true,
-              verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-          }
-        }
-      } catch (e) {
-        // If user not found, create below
-      }
+      // Skip verification email here - it will be handled by subscription.updated webhook
+      // This prevents duplicate emails and rate limiting
+      console.log(`User updated from checkout.session.completed: ${email} (verification will be handled by subscription webhook)`);
     } else {
       // Create new user path
       if (!email) {
