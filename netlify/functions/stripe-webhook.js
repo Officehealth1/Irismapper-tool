@@ -15,7 +15,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// Function to handle email verification
+// Function to send verification email
 async function sendVerificationEmail(email) {
   try {
     // Generate the verification link
@@ -29,14 +29,16 @@ async function sendVerificationEmail(email) {
     console.log(`✅ Verification link generated for ${email}`);
     console.log(`Link: ${verificationLink}`);
     
-    // For now, we'll mark this as successful
-    // TODO: In production, implement actual email sending service (SendGrid, Nodemailer, etc.)
-    // For testing, users can manually use the link from the logs
+    // Firebase Admin SDK only generates links - doesn't send emails
+    // We need to implement actual email sending here
+    
+    // For now, log the link so you can manually test
+    // In production, you would integrate with SendGrid, Nodemailer, etc.
     
     return { 
-      success: true, 
+      success: true,
       verificationLink: verificationLink,
-      message: 'Verification link generated - check server logs for manual testing' 
+      message: 'Verification link generated successfully' 
     };
     
   } catch (error) {
