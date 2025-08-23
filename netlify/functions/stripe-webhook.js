@@ -104,7 +104,9 @@ async function sendVerificationEmail(email) {
     if (error.response) {
       console.error('SendGrid error response:', error.response.body);
     }
-    return { success: false, error: error.message };
+    const message = error?.errorInfo?.message || error.message || 'unknown-error';
+    const rateLimited = typeof message === 'string' && message.includes('TOO_MANY_ATTEMPTS_TRY_LATER');
+    return { success: false, error: message, rateLimited };
   }
 }
 
@@ -223,9 +225,15 @@ async function updateSubscription(subscription) {
       try {
         // Check if user already has email verified
         const userData = userDoc.data();
-        console.log(`User data for ${customer.email}:`, { emailVerified: userData.emailVerified, uid: userData.uid });
+        console.log(`User data for ${customer.email}:`, { emailVerified: userData.emailVerified, uid: userData.uid, verificationEmailSentAt: userData.verificationEmailSentAt });
         
         if (!userData.emailVerified) {
+          // Throttle: if we sent a verification within the last 12 hours, skip
+          const lastSent = userData.verificationEmailSentAt?.toDate ? userData.verificationEmailSentAt.toDate() : userData.verificationEmailSentAt;
+          if (lastSent && Date.now() - new Date(lastSent).getTime() < 12 * 60 * 60 * 1000) {
+            console.log(`Skipping verification email for ${customer.email} (sent within 12h)`);
+            return;
+          }
           console.log(`Attempting to send email verification to: ${customer.email}`);
           
           // Get the Firebase user to check their verification status
@@ -244,7 +252,11 @@ async function updateSubscription(subscription) {
                   verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
                 });
               } else {
-                console.error(`Failed to send verification email to: ${customer.email}`, emailVerificationResult.error);
+                if (emailVerificationResult.rateLimited) {
+                  console.warn(`Rate limited by Firebase when generating link. Will retry later for ${customer.email}.`);
+                } else {
+                  console.error(`Failed to send verification email to: ${customer.email}`, emailVerificationResult.error);
+                }
               }
             } else {
               console.log(`User ${customer.email} already verified in Firebase Auth`);
@@ -461,12 +473,19 @@ async function handleCheckoutCompleted(session) {
       try {
         const firebaseUser = await admin.auth().getUserByEmail(email);
         if (!firebaseUser.emailVerified) {
-          const result = await sendVerificationEmail(email);
-          if (result.success) {
-            await userDoc.ref.update({
-              verificationEmailSent: true,
-              verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
-            });
+          const lastSent = userDoc.data().verificationEmailSentAt?.toDate ? userDoc.data().verificationEmailSentAt.toDate() : userDoc.data().verificationEmailSentAt;
+          if (!lastSent || Date.now() - new Date(lastSent).getTime() >= 12 * 60 * 60 * 1000) {
+            const result = await sendVerificationEmail(email);
+            if (result.success) {
+              await userDoc.ref.update({
+                verificationEmailSent: true,
+                verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
+              });
+            } else if (result.rateLimited) {
+              console.warn(`Rate limited; skipping immediate resend for ${email}`);
+            }
+          } else {
+            console.log(`Skipping verification email for ${email} (sent within 12h)`);
           }
         }
       } catch (e) {
