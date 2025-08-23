@@ -5,6 +5,10 @@ const sgMail = require('@sendgrid/mail');
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
+// Event deduplication cache
+const processedEvents = new Set();
+const EVENT_CACHE_DURATION = 60000; // 1 minute
+
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -21,10 +25,33 @@ const db = admin.firestore();
 // Function to generate and send verification email via SendGrid
 async function sendVerificationEmail(email) {
   try {
-    const verificationLink = await admin.auth().generateEmailVerificationLink(
-      email,
-      { url: 'https://irismapper.com/login' }
-    );
+    // Add retry logic with exponential backoff for rate limiting
+    let verificationLink;
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        verificationLink = await admin.auth().generateEmailVerificationLink(
+          email,
+          { url: 'https://irismapper.com/login' }
+        );
+        break; // Success, exit loop
+      } catch (error) {
+        if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
+          retries++;
+          if (retries >= maxRetries) {
+            throw error; // Max retries reached
+          }
+          // Exponential backoff: 2s, 4s, 8s
+          const delay = Math.pow(2, retries) * 1000;
+          console.log(`Rate limited, retrying in ${delay}ms (attempt ${retries}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        } else {
+          throw error; // Different error, don't retry
+        }
+      }
+    }
 
     console.log(`✅ Verification link generated for ${email}`);
 
@@ -138,6 +165,20 @@ exports.handler = async (event) => {
     };
   }
 
+  // Deduplicate events
+  const eventId = stripeEvent.id;
+  if (processedEvents.has(eventId)) {
+    console.log(`Duplicate event ${eventId} - skipping`);
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ received: true, duplicate: true })
+    };
+  }
+  
+  // Add to cache and clean old entries
+  processedEvents.add(eventId);
+  setTimeout(() => processedEvents.delete(eventId), EVENT_CACHE_DURATION);
+
   // Handle the event
   try {
     switch (stripeEvent.type) {
@@ -219,41 +260,25 @@ async function updateSubscription(subscription) {
 
     console.log(`Subscription updated for customer: ${customer.id}`);
     
-    // Idempotent verification send guard: only send if not sent in last 24h and not verified
+    // Check if user is verified in Firebase Auth (for existing users)
     if (subscription.status === 'trialing' || subscription.status === 'active') {
       try {
         const userData = userDoc.data();
-        const sentAtTs = userData.verificationEmailSentAt;
-        const sentAtDate = sentAtTs?.toDate ? sentAtTs.toDate() : sentAtTs;
-        const sentRecently = userData.verificationEmailSent && sentAtDate && (Date.now() - new Date(sentAtDate).getTime() < 24 * 60 * 60 * 1000);
-
-        if (!userData.emailVerified && !sentRecently) {
-          console.log(`Attempting to send email verification to: ${customer.email}`);
+        if (!userData.emailVerified) {
           try {
             const firebaseUser = await admin.auth().getUserByEmail(customer.email);
-            if (!firebaseUser.emailVerified) {
-              const emailVerificationResult = await sendVerificationEmail(customer.email);
-              if (emailVerificationResult.success) {
-                await userDoc.ref.update({
-                  verificationEmailSent: true,
-                  verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
-                });
-                console.log(`✅ Verification email sent (guarded) to: ${customer.email}`);
-              } else {
-                console.error(`Failed to send verification email to: ${customer.email}`, emailVerificationResult.error);
-              }
-            } else {
+            if (firebaseUser.emailVerified) {
               await userDoc.ref.update({ emailVerified: true });
-              console.log(`User ${customer.email} already verified in Firebase Auth`);
+              console.log(`User ${customer.email} already verified in Firebase Auth - updated Firestore`);
+            } else {
+              console.log(`User ${customer.email} not verified yet - verification handled during account creation`);
             }
           } catch (authError) {
             console.error(`Error checking Firebase Auth user:`, authError);
           }
-        } else {
-          console.log(`Skipping verification email for ${customer.email} (verified or recently sent)`);
         }
-      } catch (emailError) {
-        console.error('Failed verification email guard flow:', emailError);
+      } catch (error) {
+        console.error('Failed verification status check:', error);
       }
     }
   } else {
@@ -311,12 +336,24 @@ async function handleTrialEnding(subscription) {
 }
 
 async function handleNewSubscriptionUser(customer, subscription) {
+  // Check if we've already processed this user recently (deduplication)
+  const recentUserCheck = await db.collection('users')
+    .where('email', '==', customer.email)
+    .where('createdAt', '>=', new Date(Date.now() - 60000)) // Within last minute
+    .limit(1)
+    .get();
+    
+  if (!recentUserCheck.empty) {
+    console.log(`User ${customer.email} was just created, skipping duplicate processing`);
+    return;
+  }
+
   const userData = {
     stripeCustomerId: customer.id,
     subscriptionId: subscription.id,
     subscriptionStatus: subscription.status,
-    subscriptionTier: subscription.metadata.tier || 'practitioner',
-    subscriptionPlan: subscription.metadata.plan || 'monthly',
+    subscriptionTier: subscription.metadata?.tier || 'practitioner',
+    subscriptionPlan: subscription.metadata?.plan || 'monthly',
     trialEndsAt: subscription.trial_end ? new Date(subscription.trial_end * 1000) : null,
     currentPeriodEnd: subscription.current_period_end ? new Date(subscription.current_period_end * 1000) : null,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -334,62 +371,191 @@ async function handleNewSubscriptionUser(customer, subscription) {
       disabled: false
     });
     
-    // Create Firestore user record
+    // Create Firestore user record with verification sent flag to prevent duplicates
     await db.collection('users').doc(userRecord.uid).set({
       email: customer.email,
       uid: userRecord.uid,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       needsPasswordReset: true,
+      verificationEmailSent: true, // Mark as sent immediately to prevent race conditions
+      verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp(),
       ...userData
     });
     
-    // Send email verification
+    // Send ONE combined email with both verification and password reset
     try {
-      const emailVerificationResult = await sendVerificationEmail(customer.email);
+      let verificationLink = null;
+      let passwordResetLink = null;
       
-      if (emailVerificationResult.success) {
-        console.log(`✅ Email verification sent successfully to new user: ${customer.email}`);
-        // Update that we sent the verification email
-        await db.collection('users').doc(userRecord.uid).update({
-          verificationEmailSent: true,
-          verificationEmailSentAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        // Also send a welcome email with password reset link
-        const passwordResetLink = await admin.auth().generatePasswordResetLink(customer.email, {
-          url: 'https://irismapper.com/login'
-        });
-
-        const welcomeMsg = {
-          to: customer.email,
-          from: process.env.SENDGRID_FROM_EMAIL,
-          subject: 'Welcome to IrisMapper - Set Your Password',
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <h2>Welcome to IrisMapper!</h2>
-              <p>Your account has been created. Please follow these steps:</p>
-              <ol>
-                <li>First, verify your email address (check your inbox for the verification email)</li>
-                <li>Then, set your password by clicking the link below:</li>
-              </ol>
-              <a href="${passwordResetLink}" 
-                 style="display: inline-block; padding: 10px 20px; background-color: #667eea; 
-                        color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">
-                Set Your Password
-              </a>
-              <p>If you have any questions, please contact our support team.</p>
-            </div>
-          `
-        };
-        
-        await sgMail.send(welcomeMsg);
-        console.log(`Welcome email with password reset sent to: ${customer.email}`);
-
-      } else {
-        console.error(`Failed to send verification email to new user: ${customer.email}`, emailVerificationResult.error);
+      // Try to generate both links
+      try {
+        // Try verification link with rate limit handling
+        verificationLink = await admin.auth().generateEmailVerificationLink(
+          customer.email,
+          { url: 'https://irismapper.com/login' }
+        );
+        console.log(`✅ Verification link generated for ${customer.email}`);
+      } catch (error) {
+        if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
+          console.log(`⚠️ Rate limited on verification link for ${customer.email}`);
+        } else {
+          console.error('Error generating verification link:', error);
+        }
       }
+      
+      // Generate password reset link (usually doesn't have as strict rate limits)
+      try {
+        passwordResetLink = await admin.auth().generatePasswordResetLink(
+          customer.email,
+          { url: 'https://irismapper.com/login' }
+        );
+        console.log(`✅ Password reset link generated for ${customer.email}`);
+      } catch (error) {
+        console.error('Error generating password reset link:', error);
+      }
+      
+      // Send ONE combined email
+      const combinedMsg = {
+        to: customer.email,
+        from: process.env.SENDGRID_FROM_EMAIL,
+        subject: 'Welcome to IrisMapper - Complete Your Setup',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td align="center" style="padding: 40px 0;">
+                  <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <tr>
+                      <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px 8px 0 0;">
+                        <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">IrisMapper</h1>
+                        <p style="margin: 10px 0 0 0; color: #ffffff; font-size: 16px;">Welcome to Your Journey!</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 40px 30px;">
+                        <h2 style="margin: 0 0 20px 0; color: #333333; font-size: 24px;">Welcome! Let's Get You Started</h2>
+                        <p style="margin: 0 0 30px 0; color: #666666; font-size: 16px; line-height: 1.5;">
+                          Thank you for subscribing to IrisMapper! Your account has been created successfully. 
+                          Please complete these two quick steps to activate your account:
+                        </p>
+                        
+                        <!-- Step 1: Set Password -->
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                          <h3 style="margin: 0 0 15px 0; color: #333333; font-size: 18px;">
+                            <span style="background: #667eea; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 10px;">1</span>
+                            Set Your Password
+                          </h3>
+                          ${passwordResetLink ? `
+                            <p style="margin: 0 0 15px 0; color: #666666; font-size: 14px;">
+                              First, create a secure password for your account:
+                            </p>
+                            <table role="presentation" style="margin: 0;">
+                              <tr>
+                                <td style="border-radius: 6px; background: #667eea;">
+                                  <a href="${passwordResetLink}"
+                                     target="_blank"
+                                     style="display: inline-block; padding: 12px 24px; color: #ffffff; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 6px;">
+                                    Set Password
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          ` : `
+                            <p style="margin: 0; color: #666666; font-size: 14px;">
+                              You'll receive a separate email with instructions to set your password, or you can request one from the login page.
+                            </p>
+                          `}
+                        </div>
+                        
+                        <!-- Step 2: Verify Email -->
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px;">
+                          <h3 style="margin: 0 0 15px 0; color: #333333; font-size: 18px;">
+                            <span style="background: #764ba2; color: white; padding: 2px 8px; border-radius: 50%; margin-right: 10px;">2</span>
+                            Verify Your Email
+                          </h3>
+                          ${verificationLink ? `
+                            <p style="margin: 0 0 15px 0; color: #666666; font-size: 14px;">
+                              Then, verify your email address to unlock all features:
+                            </p>
+                            <table role="presentation" style="margin: 0;">
+                              <tr>
+                                <td style="border-radius: 6px; background: #764ba2;">
+                                  <a href="${verificationLink}"
+                                     target="_blank"
+                                     style="display: inline-block; padding: 12px 24px; color: #ffffff; font-size: 14px; font-weight: bold; text-decoration: none; border-radius: 6px;">
+                                    Verify Email
+                                  </a>
+                                </td>
+                              </tr>
+                            </table>
+                          ` : `
+                            <p style="margin: 0; color: #666666; font-size: 14px;">
+                              After setting your password and logging in, you can request email verification from your account settings.
+                            </p>
+                          `}
+                        </div>
+                        
+                        ${verificationLink ? `
+                          <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;">
+                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 13px; font-weight: bold;">
+                              Can't click the buttons?
+                            </p>
+                            <p style="margin: 0 0 10px 0; color: #856404; font-size: 12px;">
+                              Verification link:
+                              <span style="word-break: break-all; font-size: 11px;">${verificationLink}</span>
+                            </p>
+                            ${passwordResetLink ? `
+                              <p style="margin: 0; color: #856404; font-size: 12px;">
+                                Password reset link:
+                                <span style="word-break: break-all; font-size: 11px;">${passwordResetLink}</span>
+                              </p>
+                            ` : ''}
+                          </div>
+                        ` : ''}
+                        
+                        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eeeeee;">
+                        
+                        <p style="margin: 0; color: #999999; font-size: 14px; line-height: 1.5;">
+                          These links will expire in 24 hours. If you didn't create an account with IrisMapper,
+                          you can safely ignore this email.
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding: 30px; text-align: center; background-color: #f8f9fa; border-radius: 0 0 8px 8px;">
+                        <p style="margin: 0 0 10px 0; color: #999999; font-size: 12px;">
+                          Need help? Contact us at support@irismapper.com
+                        </p>
+                        <p style="margin: 0; color: #999999; font-size: 12px;">
+                          © 2025 IrisMapper. All rights reserved.
+                        </p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </body>
+          </html>
+        `
+      };
+      
+      // Send the SINGLE combined email
+      await sgMail.send(combinedMsg);
+      console.log(`✅ Combined welcome email sent to: ${customer.email}`);
+      
     } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
+      console.error('Failed to send welcome email:', emailError);
+      // Reset the flag if email failed
+      await db.collection('users').doc(userRecord.uid).update({
+        verificationEmailSent: false
+      });
     }
     
     console.log(`New user created and subscription activated: ${customer.email}`);
