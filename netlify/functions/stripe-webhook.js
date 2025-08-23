@@ -189,8 +189,19 @@ async function handleCheckoutComplete(session) {
         ...userData
       });
       
-      // Note: Welcome email will be sent from success.html when user clicks "Start Using" button
-      // This provides better UX - user gets email exactly when they need it
+      // Send email verification using Firebase's built-in system
+      try {
+        const verificationLink = await admin.auth().generateEmailVerificationLink(
+          customer.email,
+          {
+            url: 'https://irismapper.com/login'
+          }
+        );
+        console.log(`✅ Email verification sent to: ${customer.email}`);
+      } catch (emailError) {
+        console.error('Failed to send verification email:', emailError);
+      }
+      
       console.log(`User account created successfully: ${customer.email}`);
       
       console.log(`New user created and subscription activated: ${customer.email}`);
