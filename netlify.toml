@@ -4,6 +4,10 @@
 
 [functions]
   node_bundler = "esbuild"
+  external_node_modules = ["@sendgrid/mail"]
+  
+[functions."stripe-webhook"]
+  external_node_modules = ["@sendgrid/mail"]
 
 [[headers]]
   for = "/*"
