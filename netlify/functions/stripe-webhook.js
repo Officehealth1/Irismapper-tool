@@ -117,17 +117,34 @@ async function updateSubscription(subscription) {
       try {
         // Check if user already has email verified
         const userData = userDoc.data();
+        console.log(`User data for ${customer.email}:`, { emailVerified: userData.emailVerified, uid: userData.uid });
+        
         if (!userData.emailVerified) {
           console.log(`Sending email verification to: ${customer.email}`);
           
-          const verificationLink = await admin.auth().generateEmailVerificationLink(
-            customer.email,
-            {
-              url: 'https://irismapper.com/login'
+          // Get the Firebase user to check their verification status
+          try {
+            const firebaseUser = await admin.auth().getUserByEmail(customer.email);
+            console.log(`Firebase user verification status:`, { emailVerified: firebaseUser.emailVerified, uid: firebaseUser.uid });
+            
+            if (!firebaseUser.emailVerified) {
+              const verificationLink = await admin.auth().generateEmailVerificationLink(
+                customer.email,
+                {
+                  url: 'https://irismapper.com/login'
+                }
+              );
+              
+              console.log(`✅ Email verification link generated for: ${customer.email}`);
+              console.log(`Verification link: ${verificationLink}`);
+            } else {
+              console.log(`User ${customer.email} already verified in Firebase Auth`);
             }
-          );
-          
-          console.log(`✅ Email verification sent to: ${customer.email}`);
+          } catch (authError) {
+            console.error(`Error checking Firebase Auth user:`, authError);
+          }
+        } else {
+          console.log(`User ${customer.email} already marked as verified in Firestore`);
         }
       } catch (emailError) {
         console.error('Failed to send verification email:', emailError);
