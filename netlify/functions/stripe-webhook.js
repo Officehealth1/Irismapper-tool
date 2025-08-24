@@ -5,9 +5,7 @@ const sgMail = require('@sendgrid/mail');
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// Event deduplication cache
-const processedEvents = new Set();
-const EVENT_CACHE_DURATION = 60000; // 1 minute
+// Event deduplication now handled via Firestore collections
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -165,19 +163,25 @@ exports.handler = async (event) => {
     };
   }
 
-  // Deduplicate events
+  // Check if this Stripe event has already been processed
   const eventId = stripeEvent.id;
-  if (processedEvents.has(eventId)) {
-    console.log(`Duplicate event ${eventId} - skipping`);
+  const eventCheck = await db.collection('processed_stripe_events').doc(eventId).get();
+  
+  if (eventCheck.exists) {
+    console.log(`Event ${eventId} already processed - skipping`);
     return {
       statusCode: 200,
       body: JSON.stringify({ received: true, duplicate: true })
     };
   }
   
-  // Add to cache and clean old entries
-  processedEvents.add(eventId);
-  setTimeout(() => processedEvents.delete(eventId), EVENT_CACHE_DURATION);
+  // Mark this event as being processed (with TTL for cleanup)
+  const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  await db.collection('processed_stripe_events').doc(eventId).set({
+    processedAt: admin.firestore.FieldValue.serverTimestamp(),
+    eventType: stripeEvent.type,
+    expiresAt: twentyFourHoursFromNow
+  });
 
   // Handle the event
   try {
@@ -224,6 +228,26 @@ exports.handler = async (event) => {
 
 async function updateSubscription(subscription) {
   const customer = await stripe.customers.retrieve(subscription.customer);
+  
+  // For new subscriptions, check if we've already processed this subscription creation
+  if (subscription.status === 'trialing' || subscription.status === 'active') {
+    const subCheck = await db.collection('processed_subscriptions').doc(subscription.id).get();
+    
+    if (subCheck.exists) {
+      console.log(`Subscription ${subscription.id} creation already processed, skipping new user flow`);
+      // Continue with regular update flow below
+    } else {
+      // Mark this subscription as processed for new user creation
+      const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await db.collection('processed_subscriptions').doc(subscription.id).set({
+        processedAt: admin.firestore.FieldValue.serverTimestamp(),
+        customerId: customer.id,
+        customerEmail: customer.email,
+        status: subscription.status,
+        expiresAt: twentyFourHoursFromNow
+      });
+    }
+  }
   
   // Find user by Stripe customer ID or email
   let userQuery = await db.collection('users')
@@ -282,9 +306,16 @@ async function updateSubscription(subscription) {
       }
     }
   } else {
-    // If user doesn't exist, create them (fallback from checkout.session.completed)
-    console.log(`Creating new user for subscription: ${customer.email}`);
-    await handleNewSubscriptionUser(customer, subscription);
+    // If user doesn't exist, check if this subscription was already processed for user creation
+    const subCheck = await db.collection('processed_subscriptions').doc(subscription.id).get();
+    
+    if (!subCheck.exists && (subscription.status === 'trialing' || subscription.status === 'active')) {
+      // Only create user if subscription hasn't been processed yet
+      console.log(`Creating new user for subscription: ${customer.email}`);
+      await handleNewSubscriptionUser(customer, subscription);
+    } else {
+      console.log(`Subscription ${subscription.id} already processed for user creation or not in active state, skipping user creation`);
+    }
   }
 }
 
@@ -663,6 +694,14 @@ async function handleNewSubscriptionUser(customer, subscription) {
 // Handle successful checkout to create/update user and send verification immediately
 async function handleCheckoutCompleted(session) {
   try {
+    // Check if this session has already been processed
+    const sessionCheck = await db.collection('processed_sessions').doc(session.id).get();
+    
+    if (sessionCheck.exists) {
+      console.log(`Session ${session.id} already processed, skipping`);
+      return;
+    }
+    
     // Get customer email from session
     let email = session.customer_details?.email || session.customer_email;
     let customerId = session.customer;
@@ -673,6 +712,15 @@ async function handleCheckoutCompleted(session) {
         email = email || customer.email;
       }
     }
+    
+    // Mark this session as being processed
+    const twentyFourHoursFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await db.collection('processed_sessions').doc(session.id).set({
+      processedAt: admin.firestore.FieldValue.serverTimestamp(),
+      email: email,
+      customerId: customerId,
+      expiresAt: twentyFourHoursFromNow
+    });
 
     // Get subscription info if present
     let subscription = null;
