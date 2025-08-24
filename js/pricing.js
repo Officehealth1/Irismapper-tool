@@ -6,13 +6,13 @@ const stripe = Stripe(STRIPE_PUBLIC_KEY);
 const pricing = {
     practitioner: {
         monthly: { price: 10, id: 'price_1Ryl4vFqKKPQ6G55rwaBOdT0' },
-        yearly: { price: 80, id: 'price_1Ryl8PFqKKPQ6G557x2YEQMq', savings: '£40 saved' },
-        '2year': { price: 120, id: 'price_1Ryl8PFqKKPQ6G55oFWQXZhi', savings: '£120 saved' }
+        yearly: { price: 100, id: 'price_1Ryl8PFqKKPQ6G557x2YEQMq', savings: '£20 saved' },
+        '2year': { price: 170, id: 'price_1Ryl8PFqKKPQ6G55oFWQXZhi', savings: '£70 saved' }
     },
     clinic: {
         monthly: { price: 30, id: 'price_1Ryl7FFqKKPQ6G55VaLmEhM1' },
-        yearly: { price: 160, id: 'price_1Ryl7FFqKKPQ6G55wlwJItIO', savings: '£200 saved' },
-        '2year': { price: 240, id: 'price_1Ryl7FFqKKPQ6G55Qww2Rxpx', savings: '£480 saved' }
+        yearly: { price: 300, id: 'price_1Ryl7FFqKKPQ6G55wlwJItIO', savings: '£60 saved' },
+        '2year': { price: 450, id: 'price_1Ryl7FFqKKPQ6G55Qww2Rxpx', savings: '£270 saved' }
     }
 };
 
