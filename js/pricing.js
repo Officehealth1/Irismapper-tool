@@ -231,6 +231,167 @@ function resetModalButton() {
     startTrialBtn.textContent = 'Start Free Trial';
 }
 
+// COMPREHENSIVE CTA HANDLING
+
+// CTA Elements
+const heroTrialBtn = document.getElementById('heroTrialBtn');
+const heroDemoBtn = document.getElementById('heroDemoBtn');
+const videoCta = document.getElementById('videoCta');
+const socialProofCta = document.getElementById('socialProofCta');
+const featuresCta = document.getElementById('featuresCta');
+const faqCta = document.getElementById('faqCta');
+const resultsCta = document.getElementById('resultsCta');
+const supportCta = document.getElementById('supportCta');
+const mobileTrialBtn = document.getElementById('mobileTrialBtn');
+
+// Video thumbnails
+const videoThumbnails = document.querySelectorAll('.video-thumbnail');
+
+// Contact form
+const contactForm = document.getElementById('contactForm');
+
+// CTA Landing Functions
+function openEmailModal(source) {
+    console.log(`CTA clicked from: ${source}`);
+    emailModal.classList.add('show');
+    emailInput.focus();
+}
+
+function scrollToPricing(highlight = false) {
+    const pricingSection = document.getElementById('pricing-section');
+    pricingSection.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'center'
+    });
+    
+    if (highlight) {
+        const priceCard = document.querySelector('.price-card');
+        priceCard.classList.add('highlight-glow');
+        setTimeout(() => {
+            priceCard.classList.remove('highlight-glow');
+        }, 2000);
+    }
+}
+
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
+}
+
+// CTA Event Handlers
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Hero CTAs
+    if (heroTrialBtn) {
+        heroTrialBtn.addEventListener('click', () => openEmailModal('hero_primary'));
+    }
+    
+    if (heroDemoBtn) {
+        heroDemoBtn.addEventListener('click', () => scrollToSection('demo-section'));
+    }
+    
+    // Video Section CTAs
+    if (videoCta) {
+        videoCta.addEventListener('click', () => scrollToPricing(true));
+    }
+    
+    // Video thumbnails (placeholder - would integrate with actual video player)
+    videoThumbnails.forEach(thumbnail => {
+        thumbnail.addEventListener('click', () => {
+            const videoType = thumbnail.dataset.video;
+            console.log(`Playing video: ${videoType}`);
+            // Placeholder for video player integration
+            alert(`Video player would open here for: ${videoType}`);
+        });
+    });
+    
+    // Social Proof CTA
+    if (socialProofCta) {
+        socialProofCta.addEventListener('click', () => scrollToPricing(true));
+    }
+    
+    // Features CTA
+    if (featuresCta) {
+        featuresCta.addEventListener('click', () => openEmailModal('features'));
+    }
+    
+    // FAQ CTA
+    if (faqCta) {
+        faqCta.addEventListener('click', () => scrollToPricing(false));
+    }
+    
+    // Results CTA
+    if (resultsCta) {
+        resultsCta.addEventListener('click', () => openEmailModal('results'));
+    }
+    
+    // Support CTA
+    if (supportCta) {
+        supportCta.addEventListener('click', () => openEmailModal('support'));
+    }
+    
+    // Mobile Sticky CTA
+    if (mobileTrialBtn) {
+        mobileTrialBtn.addEventListener('click', () => openEmailModal('mobile_sticky'));
+    }
+    
+    // Contact Form Handler
+    if (contactForm) {
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(contactForm);
+            const submitBtn = contactForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending...';
+                
+                // Placeholder for actual form submission
+                console.log('Contact form submitted:', Object.fromEntries(formData));
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                alert('Message sent successfully! We\'ll respond within 24 hours.');
+                contactForm.reset();
+                
+            } catch (error) {
+                console.error('Contact form error:', error);
+                alert('Failed to send message. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    }
+    
+    // Mobile sticky CTA visibility
+    const mobileCta = document.getElementById('mobileCta');
+    if (mobileCta) {
+        let isVisible = false;
+        
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const shouldShow = scrolled > 500 && window.innerWidth <= 768;
+            
+            if (shouldShow && !isVisible) {
+                mobileCta.style.display = 'block';
+                isVisible = true;
+            } else if (!shouldShow && isVisible) {
+                mobileCta.style.display = 'none';
+                isVisible = false;
+            }
+        });
+    }
+});
+
 // Test mode indicator
 if (STRIPE_PUBLIC_KEY.includes('test')) {
     const testBadge = document.createElement('div');
