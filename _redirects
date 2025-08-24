@@ -12,6 +12,7 @@
 /forgot-password /forgot-password.html 200
 /reset-password /reset-password.html 200
 /setup-password /setup-password.html 200
+/verify-email /verify-email.html 200
 
 # Redirect root to pricing page for new visitors
 / /pricing 302

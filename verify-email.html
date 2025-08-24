@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Verify Email - Iris Mapper Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <link rel="stylesheet" href="css/login.css">
+    <style>
+        .verification-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 40px;
+        }
+        
+        .verification-icon.loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        .verification-icon.success {
+            background: linear-gradient(135deg, #0dc5a1 0%, #0aa08b 100%);
+            color: white;
+        }
+        
+        .verification-icon.error {
+            background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+            color: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.95); }
+        }
+        
+        .spinner-verification {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4A90E2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .countdown {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        
+        .secondary-btn {
+            background: transparent;
+            color: #4A90E2;
+            border: 2px solid #4A90E2;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+        
+        .secondary-btn:hover {
+            background: #4A90E2;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="header">
+                <img src="grids/watermark.png" alt="IrisLAB" class="logo">
+                <h1 id="mainTitle">Email Verification</h1>
+                <p class="subtitle" id="subtitle">Verifying your email address...</p>
+            </div>
+
+            <!-- Verification Status Display -->
+            <div id="verificationContent" style="text-align: center; padding: 20px;">
+                <!-- Loading State -->
+                <div id="loadingState">
+                    <div class="verification-icon loading">
+                        <div class="spinner-verification"></div>
+                    </div>
+                    <p style="color: #666; margin-top: 20px;">Please wait while we verify your email...</p>
+                </div>
+
+                <!-- Success State (hidden initially) -->
+                <div id="successState" style="display: none;">
+                    <div class="verification-icon success">
+                        ✓
+                    </div>
+                    <h2 style="color: #0dc5a1; margin: 20px 0;">Email Verified Successfully!</h2>
+                    <p id="successMessage" style="color: #666; margin-bottom: 10px;"></p>
+                    <p class="countdown" id="countdown">Redirecting to login in 3 seconds...</p>
+                    <div class="action-buttons">
+                        <button class="login-btn" id="continueBtn">
+                            Continue to Login
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error State (hidden initially) -->
+                <div id="errorState" style="display: none;">
+                    <div class="verification-icon error">
+                        ✕
+                    </div>
+                    <h2 style="color: #d32f2f; margin: 20px 0;">Verification Failed</h2>
+                    <p id="errorMessage" style="color: #666; margin-bottom: 20px;"></p>
+                    <div class="action-buttons">
+                        <button class="login-btn" id="retryBtn">
+                            Request New Verification Email
+                        </button>
+                        <a href="/login" class="secondary-btn">
+                            Go to Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="trust-badges">
+                <p>🔒 Secure verification</p>
+                <p>✉️ Check your inbox</p>
+                <p>⚡ Instant activation</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+    <!-- Email Verification Logic -->
+    <script src="js/verify-email.js"></script>
+</body>
+</html>
