@@ -30,10 +30,15 @@ async function sendVerificationEmail(email) {
     
     while (retries < maxRetries) {
       try {
-        verificationLink = await admin.auth().generateEmailVerificationLink(
+        const firebaseVerifyLink = await admin.auth().generateEmailVerificationLink(
           email,
           { url: 'https://irismapper.com/login' }
         );
+        
+        // Extract oobCode and create custom branded verification link
+        const verifyUrl = new URL(firebaseVerifyLink);
+        const verifyOobCode = verifyUrl.searchParams.get('oobCode');
+        verificationLink = `https://irismapper.com/verify-email?mode=verifyEmail&oobCode=${verifyOobCode}`;
         break; // Success, exit loop
       } catch (error) {
         if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
@@ -459,10 +464,15 @@ async function handleNewSubscriptionUser(customer, subscription) {
       // Try to generate both links
       try {
         // Try verification link with rate limit handling
-        verificationLink = await admin.auth().generateEmailVerificationLink(
+        const firebaseVerifyLink = await admin.auth().generateEmailVerificationLink(
           customer.email,
           { url: 'https://irismapper.com/login' }
         );
+        
+        // Extract oobCode and create custom branded verification link
+        const verifyUrl = new URL(firebaseVerifyLink);
+        const verifyOobCode = verifyUrl.searchParams.get('oobCode');
+        verificationLink = `https://irismapper.com/verify-email?mode=verifyEmail&oobCode=${verifyOobCode}`;
         console.log(`✅ Verification link generated for ${customer.email}`);
       } catch (error) {
         if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
@@ -475,11 +485,26 @@ async function handleNewSubscriptionUser(customer, subscription) {
       // Only generate password reset if user is new or needs reset
       if (!userAlreadyExisted || !existingDoc.exists) {
         try {
-          // Create a direct link to our custom password setup page with the email
-          passwordResetLink = `https://irismapper.com/setup-password?email=${encodeURIComponent(customer.email)}&new=true`;
-          console.log(`✅ Password setup link generated for ${customer.email}`);
+          // Generate a secure token for password setup
+          const crypto = require('crypto');
+          const setupToken = crypto.randomBytes(32).toString('hex');
+          
+          // Store token in Firestore with expiration
+          const tokenData = {
+            email: customer.email,
+            used: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+            type: 'password_setup'
+          };
+          
+          await db.collection('auth_tokens').doc(setupToken).set(tokenData);
+          
+          // Create secure link with token
+          passwordResetLink = `https://irismapper.com/setup-password?token=${setupToken}`;
+          console.log(`✅ Secure password setup token generated for ${customer.email}`);
         } catch (error) {
-          console.error('Error generating password setup link:', error);
+          console.error('Error generating password setup token:', error);
         }
       }
       

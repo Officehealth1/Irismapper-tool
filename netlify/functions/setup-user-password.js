@@ -11,6 +11,8 @@ if (!admin.apps.length) {
   });
 }
 
+const db = admin.firestore();
+
 exports.handler = async (event, context) => {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -21,7 +23,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    const { email, password } = JSON.parse(event.body);
+    const { email, password, token } = JSON.parse(event.body);
 
     // Validate input
     if (!email || !password) {
@@ -39,6 +41,20 @@ exports.handler = async (event, context) => {
     }
 
     console.log(`Setting up password for user: ${email}`);
+    
+    // If token is provided, validate and mark as used
+    if (token) {
+      const tokenDoc = await db.collection('auth_tokens').doc(token).get();
+      
+      if (tokenDoc.exists && !tokenDoc.data().used) {
+        // Mark token as used
+        await db.collection('auth_tokens').doc(token).update({
+          used: true,
+          usedAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        console.log('Token marked as used');
+      }
+    }
 
     try {
       // Get the user by email
