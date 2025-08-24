@@ -27,24 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // For custom verification page, redirect to login page which handles Firebase verification
-    // This page serves as a branded intermediary
-    console.log('Redirecting to login for Firebase verification...');
+    // Perform actual verification on this page instead of redirecting
+    console.log('Starting email verification...');
+    subtitle.textContent = 'Verifying your email address...';
     
-    // Build the redirect URL with all parameters
-    const redirectUrl = `/login?mode=${mode}&oobCode=${oobCode}${apiKey ? `&apiKey=${apiKey}` : ''}${continueUrl ? `&continueUrl=${encodeURIComponent(continueUrl)}` : ''}`;
-    
-    // Show brief loading message then redirect
-    subtitle.textContent = 'Redirecting to complete verification...';
-    
-    setTimeout(() => {
-        window.location.href = redirectUrl;
-    }, 500);
+    // Auto-verify on page load
+    verifyEmail();
 
-    // The rest of the functions below are kept for potential future use
-    // but won't be called since we redirect immediately
-    
-    /* 
     // Continue button handler
     continueBtn.addEventListener('click', () => {
         window.location.href = '/login';
@@ -61,16 +50,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Main verification function
     async function verifyEmail() {
         try {
-            console.log('Starting email verification...');
+            console.log('Starting email verification with oobCode:', oobCode.substring(0, 10) + '...');
+            
+            // First check the action code without applying it
+            const info = await firebase.auth().checkActionCode(oobCode);
+            const email = info.data.email;
+            console.log('Action code is valid for email:', email);
             
             // Apply the email verification code
             await firebase.auth().applyActionCode(oobCode);
-            
-            // Get info about the action code
-            const info = await firebase.auth().checkActionCode(oobCode);
-            const email = info.data.email;
-            
-            console.log(`Email verified successfully for: ${email}`);
+            console.log('Email verification applied successfully');
             
             // Show success state
             showSuccess(email);
@@ -80,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
         } catch (error) {
             console.error('Email verification failed:', error);
+            console.error('Error details:', error.code, error.message);
             handleVerificationError(error);
         }
     }
@@ -164,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Countdown and redirect
     function startCountdown() {
-        let seconds = 3;
+        let seconds = 5;
         
         const countdownInterval = setInterval(() => {
             seconds--;
@@ -183,5 +173,4 @@ document.addEventListener('DOMContentLoaded', function() {
             retryBtn.click();
         }
     });
-    */
 });
