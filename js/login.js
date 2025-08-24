@@ -45,11 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/pricing';
     });
 
-    // Forgot password
-    forgotPasswordLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleForgotPassword();
-    });
+    // Forgot password - now handled by direct link to /forgot-password page
+    // No JavaScript needed since it's a regular navigation link
 
     // Close error modal
     closeErrorModal.addEventListener('click', () => {
@@ -109,24 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle forgot password
-    async function handleForgotPassword() {
-        const email = emailInput.value.trim();
-        
-        if (!email) {
-            showError('Please enter your email address first, then click "Forgot your password?"');
-            emailInput.focus();
-            return;
-        }
-
-        try {
-            await firebase.auth().sendPasswordResetEmail(email);
-            showError('Password reset email sent! Check your inbox and follow the instructions.', false);
-        } catch (error) {
-            console.error('Password reset error:', error);
-            showError(getErrorMessage(error.code));
-        }
-    }
+    // Forgot password functionality moved to dedicated /forgot-password page
 
     // Show/hide loading state
     function showLoading(loading) {
