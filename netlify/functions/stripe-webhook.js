@@ -475,22 +475,11 @@ async function handleNewSubscriptionUser(customer, subscription) {
       // Only generate password reset if user is new or needs reset
       if (!userAlreadyExisted || !existingDoc.exists) {
         try {
-          const firebaseResetLink = await admin.auth().generatePasswordResetLink(
-            customer.email,
-            { url: 'https://irismapper.com/login' }
-          );
-          
-          // Extract the oobCode from Firebase link and create custom branded link
-          const url = new URL(firebaseResetLink);
-          const oobCode = url.searchParams.get('oobCode');
-          passwordResetLink = `https://irismapper.com/reset-password?mode=resetPassword&oobCode=${oobCode}`;
-          console.log(`✅ Password reset link generated for ${customer.email}`);
+          // Create a direct link to our custom password setup page with the email
+          passwordResetLink = `https://irismapper.com/setup-password?email=${encodeURIComponent(customer.email)}&new=true`;
+          console.log(`✅ Password setup link generated for ${customer.email}`);
         } catch (error) {
-          if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
-            console.log(`⚠️ Rate limited on password reset link for ${customer.email}`);
-          } else {
-            console.error('Error generating password reset link:', error);
-          }
+          console.error('Error generating password setup link:', error);
         }
       }
       
