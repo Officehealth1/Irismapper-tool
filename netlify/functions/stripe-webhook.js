@@ -35,10 +35,8 @@ async function sendVerificationEmail(email) {
           { url: 'https://irismapper.com/login' }
         );
         
-        // Extract oobCode and create custom branded verification link
-        const verifyUrl = new URL(firebaseVerifyLink);
-        const verifyOobCode = verifyUrl.searchParams.get('oobCode');
-        verificationLink = `https://irismapper.com/verify-email?mode=verifyEmail&oobCode=${verifyOobCode}`;
+        // Use Firebase's verification link directly (can't be customized)
+        verificationLink = firebaseVerifyLink;
         break; // Success, exit loop
       } catch (error) {
         if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
@@ -469,10 +467,8 @@ async function handleNewSubscriptionUser(customer, subscription) {
           { url: 'https://irismapper.com/login' }
         );
         
-        // Extract oobCode and create custom branded verification link
-        const verifyUrl = new URL(firebaseVerifyLink);
-        const verifyOobCode = verifyUrl.searchParams.get('oobCode');
-        verificationLink = `https://irismapper.com/verify-email?mode=verifyEmail&oobCode=${verifyOobCode}`;
+        // Use Firebase's verification link directly (can't be customized)
+        verificationLink = firebaseVerifyLink;
         console.log(`✅ Verification link generated for ${customer.email}`);
       } catch (error) {
         if (error.message?.includes('TOO_MANY_ATTEMPTS')) {
