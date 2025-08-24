@@ -66,42 +66,37 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showLoading(true);
             
-            // For new users, try to create account first
-            try {
-                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                console.log('New account created:', userCredential.user.email);
-                showSuccessAndRedirect();
-            } catch (createError) {
-                if (createError.code === 'auth/email-already-in-use') {
-                    // Account already exists, try to sign in with the password
-                    try {
-                        await firebase.auth().signInWithEmailAndPassword(email, password);
-                        console.log('Signed in to existing account');
-                        showSuccessAndRedirect();
-                    } catch (signInError) {
-                        if (signInError.code === 'auth/wrong-password') {
-                            // Account exists but wrong password - send reset link
-                            showMessage('Account Exists', 
-                                'An account with this email already exists but has a different password. We\'ve sent you a password reset link.',
-                                false);
-                            
-                            // Send password reset email
-                            await firebase.auth().sendPasswordResetEmail(email, {
-                                url: 'https://irismapper.com/login',
-                                handleCodeInApp: false
-                            });
-                        } else {
-                            throw signInError;
-                        }
-                    }
-                } else {
-                    throw createError;
+            // Call the Netlify function to set up the password
+            const response = await fetch('/.netlify/functions/setup-user-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                console.log('Password set successfully');
+                
+                // Sign in with the custom token
+                if (data.customToken) {
+                    await firebase.auth().signInWithCustomToken(data.customToken);
+                    console.log('Signed in with custom token');
                 }
+                
+                showSuccessAndRedirect();
+            } else {
+                throw new Error(data.error || 'Failed to set password');
             }
             
         } catch (error) {
             console.error('Password setup error:', error);
-            showMessage('Error', getErrorMessage(error.code), true);
+            showMessage('Error', error.message || 'Failed to set up password. Please try again.', true);
         } finally {
             showLoading(false);
         }
@@ -155,23 +150,6 @@ document.addEventListener('DOMContentLoaded', function() {
         messageModal.classList.remove('show');
     }
 
-    // Get user-friendly error messages
-    function getErrorMessage(errorCode) {
-        switch (errorCode) {
-            case 'auth/email-already-in-use':
-                return 'An account with this email already exists. Please sign in instead.';
-            case 'auth/invalid-email':
-                return 'Please enter a valid email address.';
-            case 'auth/weak-password':
-                return 'Password is too weak. Please choose a stronger password.';
-            case 'auth/network-request-failed':
-                return 'Network error. Please check your internet connection and try again.';
-            case 'auth/too-many-requests':
-                return 'Too many attempts. Please try again later.';
-            default:
-                return 'Unable to set up your password. Please try again or contact support.';
-        }
-    }
 
     // Close modal on escape key
     document.addEventListener('keydown', (e) => {
