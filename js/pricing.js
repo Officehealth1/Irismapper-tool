@@ -90,7 +90,11 @@ function updateDisplay() {
     const plan = pricing[currentTier][currentPeriod];
     
     // Update plan name
-    planName.textContent = `${currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} Plan`;
+    const tierNames = {
+        'practitioner': 'Solo Practitioner Plan',
+        'clinic': 'Growing Clinic Plan'
+    };
+    planName.textContent = tierNames[currentTier];
     
     // Update price
     priceAmount.textContent = plan.price;
@@ -240,9 +244,18 @@ const videoCta = document.getElementById('videoCta');
 const socialProofCta = document.getElementById('socialProofCta');
 const featuresCta = document.getElementById('featuresCta');
 const faqCta = document.getElementById('faqCta');
+const headerCtaBtn = document.querySelector('.nav-cta-btn');
 const resultsCta = document.getElementById('resultsCta');
 const supportCta = document.getElementById('supportCta');
 const mobileTrialBtn = document.getElementById('mobileTrialBtn');
+const testimonialDemo = document.getElementById('testimonialDemo');
+const faqContact = document.getElementById('faqContact');
+const resultsDemo = document.getElementById('resultsDemo');
+
+// FAQ inline CTAs
+const faqInlineCtas = document.querySelectorAll('[data-source^="faq_"]');
+// Results inline CTAs
+const resultsInlineCtas = document.querySelectorAll('[data-source^="results_"]');
 
 // Video thumbnails
 const videoThumbnails = document.querySelectorAll('.video-thumbnail');
@@ -286,6 +299,25 @@ function scrollToSection(sectionId) {
 // CTA Event Handlers
 document.addEventListener('DOMContentLoaded', () => {
     
+    // Header Navigation Links - Smooth Scrolling with offset for fixed header
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+                const headerOffset = 80; // Height of fixed header
+                const elementPosition = targetElement.getBoundingClientRect().top;
+                const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+                
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    });
+    
     // Hero CTAs
     if (heroTrialBtn) {
         heroTrialBtn.addEventListener('click', () => openEmailModal('hero_primary'));
@@ -293,6 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (heroDemoBtn) {
         heroDemoBtn.addEventListener('click', () => scrollToSection('demo-section'));
+    }
+    
+    if (headerCtaBtn) {
+        headerCtaBtn.addEventListener('click', () => openEmailModal('header_cta'));
     }
     
     // Video Section CTAs
@@ -312,7 +348,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Social Proof CTA
     if (socialProofCta) {
-        socialProofCta.addEventListener('click', () => scrollToPricing(true));
+        socialProofCta.addEventListener('click', () => openEmailModal('social_proof'));
+    }
+    
+    if (testimonialDemo) {
+        testimonialDemo.addEventListener('click', () => scrollToSection('demo-section'));
     }
     
     // Features CTA
@@ -322,13 +362,43 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // FAQ CTA
     if (faqCta) {
-        faqCta.addEventListener('click', () => scrollToPricing(false));
+        faqCta.addEventListener('click', () => openEmailModal('faq_final'));
     }
     
-    // Results CTA
-    if (resultsCta) {
-        resultsCta.addEventListener('click', () => openEmailModal('results'));
+    if (faqContact) {
+        faqContact.addEventListener('click', () => scrollToSection('contact'));
     }
+    
+    // FAQ inline CTAs
+    faqInlineCtas.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const source = btn.getAttribute('data-source');
+            if (source === 'faq_trial') {
+                openEmailModal('faq_trial');
+            } else if (source === 'faq_clinic') {
+                scrollToPricing(true);
+            }
+        });
+    });
+    
+    // Results CTAs
+    if (resultsCta) {
+        resultsCta.addEventListener('click', () => openEmailModal('results_main'));
+    }
+    
+    if (resultsDemo) {
+        resultsDemo.addEventListener('click', () => scrollToSection('demo-section'));
+    }
+    
+    // Results inline CTAs
+    resultsInlineCtas.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const source = btn.getAttribute('data-source');
+            if (source === 'results_efficiency') {
+                openEmailModal('results_efficiency');
+            }
+        });
+    });
     
     // Support CTA
     if (supportCta) {
@@ -338,6 +408,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mobile Sticky CTA
     if (mobileTrialBtn) {
         mobileTrialBtn.addEventListener('click', () => openEmailModal('mobile_sticky'));
+    }
+    
+    // New Contact Section Button Handlers
+    const bookSetupCall = document.getElementById('bookSetupCall');
+    const chatWithUs = document.getElementById('chatWithUs');
+    
+    if (bookSetupCall) {
+        bookSetupCall.addEventListener('click', () => {
+            // Open calendar booking system (placeholder)
+            console.log('Opening calendar booking system...');
+            window.open('https://calendly.com/irismapper-support', '_blank');
+        });
+    }
+    
+    if (chatWithUs) {
+        chatWithUs.addEventListener('click', () => {
+            // Open live chat system (placeholder)
+            console.log('Opening live chat...');
+            // Replace with actual chat widget or mailto
+            window.location.href = 'mailto:team@irislab.com?subject=Live%20Chat%20Request';
+        });
     }
     
     // Contact Form Handler
