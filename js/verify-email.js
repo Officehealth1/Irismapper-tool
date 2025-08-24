@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
     const oobCode = urlParams.get('oobCode');
+    const apiKey = urlParams.get('apiKey');
     const continueUrl = urlParams.get('continueUrl');
 
     // Security check - must have valid parameters
@@ -25,10 +26,25 @@ document.addEventListener('DOMContentLoaded', function() {
         showError('Invalid verification link', 'This verification link is invalid or incomplete. Please check your email for the correct link.');
         return;
     }
+    
+    // For custom verification page, redirect to login page which handles Firebase verification
+    // This page serves as a branded intermediary
+    console.log('Redirecting to login for Firebase verification...');
+    
+    // Build the redirect URL with all parameters
+    const redirectUrl = `/login?mode=${mode}&oobCode=${oobCode}${apiKey ? `&apiKey=${apiKey}` : ''}${continueUrl ? `&continueUrl=${encodeURIComponent(continueUrl)}` : ''}`;
+    
+    // Show brief loading message then redirect
+    subtitle.textContent = 'Redirecting to complete verification...';
+    
+    setTimeout(() => {
+        window.location.href = redirectUrl;
+    }, 500);
 
-    // Auto-verify on page load
-    verifyEmail();
-
+    // The rest of the functions below are kept for potential future use
+    // but won't be called since we redirect immediately
+    
+    /* 
     // Continue button handler
     continueBtn.addEventListener('click', () => {
         window.location.href = '/login';
@@ -167,4 +183,5 @@ document.addEventListener('DOMContentLoaded', function() {
             retryBtn.click();
         }
     });
+    */
 });
