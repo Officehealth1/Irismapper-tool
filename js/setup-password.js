@@ -18,17 +18,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get URL parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const emailFromUrl = urlParams.get('email');
-    const isNew = urlParams.get('new');
+    const tokenFromUrl = urlParams.get('token');
+    let currentToken = tokenFromUrl;
+    let validatedEmail = null;
 
-    if (!emailFromUrl) {
-        showMessage('Error', 'Invalid setup link. Please contact support.', true);
+    // Validate token on page load
+    if (!tokenFromUrl) {
+        showMessage('Error', 'Invalid or missing setup link. Please use the link from your email.', true);
+        emailInput.parentElement.style.display = 'none';
+        setupPasswordForm.style.display = 'none';
         return;
     }
 
-    // Pre-fill email and update display
-    emailInput.value = emailFromUrl;
-    emailDisplay.textContent = `Create password for ${emailFromUrl}`;
+    // Validate token with backend
+    validateToken();
 
     // Form submission
     setupPasswordForm.addEventListener('submit', async (e) => {
@@ -40,6 +43,43 @@ document.addEventListener('DOMContentLoaded', function() {
     closeModal.addEventListener('click', () => {
         hideModal();
     });
+
+    // Validate token function
+    async function validateToken() {
+        try {
+            showLoading(true);
+            btnText.textContent = 'Validating...';
+            
+            const response = await fetch('/.netlify/functions/validate-setup-token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ token: tokenFromUrl })
+            });
+
+            const data = await response.json();
+            
+            if (data.valid) {
+                validatedEmail = data.email;
+                emailInput.value = data.email;
+                emailDisplay.textContent = `Create password for ${data.email}`;
+                setupPasswordForm.style.display = 'block';
+                passwordInput.focus();
+                showLoading(false);
+                btnText.textContent = 'Create Account & Sign In';
+            } else {
+                setupPasswordForm.style.display = 'none';
+                showMessage('Invalid Link', data.error || 'This setup link is invalid or has expired.', true);
+                showLoading(false);
+            }
+        } catch (error) {
+            console.error('Token validation error:', error);
+            setupPasswordForm.style.display = 'none';
+            showMessage('Error', 'Unable to validate setup link. Please try again.', true);
+            showLoading(false);
+        }
+    }
 
     // Handle password setup
     async function handlePasswordSetup() {
@@ -74,7 +114,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     email: email,
-                    password: password
+                    password: password,
+                    token: currentToken
                 })
             });
 
