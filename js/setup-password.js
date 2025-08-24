@@ -66,49 +66,38 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             showLoading(true);
             
-            // Check if user already has an account
-            firebase.auth().onAuthStateChanged(async (currentUser) => {
-                if (currentUser) {
-                    // User is already signed in, just update password
-                    await currentUser.updatePassword(password);
-                    console.log('Password updated for existing user');
-                    showSuccessAndRedirect();
-                    return;
-                }
-                
-                // Try to sign in first to see if account exists
-                try {
-                    await firebase.auth().signInWithEmailAndPassword(email, password);
-                    console.log('User already has this password set');
-                    showSuccessAndRedirect();
-                } catch (signInError) {
-                    if (signInError.code === 'auth/wrong-password' || signInError.code === 'auth/user-not-found') {
-                        // Account exists but wrong password, or no account - create new one
-                        try {
-                            const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
-                            console.log('New account created:', userCredential.user.email);
-                            showSuccessAndRedirect();
-                        } catch (createError) {
-                            if (createError.code === 'auth/email-already-in-use') {
-                                // Account exists, send password reset instead
-                                showMessage('Account Exists', 
-                                    'An account with this email already exists. We\'ve sent you a password reset link to set up your password.',
-                                    false);
-                                
-                                // Send password reset email
-                                await firebase.auth().sendPasswordResetEmail(email, {
-                                    url: 'https://irismapper.com/login',
-                                    handleCodeInApp: false
-                                });
-                            } else {
-                                throw createError;
-                            }
+            // For new users, try to create account first
+            try {
+                const userCredential = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                console.log('New account created:', userCredential.user.email);
+                showSuccessAndRedirect();
+            } catch (createError) {
+                if (createError.code === 'auth/email-already-in-use') {
+                    // Account already exists, try to sign in with the password
+                    try {
+                        await firebase.auth().signInWithEmailAndPassword(email, password);
+                        console.log('Signed in to existing account');
+                        showSuccessAndRedirect();
+                    } catch (signInError) {
+                        if (signInError.code === 'auth/wrong-password') {
+                            // Account exists but wrong password - send reset link
+                            showMessage('Account Exists', 
+                                'An account with this email already exists but has a different password. We\'ve sent you a password reset link.',
+                                false);
+                            
+                            // Send password reset email
+                            await firebase.auth().sendPasswordResetEmail(email, {
+                                url: 'https://irismapper.com/login',
+                                handleCodeInApp: false
+                            });
+                        } else {
+                            throw signInError;
                         }
-                    } else {
-                        throw signInError;
                     }
+                } else {
+                    throw createError;
                 }
-            });
+            }
             
         } catch (error) {
             console.error('Password setup error:', error);
