@@ -512,7 +512,7 @@ async function handleNewSubscriptionUser(customer, subscription) {
                                   <table role="presentation" style="margin: 0;">
                                     <tr>
                                       <td align="center" style="background: #4A90E2; border-radius: 6px;">
-                                        <a href="${passwordResetLink}"
+                                        <a href="https://irismapper.com/forgot-password?email=${encodeURIComponent(customer.email)}"
                                            target="_blank"
                                            style="display: inline-block; padding: 12px 32px; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px;">
                                           Create Password →
