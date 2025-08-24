@@ -15,11 +15,30 @@
     <link rel="stylesheet" href="css/pricing.css">
 </head>
 <body>
+    <!-- Header Navigation -->
+    <header class="site-header">
+        <div class="header-container">
+            <div class="header-left">
+                <img src="grids/watermark.png" alt="IRISLAB" class="header-logo">
+            </div>
+            <nav class="header-nav">
+                <a href="#demo-section" class="nav-link">Features</a>
+                <a href="#pricing-section" class="nav-link">Pricing</a>
+                <a href="#demo-section" class="nav-link">Demo</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+            <div class="header-right">
+                <a href="login" class="nav-link login-link">Login</a>
+                <button class="nav-cta-btn">Start Free Trial</button>
+            </div>
+        </div>
+    </header>
+
     <div class="pricing-container">
         <!-- Hero Welcome Section -->
         <div class="hero-section">
             <div class="hero-container">
-                <img src="grids/watermark.png" alt="Iris Mapper Pro" class="logo">
                 <h1 class="hero-title">Transform Your Practice with Professional Iris Analysis</h1>
                 <p class="hero-subtitle">Join thousands of practitioners worldwide who've revolutionised their iris analysis with our advanced mapping tools</p>
                 
@@ -48,8 +67,10 @@
         <!-- Demo Videos Section -->
         <div class="demo-section" id="demo-section">
             <div class="section-container">
-                <h2 class="section-title">Discover the Power of Professional Iris Analysis</h2>
-                <p class="section-subtitle">Watch how IrisMapper Pro can elevate your practice in just minutes</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">See Your Success in Action 🎬</h2>
+                    <p class="section-subtitle">Join practitioners who've transformed their practice with these game-changing features – watch and be amazed!</p>
+                </div>
                 
                 <div class="video-grid">
                     <div class="video-card">
@@ -58,9 +79,16 @@
                             <div class="play-overlay">
                                 <div class="play-button">▶</div>
                             </div>
+                            <span class="video-duration">90 sec</span>
                         </div>
-                        <h3>✨ Complete Feature Tour</h3>
-                        <p>Discover every powerful feature in 90 seconds - from mapping to export</p>
+                        <div class="video-content">
+                            <h3>Master Every Feature Instantly</h3>
+                            <p>Your complete guide to professional iris analysis – from upload to stunning export in just 90 seconds</p>
+                            <div class="video-badges">
+                                <span class="video-badge">✨ Quick Start</span>
+                                <span class="video-badge">🎯 All Features</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="video-card">
                         <div class="video-thumbnail" data-video="practitioner">
@@ -68,14 +96,22 @@
                             <div class="play-overlay">
                                 <div class="play-button">▶</div>
                             </div>
+                            <span class="video-duration">2 min</span>
                         </div>
-                        <h3>🎓 Real Practitioner Success</h3>
-                        <p>See how Dr. Sarah uses IrisMapper Pro to enhance patient consultations</p>
+                        <div class="video-content">
+                            <h3>Real Results, Real Practice</h3>
+                            <p>Watch Dr. Sarah double her consultation efficiency while delivering stunning visual reports patients love</p>
+                            <div class="video-badges">
+                                <span class="video-badge">🎓 Pro Tips</span>
+                                <span class="video-badge">📈 +40% Efficiency</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="video-cta">
-                    <button class="cta-secondary" id="videoCta">Ready to Transform Your Practice?</button>
+                    <button class="cta-primary" id="videoCta">Yes! Show Me How to Transform My Practice</button>
+                    <p class="cta-supporting">Join 1,000+ practitioners already seeing results</p>
                 </div>
             </div>
         </div>
@@ -83,55 +119,95 @@
         <!-- Testimonials Section #1 -->
         <div class="testimonials-section testimonials-trust">
             <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">🌟 Loved by Practitioners Worldwide</h2>
-                    <p class="section-subtitle">Join a thriving community of professionals who've transformed their practice</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">Real Practitioners, Incredible Results 🌟</h2>
+                    <p class="section-subtitle">See why over 1,000+ professionals worldwide have made IrisMapper Pro their go-to solution for transforming their practice</p>
                 </div>
                 
                 <div class="testimonials-grid">
                     <div class="testimonial-card">
                         <div class="testimonial-content">
-                            <div class="quote-icon">💬</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">💬</div>
+                                <div class="testimonial-badge practice-revolution">Practice Revolution</div>
+                            </div>
                             <p>"IrisMapper Pro has completely revolutionised my practice! The accuracy and intuitive design make every consultation a joy. My patients are amazed by the professional presentations."</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Dr. Sarah Mitchell</strong>
                                     <span>Certified Iridologist, UK</span>
                                 </div>
-                                <div class="rating">⭐⭐⭐⭐⭐</div>
+                                <div class="testimonial-results">
+                                    <div class="rating">⭐⭐⭐⭐⭐</div>
+                                    <span class="result-metric">Complete Practice Transformation</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="testimonial-card">
                         <div class="testimonial-content">
-                            <div class="quote-icon">💬</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">💬</div>
+                                <div class="testimonial-badge clinic-essential">Clinic Essential</div>
+                            </div>
                             <p>"Outstanding! The variety of mapping systems and stunning export quality make this absolutely essential for any serious practitioner. Game-changer for my clinic."</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Marcus Weber</strong>
                                     <span>Holistic Health Practitioner, Germany</span>
                                 </div>
-                                <div class="rating">⭐⭐⭐⭐⭐</div>
+                                <div class="testimonial-results">
+                                    <div class="rating">⭐⭐⭐⭐⭐</div>
+                                    <span class="result-metric">8 Mapping Systems Mastered</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="testimonial-card">
                         <div class="testimonial-content">
-                            <div class="quote-icon">💬</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">💬</div>
+                                <div class="testimonial-badge perfect-precision">Perfect Precision</div>
+                            </div>
                             <p>"Finally found the perfect tool! The precision and professional quality I've been searching for. IrisMapper Pro exceeds every expectation - simply brilliant."</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Elena Rodriguez</strong>
                                     <span>Natural Health Consultant, Spain</span>
                                 </div>
-                                <div class="rating">⭐⭐⭐⭐⭐</div>
+                                <div class="testimonial-results">
+                                    <div class="rating">⭐⭐⭐⭐⭐</div>
+                                    <span class="result-metric">Professional Quality Achieved</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="testimonial-cta">
-                    <button class="cta-secondary" id="socialProofCta">Join Our Thriving Community</button>
+                <!-- Strategic CTA Placement -->
+                <div class="testimonial-cta-enhanced">
+                    <div class="cta-content">
+                        <h3 class="cta-headline">Ready to Join These Success Stories?</h3>
+                        <p class="cta-subtext">Start your 14-day free trial and discover why practitioners worldwide choose IrisMapper Pro</p>
+                        <div class="cta-buttons">
+                            <button class="cta-primary" id="socialProofCta">Start My Practice Transformation</button>
+                            <button class="cta-secondary" id="testimonialDemo">See How It Works</button>
+                        </div>
+                        <div class="social-proof-stats">
+                            <div class="proof-item">
+                                <strong>1,000+</strong>
+                                <span>Active Practitioners</span>
+                            </div>
+                            <div class="proof-item">
+                                <strong>5⭐</strong>
+                                <span>Average Rating</span>
+                            </div>
+                            <div class="proof-item">
+                                <strong>14 Days</strong>
+                                <span>Free Trial</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -139,262 +215,513 @@
         <!-- Enhanced Pricing Section -->
         <div class="pricing-section" id="pricing-section">
             <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">🚀 Choose Your Success Plan</h2>
-                    <p class="section-subtitle">Start your transformation today with a risk-free 14-day trial - no credit card needed!</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">Choose Your Perfect Practice Plan 🚀</h2>
+                    <p class="section-subtitle">Start transforming your practice today with a risk-free 14-day trial. No credit card needed – just instant access to professional iris analysis tools that practitioners worldwide love.</p>
+                    
+                    <!-- Plan Selection Controls -->
+                    <div class="pricing-controls">
+                        <!-- Plan Type Toggle -->
+                        <div class="control-group">
+                            <label class="control-label">Choose your practice size:</label>
+                            <div class="plan-toggle">
+                                <button class="toggle-btn active" data-tier="practitioner">Solo Practitioner</button>
+                                <button class="toggle-btn" data-tier="clinic">Growing Clinic</button>
+                            </div>
+                        </div>
+
+                        <!-- Billing Period Toggle -->
+                        <div class="control-group">
+                            <label class="control-label">Save more with longer plans:</label>
+                            <div class="billing-toggle">
+                                <button class="period-btn active" data-period="monthly">Monthly</button>
+                                <button class="period-btn" data-period="yearly">Yearly <span class="badge">Save £20</span></button>
+                                <button class="period-btn" data-period="2year">2 Years <span class="badge">Save £70</span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Pricing Display -->
+                <div class="pricing-display">
+                    <div class="price-card">
+                        <div class="plan-header">
+                            <h2 id="plan-name">Solo Practitioner Plan</h2>
+                            <div class="plan-badge">Most Popular</div>
+                        </div>
+                        
+                        <div class="price-section">
+                            <div class="price">
+                                <span class="currency">£</span>
+                                <span id="price-amount">10</span>
+                                <span id="price-period">/month</span>
+                            </div>
+                            <div class="savings" id="savings-text" style="display: none;"></div>
+                            <p class="price-description">Everything you need to revolutionize your practice</p>
+                        </div>
+                        
+                        <div class="features-section">
+                            <div class="features" id="practitioner-features">
+                                <h3>🎯 What You Get:</h3>
+                                <ul>
+                                    <li><span class="feature-icon">✨</span>8 Professional iris mapping systems</li>
+                                    <li><span class="feature-icon">📸</span>Unlimited image uploads & storage</li>
+                                    <li><span class="feature-icon">🎨</span>Advanced image adjustments & filters</li>
+                                    <li><span class="feature-icon">📊</span>Export stunning high-resolution reports</li>
+                                    <li><span class="feature-icon">👥</span>Save & manage unlimited patient records</li>
+                                    <li><span class="feature-icon">🎁</span>14-day free trial (no card needed)</li>
+                                    <li><span class="feature-icon">🚪</span>Cancel anytime with one click</li>
+                                </ul>
+                            </div>
+
+                            <div class="features" id="clinic-features" style="display: none;">
+                                <h3>🏥 Everything in Solo Practitioner plus:</h3>
+                                <ul>
+                                    <li><span class="feature-icon">👥</span>Multi-user access (up to 5 practitioners)</li>
+                                    <li><span class="feature-icon">🏢</span>Custom clinic branding & logos</li>
+                                    <li><span class="feature-icon">⚡</span>Priority VIP support</li>
+                                    <li><span class="feature-icon">📦</span>Bulk export & batch processing</li>
+                                    <li><span class="feature-icon">📈</span>Advanced practice analytics</li>
+                                    <li><span class="feature-icon">🔗</span>API access (coming soon)</li>
+                                    <li><span class="feature-icon">🎁</span>14-day free trial (no card needed)</li>
+                                    <li><span class="feature-icon">🚪</span>Cancel anytime with one click</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="cta-section">
+                            <button class="subscribe-btn" id="subscribe-btn">
+                                🚀 Start My Free Trial Now
+                            </button>
+                            
+                            <p class="trial-info">
+                                <span class="highlight">🎁 No credit card required</span> • Full access for 14 days • Join 1,000+ practitioners
+                            </p>
+                            
+                            <!-- Trust Badges Integration -->
+                            <div class="trust-badges">
+                                <div class="trust-item">
+                                    <span class="trust-icon">🔒</span>
+                                    <span>Bank-level security</span>
+                                </div>
+                                <div class="trust-item">
+                                    <span class="trust-icon">💳</span>
+                                    <span>All major cards</span>
+                                </div>
+                                <div class="trust-item">
+                                    <span class="trust-icon">✨</span>
+                                    <span>Cancel anytime</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-        <!-- Plan Type Toggle -->
-        <div class="plan-toggle">
-            <button class="toggle-btn active" data-tier="practitioner">Practitioner</button>
-            <button class="toggle-btn" data-tier="clinic">Clinic</button>
         </div>
-
-        <!-- Billing Period Toggle -->
-        <div class="billing-toggle">
-            <button class="period-btn active" data-period="monthly">Monthly</button>
-            <button class="period-btn" data-period="yearly">Yearly <span class="badge">Save 17%</span></button>
-            <button class="period-btn" data-period="2year">2 Years <span class="badge">Save up to 38%</span></button>
-        </div>
-
-        <!-- Pricing Display -->
-        <div class="pricing-display">
-            <div class="price-card">
-                <h2 id="plan-name">Practitioner Plan</h2>
-                <div class="price">
-                    <span class="currency">£</span>
-                    <span id="price-amount">10</span>
-                    <span id="price-period">/month</span>
-                </div>
-                <div class="savings" id="savings-text" style="display: none;"></div>
-                
-                <div class="features" id="practitioner-features">
-                    <h3>Everything you need:</h3>
-                    <ul>
-                        <li>All iris mapping templates</li>
-                        <li>Unlimited image uploads</li>
-                        <li>Advanced image adjustments</li>
-                        <li>Export high-resolution images</li>
-                        <li>Save & manage patient records</li>
-                        <li>14-day free trial</li>
-                        <li>Cancel anytime</li>
-                    </ul>
-                </div>
-
-                <div class="features" id="clinic-features" style="display: none;">
-                    <h3>Everything in Practitioner plus:</h3>
-                    <ul>
-                        <li>Multi-user access (up to 5 users)</li>
-                        <li>Clinic branding options</li>
-                        <li>Priority support</li>
-                        <li>Bulk export features</li>
-                        <li>Advanced analytics</li>
-                        <li>API access (coming soon)</li>
-                        <li>14-day free trial</li>
-                        <li>Cancel anytime</li>
-                    </ul>
-                </div>
-
-                <button class="subscribe-btn" id="subscribe-btn">
-                    Start 14-Day Free Trial
-                </button>
-                
-                <div class="additional-cta">
-                    <button class="cta-tertiary" id="featuresCta">Unlock All Features Now</button>
-                </div>
-
-                <p class="trial-info">🎁 No credit card required for trial</p>
-            </div>
-        </div>
-
-        <div class="trust-badges">
-            <div class="trust-item">
-                <span class="trust-icon">🔒</span>
-                <span>Bank-level security via Stripe</span>
-            </div>
-            <div class="trust-item">
-                <span class="trust-icon">💳</span>
-                <span>All major cards welcome</span>
-            </div>
-            <div class="trust-item">
-                <span class="trust-icon">✨</span>
-                <span>Change or cancel anytime</span>
-            </div>
-        </div>
-        
-        </div> <!-- Close pricing section -->
 
         <!-- Enhanced FAQ Section -->
-        <div class="faq-section">
+        <div class="faq-section" id="faq">
             <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">❓ Your Questions, Answered</h2>
-                    <p class="section-subtitle">Everything you need to know to get started with confidence</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">Get All Your Answers Right Here ❓</h2>
+                    <p class="section-subtitle">We've answered the most common questions from practitioners worldwide. Still curious? We're here to help!</p>
                 </div>
                 
-                <div class="faq">
-                    <details>
-                        <summary>🎁 What's included in my free trial?</summary>
-                        <p>You get the full VIP experience! Complete access to all 8 professional iris mapping systems, unlimited image uploads, all premium tools, and export features. No credit card needed - just pure exploration for 14 amazing days!</p>
-                    </details>
+                <!-- FAQ Categories -->
+                <div class="faq-categories">
+                    <!-- Getting Started Category -->
+                    <div class="faq-category">
+                        <h3 class="category-title">🚀 Getting Started</h3>
+                        <div class="faq-group">
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">🎁 What's included in my free trial?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>You get the full VIP experience! Complete access to all 8 professional iris mapping systems, unlimited image uploads, all premium tools, and export features. No credit card needed - just pure exploration for 14 amazing days!</p>
+                                    <div class="faq-cta-inline">
+                                        <button class="cta-primary cta-small" data-source="faq_trial">Start My Free Trial Now</button>
+                                    </div>
+                                </div>
+                            </details>
 
-                    <details>
-                        <summary>🔄 Can I easily switch plans later?</summary>
-                        <p>Absolutely! You're in complete control. Upgrade or downgrade whenever you want with just one click. Changes take effect at your next billing cycle, so you're never locked in.</p>
-                    </details>
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">🗺️ Which professional mapping systems do I get?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>You receive all 8 world-class systems: Angerer, Bourdiol, IrisLAB, Jaussas, Jensen, and Roux mapping systems in multiple languages. It's like having a complete iris analysis library!</p>
+                                    <div class="feature-highlight">
+                                        <span class="highlight-badge">✨ Professional Grade</span>
+                                        <span class="highlight-badge">🌍 Multi-Language</span>
+                                        <span class="highlight-badge">📚 Complete Library</span>
+                                    </div>
+                                </div>
+                            </details>
 
-                    <details>
-                        <summary>⚡ What makes Clinic different from Practitioner?</summary>
-                        <p>Clinic is perfect for growing practices! You get everything in Practitioner PLUS multi-user access (up to 5 team members), priority VIP support, and advanced practice management features.</p>
-                    </details>
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">📱 Do I need to download anything?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>Nope! Zero downloads, zero installations, zero headaches. IrisMapper Pro runs beautifully in any web browser on Windows, Mac, tablets, and phones. Just click and go!</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
 
-                    <details>
-                        <summary>🗺️ Which professional mapping systems do I get?</summary>
-                        <p>You receive all 8 world-class systems: Angerer, Bourdiol, IrisLAB, Jaussas, Jensen, and Roux mapping systems in multiple languages. It's like having a complete iris analysis library!</p>
-                    </details>
+                    <!-- Plans & Billing Category -->
+                    <div class="faq-category">
+                        <h3 class="category-title">💳 Plans & Billing</h3>
+                        <div class="faq-group">
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">🔄 Can I easily switch plans later?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>Absolutely! You're in complete control. Upgrade or downgrade whenever you want with just one click. Changes take effect at your next billing cycle, so you're never locked in.</p>
+                                </div>
+                            </details>
 
-                    <details>
-                        <summary>🚪 How simple is it to cancel?</summary>
-                        <p>Super simple! Cancel anytime with one click from your dashboard. You'll keep full access until your billing period ends - no hassles, no complications, no hard feelings!</p>
-                    </details>
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">⚡ What makes Clinic different from Practitioner?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>Clinic is perfect for growing practices! You get everything in Practitioner PLUS multi-user access (up to 5 team members), priority VIP support, and advanced practice management features.</p>
+                                    <div class="faq-cta-inline">
+                                        <button class="cta-secondary cta-small" data-source="faq_clinic">View Clinic Features</button>
+                                    </div>
+                                </div>
+                            </details>
 
-                    <details>
-                        <summary>🔐 How secure is my patient data?</summary>
-                        <p>Fort Knox level security! We use enterprise-grade SSL encryption and secure cloud storage. Your data is completely private - we never share, sell, or peek at your information. Promise!</p>
-                    </details>
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">🚪 How simple is it to cancel?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>Super simple! Cancel anytime with one click from your dashboard. You'll keep full access until your billing period ends - no hassles, no complications, no hard feelings!</p>
+                                </div>
+                            </details>
 
-                    <details>
-                        <summary>📱 Do I need to download anything?</summary>
-                        <p>Nope! Zero downloads, zero installations, zero headaches. IrisMapper Pro runs beautifully in any web browser on Windows, Mac, tablets, and phones. Just click and go!</p>
-                    </details>
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">💰 What's your money-back guarantee?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>We're so confident you'll love IrisMapper Pro that we offer a generous 30-day money-back guarantee on annual and 2-year plans. Your success is our success!</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
 
-                    <details>
-                        <summary>💰 What's your money-back guarantee?</summary>
-                        <p>We're so confident you'll love IrisMapper Pro that we offer a generous 30-day money-back guarantee on annual and 2-year plans. Your success is our success!</p>
-                    </details>
+                    <!-- Security & Technical Category -->
+                    <div class="faq-category">
+                        <h3 class="category-title">🔐 Security & Technical</h3>
+                        <div class="faq-group">
+                            <details class="faq-item">
+                                <summary class="faq-question">
+                                    <span class="question-text">🔐 How secure is my patient data?</span>
+                                    <span class="expand-icon">⌄</span>
+                                </summary>
+                                <div class="faq-answer">
+                                    <p>Fort Knox level security! We use enterprise-grade SSL encryption and secure cloud storage. Your data is completely private - we never share, sell, or peek at your information. Promise!</p>
+                                    <div class="security-badges">
+                                        <span class="security-badge">🔒 SSL Encrypted</span>
+                                        <span class="security-badge">☁️ Secure Cloud</span>
+                                        <span class="security-badge">🛡️ GDPR Compliant</span>
+                                    </div>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="faq-cta">
-                    <button class="cta-secondary" id="faqCta">All Clear? Start Your Success Story</button>
+                <!-- Final CTA Section -->
+                <div class="faq-final-cta">
+                    <div class="final-cta-content">
+                        <h3 class="final-cta-headline">Still Have Questions?</h3>
+                        <p class="final-cta-text">Try IrisMapper Pro risk-free for 14 days and discover why practitioners worldwide choose us</p>
+                        <div class="final-cta-buttons">
+                            <button class="cta-primary" id="faqCta">Start My Risk-Free Trial</button>
+                            <button class="cta-tertiary" id="faqContact">Ask Our Team</button>
+                        </div>
+                        <p class="final-cta-guarantee">🎁 No credit card required • 30-day money-back guarantee</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Testimonials Section #2 - Results Focus -->
+        <!-- Results-Driven Success Stories Section -->
         <div class="testimonials-section testimonials-results">
             <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">📈 Amazing Results from Amazing Practitioners</h2>
-                    <p class="section-subtitle">Discover the incredible transformations happening in practices worldwide</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">Proven Results That Speak Volumes 📈</h2>
+                    <p class="section-subtitle">Real practitioners sharing the measurable impact IrisMapper Pro has made on their practices – these results could be yours too</p>
+                    
+                    <!-- Live Activity Indicator -->
+                    <div class="live-activity">
+                        <div class="activity-indicator">
+                            <span class="pulse-dot"></span>
+                            <span class="activity-text">47 practitioners started their free trial this week</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="testimonials-grid">
-                    <div class="testimonial-card">
+                <div class="results-testimonials-grid">
+                    <div class="result-testimonial-card featured">
+                        <div class="result-badge">Top Performer</div>
                         <div class="testimonial-content">
-                            <div class="quote-icon">🚀</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">🚀</div>
+                                <div class="result-highlight">
+                                    <span class="big-metric">+40%</span>
+                                    <span class="metric-desc">Efficiency Gained</span>
+                                </div>
+                            </div>
                             <p>"Absolute game-changer! IrisMapper Pro boosted my practice efficiency by an incredible 40%. The time I save on analysis means I can help more clients and grow my business. Pure magic!"</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Dr. James Thompson</strong>
                                     <span>Naturopathic Doctor, Canada</span>
                                 </div>
-                                <div class="result-metric">
-                                    <span class="metric-value">+40%</span>
-                                    <span class="metric-label">Efficiency Boost</span>
-                                </div>
+                                <div class="author-avatar">JT</div>
+                            </div>
+                            <div class="inline-cta">
+                                <button class="cta-primary cta-small" data-source="results_efficiency">Get My 40% Efficiency Boost</button>
                             </div>
                         </div>
                     </div>
-                    <div class="testimonial-card">
+                    
+                    <div class="result-testimonial-card">
+                        <div class="result-badge time-saver">Time Saver</div>
                         <div class="testimonial-content">
-                            <div class="quote-icon">⏰</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">⏰</div>
+                                <div class="result-highlight">
+                                    <span class="big-metric">3 hrs</span>
+                                    <span class="metric-desc">Saved Weekly</span>
+                                </div>
+                            </div>
                             <p>"I'm saving 3 precious hours every week! The stunning export quality has completely elevated my client presentations. My practice has never looked more professional!"</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Maria Gonzalez</strong>
                                     <span>Holistic Health Coach, Mexico</span>
                                 </div>
-                                <div class="result-metric">
-                                    <span class="metric-value">3hrs</span>
-                                    <span class="metric-label">Saved Weekly</span>
-                                </div>
+                                <div class="author-avatar">MG</div>
                             </div>
                         </div>
                     </div>
-                    <div class="testimonial-card">
+                    
+                    <div class="result-testimonial-card">
+                        <div class="result-badge accuracy">Precision Pro</div>
                         <div class="testimonial-content">
-                            <div class="quote-icon">🎯</div>
+                            <div class="testimonial-header">
+                                <div class="quote-icon">🎯</div>
+                                <div class="result-highlight">
+                                    <span class="big-metric">+25%</span>
+                                    <span class="metric-desc">Accuracy Boost</span>
+                                </div>
+                            </div>
                             <p>"My consultation accuracy increased by 25%! Clients are blown away by the professional visual reports. IrisMapper Pro has transformed how I serve my community."</p>
                             <div class="testimonial-author">
                                 <div class="author-info">
                                     <strong>Dr. Anna Petrov</strong>
                                     <span>Iridologist, Russia</span>
                                 </div>
-                                <div class="result-metric">
-                                    <span class="metric-value">+25%</span>
-                                    <span class="metric-label">Accuracy</span>
-                                </div>
+                                <div class="author-avatar">AP</div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="testimonial-cta">
-                    <button class="cta-secondary" id="resultsCta">Your Success Story Starts Here</button>
+                <!-- Enhanced Results Summary -->
+                <div class="results-summary">
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">1,000+</span>
+                            <span class="stat-label">Practitioners Transformed</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-number">40%</span>
+                            <span class="stat-label">Average Efficiency Gain</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-number">98%</span>
+                            <span class="stat-label">Would Recommend</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Strategic Results CTA -->
+                <div class="results-cta-section">
+                    <div class="results-cta-content">
+                        <h3 class="results-cta-headline">Ready to See These Results in Your Practice?</h3>
+                        <p class="results-cta-text">Join the thousands of practitioners already experiencing breakthrough results with IrisMapper Pro</p>
+                        <div class="results-cta-buttons">
+                            <button class="cta-primary" id="resultsCta">Start My Success Story Today</button>
+                            <button class="cta-secondary" id="resultsDemo">See More Success Stories</button>
+                        </div>
+                        <div class="results-guarantee">
+                            <span class="guarantee-icon">🛡️</span>
+                            <span class="guarantee-text">14-day free trial • 30-day money-back guarantee • No risk, all reward</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Contact/Support Section -->
-        <div class="contact-section">
+        <!-- Enhanced Support & Contact Section -->
+        <div class="contact-section" id="contact">
             <div class="section-container">
-                <div class="section-header">
-                    <h2 class="section-title">💝 We're Here for Your Success</h2>
-                    <p class="section-subtitle">Exceptional support every step of your journey - because your success is our mission</p>
+                <div class="section-header-left">
+                    <h2 class="section-title">We're Your Success Partners 💝</h2>
+                    <p class="section-subtitle">Join thousands of practitioners who've discovered exceptional support makes all the difference. We're here to help you succeed from day one.</p>
+                    
+                    <!-- Support Promise -->
+                    <div class="support-promise">
+                        <div class="promise-badge">
+                            <span class="promise-icon">🏆</span>
+                            <span class="promise-text">Award-winning support rated 4.9/5 by practitioners</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="contact-content">
-                    <div class="support-info">
-                        <div class="support-item">
-                            <div class="support-icon">📧</div>
-                            <div class="support-details">
-                                <strong>Lightning-Fast Email Support</strong>
-                                <p>Get expert help within 24 hours - usually much sooner!</p>
+                <div class="support-grid">
+                    <!-- Support Channels -->
+                    <div class="support-channels">
+                        <h3 class="channels-title">🚀 Get Help Your Way</h3>
+                        <div class="channels-list">
+                            <div class="support-item priority">
+                                <div class="support-icon">⚡</div>
+                                <div class="support-details">
+                                    <strong>Priority VIP Support</strong>
+                                    <p>Skip the queue - get expert help within 2 hours, not days</p>
+                                    <div class="support-meta">
+                                        <span class="meta-badge">Response: 2hrs</span>
+                                        <span class="meta-badge">Rating: 4.9/5</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="support-item">
-                            <div class="support-icon">💬</div>
-                            <div class="support-details">
-                                <strong>Friendly Live Chat</strong>
-                                <p>Instant answers during business hours - real humans, real help</p>
+                            
+                            <div class="support-item">
+                                <div class="support-icon">💬</div>
+                                <div class="support-details">
+                                    <strong>Live Chat Support</strong>
+                                    <p>Instant answers from real humans who understand iris mapping</p>
+                                    <div class="support-meta">
+                                        <span class="meta-badge online">• Online Now</span>
+                                        <span class="meta-badge">Mon-Fri 9-5 GMT</span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="support-item">
-                            <div class="support-icon">📚</div>
-                            <div class="support-details">
-                                <strong>Complete Learning Library</strong>
-                                <p>Step-by-step guides, video tutorials, and pro tips</p>
+                            
+                            <div class="support-item">
+                                <div class="support-icon">📚</div>
+                                <div class="support-details">
+                                    <strong>Complete Learning Hub</strong>
+                                    <p>Video tutorials, step-by-step guides, and practitioner success stories</p>
+                                    <div class="support-meta">
+                                        <span class="meta-badge">50+ Tutorials</span>
+                                        <span class="meta-badge">24/7 Access</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="support-item">
+                                <div class="support-icon">🎯</div>
+                                <div class="support-details">
+                                    <strong>Practice Setup Assistance</strong>
+                                    <p>Personal onboarding call to get you up and running in minutes</p>
+                                    <div class="support-meta">
+                                        <span class="meta-badge">Free Setup</span>
+                                        <span class="meta-badge">15min Call</span>
+                                    </div>
+                                    <div class="inline-cta-small">
+                                        <button class="cta-primary cta-mini" id="bookSetupCall">Book My Free Setup</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="contact-form-container">
-                        <div class="contact-form">
-                            <h3>✨ Start a Conversation</h3>
-                            <p>Have questions? Ideas? Just want to say hello? We'd love to hear from you!</p>
-                            <form id="contactForm">
-                                <input type="text" placeholder="Your Name" required>
-                                <input type="email" placeholder="Your Email" required>
-                                <textarea placeholder="What's on your mind? We're all ears!" rows="4" required></textarea>
-                                <button type="submit" class="cta-tertiary">Send My Message</button>
+                    <!-- Quick Contact Form -->
+                    <div class="quick-contact">
+                        <div class="contact-card">
+                            <h3 class="contact-title">Got a Quick Question? 💭</h3>
+                            <p class="contact-subtitle">Send us a message and we'll get back to you within 2 hours (usually much faster!)</p>
+                            
+                            <form id="contactForm" class="enhanced-contact-form">
+                                <div class="form-group">
+                                    <input type="text" name="name" placeholder="Your Name" required class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <input type="email" name="email" placeholder="Your Email" required class="form-input">
+                                </div>
+                                <div class="form-group">
+                                    <select name="topic" required class="form-select">
+                                        <option value="">What can we help with?</option>
+                                        <option value="trial">Free Trial Questions</option>
+                                        <option value="technical">Technical Support</option>
+                                        <option value="billing">Billing & Plans</option>
+                                        <option value="training">Training & Setup</option>
+                                        <option value="other">Something Else</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <textarea name="message" placeholder="Tell us more... we're listening! 👂" rows="4" required class="form-textarea"></textarea>
+                                </div>
+                                <button type="submit" class="form-submit-btn">
+                                    <span class="btn-text">Send My Message</span>
+                                    <span class="btn-icon">📨</span>
+                                </button>
                             </form>
+                            
+                            <div class="contact-promise">
+                                <span class="promise-item">✅ No spam, ever</span>
+                                <span class="promise-item">⚡ 2-hour response</span>
+                                <span class="promise-item">🎯 Real human answers</span>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <div class="contact-cta">
-                    <button class="cta-secondary" id="supportCta">Get VIP Support + Free Trial</button>
+                <!-- Primary CTA Section -->
+                <div class="support-cta-section">
+                    <div class="cta-content-large">
+                        <h3 class="cta-headline-large">Ready to Experience Our Award-Winning Support?</h3>
+                        <p class="cta-text-large">Start your free trial and discover why practitioners worldwide love our support as much as our software</p>
+                        <div class="cta-buttons-large">
+                            <button class="cta-primary" id="supportCta">Start Free Trial + Get VIP Support</button>
+                            <button class="cta-secondary" id="chatWithUs">Chat With Our Team Now</button>
+                        </div>
+                        <div class="support-stats">
+                            <div class="stat-highlight">
+                                <span class="stat-number">4.9/5</span>
+                                <span class="stat-label">Support Rating</span>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-highlight">
+                                <span class="stat-number">2hrs</span>
+                                <span class="stat-label">Avg Response</span>
+                            </div>
+                            <div class="stat-divider"></div>
+                            <div class="stat-highlight">
+                                <span class="stat-number">98%</span>
+                                <span class="stat-label">Issues Resolved</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -420,6 +747,60 @@
     <div class="mobile-sticky-cta" id="mobileCta">
         <button class="cta-primary" id="mobileTrialBtn">Start Free Trial</button>
     </div>
+
+    <!-- Minimal Footer -->
+    <footer class="minimal-footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/security">Security</a></li>
+                        <li><a href="/careers">Careers</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="/privacy">Privacy Policy</a></li>
+                        <li><a href="/terms">Terms of Service</a></li>
+                        <li><a href="/cookies">Cookie Policy</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="/help">Help Centre</a></li>
+                        <li><a href="mailto:team@irislab.com">Contact</a></li>
+                        <li><a href="/status">Status</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <ul>
+                        <li><a href="/blog">Blog</a></li>
+                        <li><a href="https://twitter.com/irismapperpro" target="_blank">Twitter</a></li>
+                        <li><a href="https://linkedin.com/company/irislab" target="_blank">LinkedIn</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-legal">
+                    <p>&copy; 2024 IrisLab. All rights reserved.</p>
+                </div>
+                <div class="footer-badges">
+                    <div class="security-badge">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjMwIiB2aWV3Qm94PSIwIDAgMTAwIDMwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjMwIiByeD0iNCIgZmlsbD0iIzI2M0E0MSIvPgo8cGF0aCBkPSJNMTAgMTVMMTUgMjBMMjUgMTAiIHN0cm9rZT0iIzBEQzVBMSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHRleHQgeD0iMzIiIHk9IjEyIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI4IiBmb250LWZhbWlseT0iYXJpYWwsIHNhbnMtc2VyaWYiPjEwMCUgU0VDVVJFPC90ZXh0Pgo8dGV4dCB4PSIzMiIgeT0iMjIiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC43KSIgZm9udC1zaXplPSI2IiBmb250LWZhbWlseT0iYXJpYWwsIHNhbnMtc2VyaWYiPlNTTCBQUk9URUNURUQ8L3RleHQ+Cjwvc3ZnPgo=" alt="SSL Protected">
+                    </div>
+                    <div class="security-badge">
+                        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iMzAiIHZpZXdCb3g9IjAgMCA4MCAzMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjMwIiByeD0iNCIgZmlsbD0iIzI2M0E0MSIvPgo8cGF0aCBkPSJNMTAgMTVMMTUgMjBMMjUgMTAiIHN0cm9rZT0iIzBEQzVBMSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPHRleHQgeD0iMzAiIHk9IjEyIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSI4IiBmb250LWZhbWlseT0iYXJpYWwsIHNhbnMtc2VyaWYiPkdEUFI8L3RleHQ+Cjx0ZXh0IHg9IjMwIiB5PSIyMiIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjcpIiBmb250LXNpemU9IjYiIGZvbnQtZmFtaWx5PSJhcmlhbCwgc2Fucy1zZXJpZiI+Q09NUExJQU5UPC90ZXh0Pgo8L3N2Zz4K" alt="GDPR Compliant">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <!-- Stripe -->
     <script src="https://js.stripe.com/v3/"></script>
