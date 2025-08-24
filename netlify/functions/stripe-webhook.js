@@ -462,57 +462,64 @@ async function handleNewSubscriptionUser(customer, subscription) {
       const combinedMsg = {
         to: customer.email,
         from: process.env.SENDGRID_FROM_EMAIL,
-        subject: userAlreadyExisted ? 'Complete Your IrisMapper Setup' : 'Welcome to IrisMapper - Complete Your Setup',
+        subject: userAlreadyExisted ? 'Activate Your IrisMapper Pro Account' : 'Welcome to IrisMapper Pro - Get Started',
         html: `
           <!DOCTYPE html>
           <html>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
           </head>
-          <body style="margin: 0; padding: 0; background-color: #1c262f; font-family: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            <table role="presentation" style="width: 100%; border-collapse: collapse;">
+          <body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8f9fa;">
               <tr>
                 <td align="center" style="padding: 40px 20px;">
-                  <table role="presentation" style="width: 600px; max-width: 100%; background-color: #ffffff; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+                  <table role="presentation" style="width: 640px; max-width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.08);">
+                    <!-- Header -->
                     <tr>
-                      <td style="padding: 50px 40px; text-align: center; background: linear-gradient(135deg, #1c262f 0%, #2a3b47 100%); border-radius: 12px 12px 0 0;">
-                        <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 300; letter-spacing: 1px;">IrisMapper</h1>
-                        <p style="margin: 15px 0 0 0; color: #0dc5a1; font-size: 16px; font-weight: 400;">
-                          ${userAlreadyExisted ? 'Complete Your Setup' : 'Welcome to Your Journey!'}
+                      <td style="padding: 40px 40px 30px 40px; text-align: center; border-bottom: 1px solid #e9ecef;">
+                        <h1 style="margin: 0; color: #1c262f; font-size: 28px; font-weight: 600; letter-spacing: -0.5px;">IrisMapper</h1>
+                        <p style="margin: 10px 0 0 0; color: #0dc5a1; font-size: 16px; font-weight: 500;">
+                          ${userAlreadyExisted ? '✅ Subscription Activated!' : '✅ Account Created Successfully!'}
                         </p>
                       </td>
                     </tr>
+                    <!-- Body -->
                     <tr>
                       <td style="padding: 40px;">
-                        <h2 style="margin: 0 0 20px 0; color: #1c262f; font-size: 26px; font-weight: 300; letter-spacing: 0.5px;">
-                          ${userAlreadyExisted ? 'Complete Your Account Setup' : 'Welcome! Let\'s Get You Started'}
+                        <h2 style="margin: 0 0 20px 0; color: #1c262f; font-size: 24px; font-weight: 600;">
+                          ${userAlreadyExisted ? 'Activate Your Full Access' : 'Your IrisMapper Pro is Ready!'}
                         </h2>
-                        <p style="margin: 0 0 35px 0; color: #666; font-size: 16px; line-height: 1.6; font-weight: 300;">
+                        <p style="margin: 0 0 30px 0; color: #495057; font-size: 16px; line-height: 1.6;">
                           ${userAlreadyExisted 
-                            ? 'Your subscription is active! Please complete the setup steps below to access all features.' 
-                            : 'Thank you for subscribing to IrisMapper! Your account has been created successfully. Please complete these steps to activate your account:'}
+                            ? 'Your subscription is now active. Complete these quick steps to unlock all professional iris mapping features:' 
+                            : 'Just 2 quick steps to start using professional iris mapping tools:'}
                         </p>
                         
                         ${passwordResetLink ? `
                           <!-- Step 1: Set Password -->
-                          <div style="background-color: #f5f5f5; padding: 25px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #4A90E2;">
-                            <h3 style="margin: 0 0 15px 0; color: #1c262f; font-size: 18px; font-weight: 400; display: flex; align-items: center;">
-                              <span style="background: #4A90E2; color: white; padding: 4px 10px; border-radius: 50%; margin-right: 12px; font-size: 14px; font-weight: 600; min-width: 24px; text-align: center;">1</span>
-                              Set Your Password
-                            </h3>
-                            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
-                              First, create a secure password for your account:
-                            </p>
-                            <table role="presentation" style="margin: 0;">
+                          <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
+                            <table role="presentation" style="width: 100%; border-collapse: collapse;">
                               <tr>
-                                <td style="border-radius: 6px; background: #4A90E2; box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);">
-                                  <a href="${passwordResetLink}"
-                                     target="_blank"
-                                     style="display: inline-block; padding: 14px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; transition: all 0.2s ease;">
-                                    Set Password
-                                  </a>
+                                <td style="width: 36px; vertical-align: top;">
+                                  <div style="width: 32px; height: 32px; background: #4A90E2; color: white; border-radius: 50%; text-align: center; line-height: 32px; font-size: 14px; font-weight: 600;">1</div>
+                                </td>
+                                <td style="padding-left: 16px;">
+                                  <h3 style="margin: 0 0 8px 0; color: #1c262f; font-size: 18px; font-weight: 600;">Create Your Secure Password</h3>
+                                  <p style="margin: 0 0 16px 0; color: #6c757d; font-size: 14px; line-height: 1.5;">
+                                    Set up your account password to protect your data:
+                                  </p>
+                                  <table role="presentation" style="margin: 0;">
+                                    <tr>
+                                      <td align="center" style="background: #4A90E2; border-radius: 6px;">
+                                        <a href="${passwordResetLink}"
+                                           target="_blank"
+                                           style="display: inline-block; padding: 12px 32px; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px;">
+                                          Create Password →
+                                        </a>
+                                      </td>
+                                    </tr>
+                                  </table>
                                 </td>
                               </tr>
                             </table>
@@ -520,71 +527,92 @@ async function handleNewSubscriptionUser(customer, subscription) {
                         ` : ''}
                         
                         <!-- Verify Email Section -->
-                        <div style="background-color: #f5f5f5; padding: 25px; border-radius: 8px; border-left: 4px solid #0dc5a1;">
-                          <h3 style="margin: 0 0 15px 0; color: #1c262f; font-size: 18px; font-weight: 400; display: flex; align-items: center;">
-                            <span style="background: #0dc5a1; color: white; padding: 4px 10px; border-radius: 50%; margin-right: 12px; font-size: 14px; font-weight: 600; min-width: 24px; text-align: center;">
-                              ${passwordResetLink ? '2' : '✓'}
-                            </span>
-                            Verify Your Email
-                          </h3>
-                          ${verificationLink ? `
-                            <p style="margin: 0 0 20px 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
-                              ${passwordResetLink ? 'Then, verify' : 'Please verify'} your email address to unlock all features:
-                            </p>
-                            <table role="presentation" style="margin: 0;">
-                              <tr>
-                                <td style="border-radius: 6px; background: #0dc5a1; box-shadow: 0 2px 8px rgba(13, 197, 161, 0.3);">
-                                  <a href="${verificationLink}"
-                                     target="_blank"
-                                     style="display: inline-block; padding: 14px 28px; color: #ffffff; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 6px; transition: all 0.2s ease;">
-                                    Verify Email
-                                  </a>
-                                </td>
-                              </tr>
-                            </table>
-                          ` : `
-                            <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.5; font-weight: 300;">
-                              After ${passwordResetLink ? 'setting your password and ' : ''}logging in, you can request email verification from your account settings.
-                            </p>
-                          `}
+                        <div style="background-color: #ffffff; padding: 24px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e9ecef;">
+                          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="width: 36px; vertical-align: top;">
+                                <div style="width: 32px; height: 32px; background: #0dc5a1; color: white; border-radius: 50%; text-align: center; line-height: 32px; font-size: 14px; font-weight: 600;">
+                                  ${passwordResetLink ? '2' : '1'}
+                                </div>
+                              </td>
+                              <td style="padding-left: 16px;">
+                                <h3 style="margin: 0 0 8px 0; color: #1c262f; font-size: 18px; font-weight: 600;">Confirm Your Email Address</h3>
+                                ${verificationLink ? `
+                                  <p style="margin: 0 0 16px 0; color: #6c757d; font-size: 14px; line-height: 1.5;">
+                                    Verify your email to unlock all professional features:
+                                  </p>
+                                  <table role="presentation" style="margin: 0;">
+                                    <tr>
+                                      <td align="center" style="background: #0dc5a1; border-radius: 6px;">
+                                        <a href="${verificationLink}"
+                                           target="_blank"
+                                           style="display: inline-block; padding: 12px 32px; color: #ffffff; font-size: 15px; font-weight: 600; text-decoration: none; border-radius: 6px;">
+                                          Verify Email →
+                                        </a>
+                                      </td>
+                                    </tr>
+                                  </table>
+                                ` : `
+                                  <p style="margin: 0; color: #6c757d; font-size: 14px; line-height: 1.5;">
+                                    You can verify your email from your account dashboard after logging in.
+                                  </p>
+                                `}
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        
+                        <!-- Benefits Section -->
+                        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                          <h4 style="margin: 0 0 12px 0; color: #1c262f; font-size: 16px; font-weight: 600;">What you'll get access to:</h4>
+                          <ul style="margin: 0; padding-left: 20px; color: #495057; font-size: 14px; line-height: 1.8;">
+                            <li>Professional iris mapping tools</li>
+                            <li>Multiple iris chart overlays</li>
+                            <li>High-resolution image analysis</li>
+                            <li>Client report generation</li>
+                            <li>Secure cloud storage</li>
+                          </ul>
                         </div>
                         
                         ${(verificationLink || passwordResetLink) ? `
-                          <div style="margin-top: 30px; padding: 20px; background-color: rgba(13, 197, 161, 0.1); border: 1px solid rgba(13, 197, 161, 0.2); border-radius: 8px;">
-                            <p style="margin: 0 0 15px 0; color: #1c262f; font-size: 13px; font-weight: 600;">
-                              Can't click the buttons? Copy these links:
+                          <div style="padding: 16px; background-color: #fff8e1; border: 1px solid #ffecb3; border-radius: 6px; margin-top: 30px;">
+                            <p style="margin: 0 0 12px 0; color: #856404; font-size: 13px; font-weight: 600;">
+                              Having trouble with the buttons?
                             </p>
-                            ${verificationLink ? `
-                              <p style="margin: 0 0 10px 0; color: #666; font-size: 12px; font-weight: 300;">
-                                <strong>Email verification:</strong><br>
-                                <span style="word-break: break-all; font-size: 11px; font-family: monospace; background: #f0f0f0; padding: 4px 6px; border-radius: 3px;">${verificationLink}</span>
+                            <p style="margin: 0; color: #856404; font-size: 12px; line-height: 1.5;">
+                              Copy and paste these links into your browser:
+                            </p>
+                            ${passwordResetLink ? `
+                              <p style="margin: 12px 0 0 0; color: #856404; font-size: 11px;">
+                                <strong>Password setup:</strong><br>
+                                <code style="word-break: break-all; background: #fff; padding: 4px; border-radius: 3px; display: inline-block; margin-top: 4px;">${passwordResetLink}</code>
                               </p>
                             ` : ''}
-                            ${passwordResetLink ? `
-                              <p style="margin: 0; color: #666; font-size: 12px; font-weight: 300;">
-                                <strong>Password reset:</strong><br>
-                                <span style="word-break: break-all; font-size: 11px; font-family: monospace; background: #f0f0f0; padding: 4px 6px; border-radius: 3px;">${passwordResetLink}</span>
+                            ${verificationLink ? `
+                              <p style="margin: 12px 0 0 0; color: #856404; font-size: 11px;">
+                                <strong>Email verification:</strong><br>
+                                <code style="word-break: break-all; background: #fff; padding: 4px; border-radius: 3px; display: inline-block; margin-top: 4px;">${verificationLink}</code>
                               </p>
                             ` : ''}
                           </div>
                         ` : ''}
                         
-                        <hr style="margin: 35px 0; border: none; border-top: 1px solid #e0e0e0;">
-                        
-                        <p style="margin: 0; color: #999; font-size: 13px; line-height: 1.5; font-weight: 300;">
-                          ${(verificationLink || passwordResetLink) ? 'These links will expire in 24 hours. ' : ''}
-                          If you didn't create an account with IrisMapper, you can safely ignore this email.
-                        </p>
                       </td>
                     </tr>
+                    <!-- Footer -->
                     <tr>
-                      <td style="padding: 25px 40px; text-align: center; background-color: #f5f5f5; border-radius: 0 0 12px 12px;">
-                        <p style="margin: 0 0 8px 0; color: #999; font-size: 12px; font-weight: 300;">
-                          Need help? Contact us at <span style="color: #0dc5a1;">support@irismapper.com</span>
+                      <td style="padding: 30px 40px; text-align: center; background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                        <p style="margin: 0 0 8px 0; color: #6c757d; font-size: 13px;">
+                          Questions? Email us at <a href="mailto:support@irismapper.com" style="color: #0dc5a1; text-decoration: none;">support@irismapper.com</a>
                         </p>
-                        <p style="margin: 0; color: #999; font-size: 11px; font-weight: 300;">
-                          © 2025 IrisMapper. All rights reserved.
+                        <p style="margin: 0; color: #adb5bd; font-size: 12px;">
+                          © 2025 IrisMapper Pro. All rights reserved.
                         </p>
+                        ${(verificationLink || passwordResetLink) ? `
+                          <p style="margin: 12px 0 0 0; color: #adb5bd; font-size: 11px;">
+                            Links expire in 24 hours for security reasons.
+                          </p>
+                        ` : ''}
                       </td>
                     </tr>
                   </table>
