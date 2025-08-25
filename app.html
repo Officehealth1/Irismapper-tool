@@ -274,6 +274,108 @@
     
     <!-- Profile Dropdown Functionality -->
     <script>
+        // Custom Modal Functions (needed for profile dropdown)
+        let customModalInstance = null;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize custom modal when DOM is ready
+            const modal = document.getElementById('customModal');
+            if (modal) {
+                customModalInstance = {
+                    modal: modal,
+                    backdrop: modal.querySelector('.custom-modal-backdrop'),
+                    icon: document.getElementById('customModalIcon'),
+                    title: document.getElementById('customModalTitle'),
+                    message: document.getElementById('customModalMessage'),
+                    cancelBtn: document.getElementById('customModalCancel'),
+                    confirmBtn: document.getElementById('customModalConfirm'),
+                    
+                    show: function(options) {
+                        const {
+                            icon = 'ℹ️',
+                            title = 'Confirmation',
+                            message = 'Are you sure?',
+                            confirmText = 'Confirm',
+                            cancelText = 'Cancel',
+                            type = 'primary'
+                        } = options;
+                        
+                        return new Promise((resolve) => {
+                            this.resolve = resolve;
+                            
+                            // Set content
+                            this.icon.textContent = icon;
+                            this.title.textContent = title;
+                            this.message.textContent = message;
+                            this.confirmBtn.textContent = confirmText;
+                            this.cancelBtn.textContent = cancelText;
+                            
+                            // Set button styles
+                            this.confirmBtn.className = `custom-modal-btn custom-modal-btn-${type}`;
+                            this.cancelBtn.className = 'custom-modal-btn custom-modal-btn-secondary';
+                            
+                            // Hide cancel button if no text provided
+                            this.cancelBtn.style.display = cancelText ? 'block' : 'none';
+                            
+                            // Show modal
+                            this.modal.style.display = 'flex';
+                            requestAnimationFrame(() => {
+                                this.modal.classList.add('show');
+                            });
+                            
+                            // Set up button handlers
+                            this.cancelBtn.onclick = () => this.close(false);
+                            this.confirmBtn.onclick = () => this.close(true);
+                            
+                            // Close on backdrop click
+                            this.backdrop.onclick = () => this.close(false);
+                            
+                            // Focus confirm button
+                            setTimeout(() => this.confirmBtn.focus(), 300);
+                        });
+                    },
+                    
+                    close: function(result) {
+                        this.modal.classList.remove('show');
+                        setTimeout(() => {
+                            this.modal.style.display = 'none';
+                            if (this.resolve) {
+                                this.resolve(result);
+                                this.resolve = null;
+                            }
+                        }, 300);
+                    }
+                };
+            }
+        });
+        
+        // Helper functions that use the modal instance
+        window.showConfirmModal = (title, message, confirmText = 'Confirm', icon = '❓') => {
+            if (!customModalInstance) return Promise.resolve(false);
+            return customModalInstance.show({
+                icon, title, message, confirmText,
+                cancelText: 'Cancel', type: 'primary'
+            });
+        };
+        
+        window.showInfoModal = (title, message, actionText = 'Got it', icon = 'ℹ️') => {
+            if (!customModalInstance) return Promise.resolve(true);
+            return customModalInstance.show({
+                icon, title, message,
+                confirmText: actionText, cancelText: '', type: 'primary'
+            });
+        };
+        
+        window.showSuccessModal = (title, message, actionText = 'OK', icon = '✅') => {
+            if (!customModalInstance) return Promise.resolve(true);
+            return customModalInstance.show({
+                icon, title, message,
+                confirmText: actionText, cancelText: 'Close', type: 'success'
+            });
+        };
+    </script>
+    
+    <script>
         // Profile Dropdown Functionality
         document.addEventListener('DOMContentLoaded', function() {
             const profileIcon = document.getElementById('profileIcon');
@@ -440,9 +542,9 @@
             });
             
             // Account Settings (placeholder for now)
-            accountSettings.addEventListener('click', function() {
+            accountSettings.addEventListener('click', async function() {
                 profileDropdown.classList.remove('show');
-                showInfoModal(
+                await showInfoModal(
                     'Coming Soon',
                     'Account settings page is currently under development.\n\nIn the meantime, you can manage your subscription and change your password using the options above.',
                     'Got it',

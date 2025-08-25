@@ -1037,7 +1037,7 @@ function updateHistogram() {
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 }
-            }).catch(error => {
+            }).catch(async (error) => {
                 console.error('Error generating export:', error);
                 progressIndicator.style.display = 'none';
                 await showInfoModal(
