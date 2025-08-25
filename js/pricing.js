@@ -21,15 +21,8 @@ let currentTier = 'practitioner';
 let currentPeriod = 'monthly';
 
 // DOM Elements
-const tierButtons = document.querySelectorAll('.toggle-btn');
 const periodButtons = document.querySelectorAll('.period-btn');
-const planName = document.getElementById('plan-name');
-const priceAmount = document.getElementById('price-amount');
-const pricePeriod = document.getElementById('price-period');
-const savingsText = document.getElementById('savings-text');
-const subscribeBtn = document.getElementById('subscribe-btn');
-const practitionerFeatures = document.getElementById('practitioner-features');
-const clinicFeatures = document.getElementById('clinic-features');
+const pricingCtas = document.querySelectorAll('.pricing-cta');
 
 // Modal elements
 const emailModal = document.getElementById('emailModal');
@@ -40,17 +33,7 @@ const closeModal = document.getElementById('closeModal');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    updateDisplay();
-    
-    // Tier toggle
-    tierButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            tierButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentTier = btn.dataset.tier;
-            updateDisplay();
-        });
-    });
+    updatePricingDisplay();
     
     // Period toggle
     periodButtons.forEach(btn => {
@@ -58,12 +41,29 @@ document.addEventListener('DOMContentLoaded', () => {
             periodButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             currentPeriod = btn.dataset.period;
-            updateDisplay();
+            updatePricingDisplay();
         });
     });
     
-    // Subscribe button
-    subscribeBtn.addEventListener('click', showEmailModal);
+    // CTA buttons
+    pricingCtas.forEach(btn => {
+        btn.addEventListener('click', () => {
+            currentTier = btn.dataset.plan;
+            showEmailModal();
+        });
+    });
+    
+    // Testimonials CTA (fix ID mismatch)
+    const testimonialsCta = document.getElementById('testimonials-cta');
+    if (testimonialsCta) {
+        testimonialsCta.addEventListener('click', () => openEmailModal('testimonials'));
+    }
+    
+    // Contact CTA
+    const contactCta = document.getElementById('contactCta');
+    if (contactCta) {
+        contactCta.addEventListener('click', () => openEmailModal('contact'));
+    }
     
     // Modal event listeners
     startTrialBtn.addEventListener('click', handleSubscribe);
@@ -86,43 +86,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Update pricing display
-function updateDisplay() {
-    const plan = pricing[currentTier][currentPeriod];
+function updatePricingDisplay() {
+    // Hide all price displays first
+    document.querySelectorAll('.monthly-price, .yearly-price, .twoyear-price, .yearly-savings, .twoyear-savings').forEach(el => {
+        el.style.display = 'none';
+    });
     
-    // Update plan name
-    const tierNames = {
-        'practitioner': 'Solo Practitioner Plan',
-        'clinic': 'Growing Clinic Plan'
-    };
-    planName.textContent = tierNames[currentTier];
-    
-    // Update price
-    priceAmount.textContent = plan.price;
-    
-    // Update period text
+    // Show appropriate price displays
     if (currentPeriod === 'monthly') {
-        pricePeriod.textContent = '/month';
+        document.querySelectorAll('.monthly-price').forEach(el => el.style.display = 'block');
     } else if (currentPeriod === 'yearly') {
-        pricePeriod.textContent = '/year';
-    } else {
-        pricePeriod.textContent = '/2 years';
-    }
-    
-    // Update savings
-    if (plan.savings) {
-        savingsText.textContent = plan.savings;
-        savingsText.style.display = 'block';
-    } else {
-        savingsText.style.display = 'none';
-    }
-    
-    // Update features display
-    if (currentTier === 'practitioner') {
-        practitionerFeatures.style.display = 'block';
-        clinicFeatures.style.display = 'none';
-    } else {
-        practitionerFeatures.style.display = 'none';
-        clinicFeatures.style.display = 'block';
+        document.querySelectorAll('.yearly-price').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.yearly-savings').forEach(el => el.style.display = 'block');
+    } else if (currentPeriod === '2year') {
+        document.querySelectorAll('.twoyear-price').forEach(el => el.style.display = 'block');
+        document.querySelectorAll('.twoyear-savings').forEach(el => el.style.display = 'block');
     }
 }
 
@@ -167,9 +145,6 @@ async function handleSubscribe() {
         startTrialBtn.disabled = true;
         startTrialBtn.classList.add('loading');
         startTrialBtn.textContent = 'Creating trial...';
-        subscribeBtn.disabled = true;
-        subscribeBtn.classList.add('loading');
-        subscribeBtn.textContent = 'Loading...';
         
         // Get the selected price ID
         const priceId = pricing[currentTier][currentPeriod].id;
@@ -216,17 +191,10 @@ async function handleSubscribe() {
     } catch (error) {
         console.error('Subscription error:', error);
         alert('Error: ' + error.message);
-        resetButton();
         resetModalButton();
     }
 }
 
-// Reset button state
-function resetButton() {
-    subscribeBtn.disabled = false;
-    subscribeBtn.classList.remove('loading');
-    subscribeBtn.textContent = 'Start 14-Day Free Trial';
-}
 
 // Reset modal button state
 function resetModalButton() {
