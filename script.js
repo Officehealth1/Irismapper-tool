@@ -919,7 +919,7 @@ function updateHistogram() {
         this.classList.add('active');
     });
 
-    // Save functionality
+    // Save functionality (Export as image)
     document.getElementById('save')?.addEventListener('click', () => {
         const containerToCapture = isDualViewActive ? dualMapperContainer : singleMapperContainer;
         if (!containerToCapture) return;
@@ -948,6 +948,326 @@ function updateHistogram() {
                 progressIndicator.style.display = 'none';
             });
         }, 100);
+    });
+
+    // Storage Manager Instance
+    const storageManager = new StorageManager();
+    storageManager.init().then(() => {
+        console.log('Storage manager initialized');
+        loadSavedProjects(); // Load saved projects on startup
+    }).catch(err => {
+        console.error('Failed to initialize storage:', err);
+    });
+
+    // Save to Account functionality
+    document.getElementById('saveToAccount')?.addEventListener('click', async () => {
+        const settings = imageSettings[currentEye];
+        if (!settings.image) {
+            alert('Please upload an image first');
+            return;
+        }
+
+        try {
+            progressIndicator.style.display = 'flex';
+
+            // Get the original image data
+            const originalCanvas = document.createElement('canvas');
+            const originalCtx = originalCanvas.getContext('2d');
+            originalCanvas.width = settings.image.width;
+            originalCanvas.height = settings.image.height;
+            originalCtx.drawImage(settings.image, 0, 0);
+            
+            // Convert to blob (preserving original quality)
+            const originalBlob = await new Promise(resolve => {
+                originalCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
+            });
+
+            // Create thumbnail
+            const thumbnailCanvas = document.createElement('canvas');
+            const thumbnailCtx = thumbnailCanvas.getContext('2d');
+            const thumbScale = 200 / settings.image.width;
+            thumbnailCanvas.width = 200;
+            thumbnailCanvas.height = settings.image.height * thumbScale;
+            thumbnailCtx.drawImage(settings.image, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
+            
+            const thumbnailBlob = await new Promise(resolve => {
+                thumbnailCanvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.7);
+            });
+
+            // Get current notes
+            const noteKey = 'notes_' + currentImageId + '_' + currentEye;
+            const notes = localStorage.getItem(noteKey) || '';
+
+            // Prompt for project name
+            const projectName = prompt('Enter a name for this project:', `Iris ${currentEye} - ${new Date().toLocaleDateString()}`);
+            if (!projectName) {
+                progressIndicator.style.display = 'none';
+                return;
+            }
+
+            // Prepare project data with complete state
+            const projectData = {
+                projectName: projectName,
+                originalImage: originalBlob,
+                thumbnail: thumbnailBlob,
+                currentEye: currentEye,
+                isDualView: isDualViewActive,
+                
+                // All adjustments
+                adjustments: {
+                    exposure: settings.adjustments.exposure,
+                    contrast: settings.adjustments.contrast,
+                    saturation: settings.adjustments.saturation,
+                    hue: settings.adjustments.hue,
+                    shadows: settings.adjustments.shadows,
+                    highlights: settings.adjustments.highlights,
+                    temperature: settings.adjustments.temperature,
+                    sharpness: settings.adjustments.sharpness
+                },
+                
+                // Map state
+                selectedMap: currentMap,
+                mapOpacity: svgSettings[currentEye].opacity,
+                mapColor: svgSettings[currentEye].mapColor,
+                
+                // Map position and transformation
+                mapPosition: {
+                    x: settings.translateX,
+                    y: settings.translateY,
+                    scale: settings.scale,
+                    rotation: settings.rotation
+                },
+                
+                // Image transformation
+                imageTransform: {
+                    zoom: settings.scale,
+                    rotation: settings.rotation,
+                    offsetX: settings.translateX,
+                    offsetY: settings.translateY
+                },
+                
+                // Notes
+                notes: notes,
+                
+                // Metadata
+                fileName: currentImageId || 'Unknown',
+                fileSize: originalBlob.size,
+                imageDimensions: `${settings.image.width}x${settings.image.height}`
+            };
+
+            // Save to IndexedDB
+            const projectId = await storageManager.saveProject(projectData);
+            
+            progressIndicator.style.display = 'none';
+            alert(`Project "${projectName}" saved successfully!`);
+            
+            // Refresh saved projects list
+            loadSavedProjects();
+            
+        } catch (error) {
+            progressIndicator.style.display = 'none';
+            console.error('Error saving project:', error);
+            alert('Failed to save project. Please try again.');
+        }
+    });
+
+    // Load saved projects
+    async function loadSavedProjects() {
+        try {
+            const projects = await storageManager.getUserProjects(20);
+            const savedProjectsSection = document.getElementById('savedProjects');
+            const savedProjectsList = document.getElementById('savedProjectsList');
+            
+            if (projects.length > 0) {
+                savedProjectsSection.style.display = 'block';
+                savedProjectsList.innerHTML = '';
+                
+                projects.forEach(project => {
+                    const projectItem = createSavedProjectItem(project);
+                    savedProjectsList.appendChild(projectItem);
+                });
+            } else {
+                savedProjectsSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading saved projects:', error);
+        }
+    }
+
+    // Create saved project item element
+    function createSavedProjectItem(project) {
+        const item = document.createElement('div');
+        item.className = 'saved-project-item';
+        
+        const thumbnail = document.createElement('img');
+        thumbnail.className = 'saved-project-thumbnail';
+        if (project.thumbnail) {
+            thumbnail.src = URL.createObjectURL(project.thumbnail);
+        }
+        
+        const info = document.createElement('div');
+        info.className = 'saved-project-info';
+        
+        const name = document.createElement('div');
+        name.className = 'saved-project-name';
+        name.textContent = project.projectName;
+        
+        const date = document.createElement('div');
+        date.className = 'saved-project-date';
+        date.textContent = new Date(project.timestamp).toLocaleString();
+        
+        info.appendChild(name);
+        info.appendChild(date);
+        
+        const actions = document.createElement('div');
+        actions.className = 'saved-project-actions';
+        
+        const loadBtn = document.createElement('button');
+        loadBtn.textContent = 'Load';
+        loadBtn.onclick = () => loadSavedProject(project.id);
+        
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-btn';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => deleteSavedProject(project.id, project.projectName);
+        
+        actions.appendChild(loadBtn);
+        actions.appendChild(deleteBtn);
+        
+        item.appendChild(thumbnail);
+        item.appendChild(info);
+        item.appendChild(actions);
+        
+        return item;
+    }
+
+    // Load a saved project
+    async function loadSavedProject(projectId) {
+        try {
+            progressIndicator.style.display = 'flex';
+            
+            const project = await storageManager.loadProject(projectId);
+            const state = project.applicationState;
+            
+            // Load the original image
+            const img = new Image();
+            img.onload = function() {
+                // Set current eye
+                currentEye = state.currentEye;
+                isDualViewActive = state.isDualView;
+                
+                // Update UI for eye selection
+                if (isDualViewActive) {
+                    document.getElementById('bothEyes').click();
+                } else {
+                    document.getElementById(currentEye === 'L' ? 'leftEye' : 'rightEye').click();
+                }
+                
+                // Load image
+                imageSettings[currentEye].image = img;
+                if (isDualViewActive) {
+                    imageSettings['L'].image = img;
+                    imageSettings['R'].image = img;
+                    createCanvasForEye('L');
+                    createCanvasForEye('R');
+                    loadImageForSpecificEye('L');
+                    loadImageForSpecificEye('R');
+                } else {
+                    createCanvasForEye(currentEye);
+                    loadImageForSpecificEye(currentEye);
+                }
+                
+                // Restore all adjustments
+                Object.keys(state.adjustments).forEach(key => {
+                    const slider = adjustmentSliders[key];
+                    if (slider) {
+                        slider.value = state.adjustments[key];
+                        const valueDisplay = slider.nextElementSibling;
+                        if (valueDisplay) {
+                            valueDisplay.textContent = state.adjustments[key];
+                        }
+                        imageSettings[currentEye].adjustments[key] = state.adjustments[key];
+                    }
+                });
+                
+                // Restore map state
+                if (state.mapState.selectedMap) {
+                    currentMap = state.mapState.selectedMap;
+                    loadSVG(`grids/${currentMap}_${currentEye}.svg`, currentEye);
+                }
+                
+                // Restore map opacity and color
+                opacitySlider.value = state.mapState.mapOpacity;
+                mapColor.value = state.mapState.mapColor;
+                svgSettings[currentEye].opacity = state.mapState.mapOpacity;
+                svgSettings[currentEye].mapColor = state.mapState.mapColor;
+                
+                if (isDualViewActive) {
+                    leftSvgContainer.style.opacity = state.mapState.mapOpacity;
+                    rightSvgContainer.style.opacity = state.mapState.mapOpacity;
+                } else {
+                    svgContainer.style.opacity = state.mapState.mapOpacity;
+                }
+                
+                // Restore transformations
+                imageSettings[currentEye].translateX = state.imageTransform.offsetX;
+                imageSettings[currentEye].translateY = state.imageTransform.offsetY;
+                imageSettings[currentEye].scale = state.imageTransform.zoom;
+                imageSettings[currentEye].rotation = state.imageTransform.rotation;
+                
+                // Apply transformations
+                if (imageSettings[currentEye].canvas) {
+                    imageSettings[currentEye].canvas.style.transform = `
+                        translate(-50%, -50%)
+                        translate(${imageSettings[currentEye].translateX}px, ${imageSettings[currentEye].translateY}px)
+                        rotate(${imageSettings[currentEye].rotation}deg)
+                        scale(${imageSettings[currentEye].scale})
+                    `;
+                }
+                
+                // Restore notes
+                if (state.notes) {
+                    const noteKey = 'notes_' + currentImageId + '_' + currentEye;
+                    localStorage.setItem(noteKey, state.notes);
+                    updateNotesArea();
+                }
+                
+                // Update histogram
+                updateHistogram();
+                
+                progressIndicator.style.display = 'none';
+                
+                alert(`Project "${project.projectName}" loaded successfully!`);
+            };
+            
+            img.src = URL.createObjectURL(project.originalImage);
+            
+        } catch (error) {
+            progressIndicator.style.display = 'none';
+            console.error('Error loading project:', error);
+            alert('Failed to load project. Please try again.');
+        }
+    }
+
+    // Delete a saved project
+    async function deleteSavedProject(projectId, projectName) {
+        if (!confirm(`Are you sure you want to delete "${projectName}"?`)) {
+            return;
+        }
+        
+        try {
+            await storageManager.deleteProject(projectId);
+            alert(`Project "${projectName}" deleted successfully!`);
+            loadSavedProjects(); // Refresh the list
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            alert('Failed to delete project. Please try again.');
+        }
+    }
+
+    // Refresh saved projects button
+    document.getElementById('refreshSavedProjects')?.addEventListener('click', () => {
+        loadSavedProjects();
     });
 
     // SVG and opacity controls

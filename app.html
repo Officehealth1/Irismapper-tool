@@ -116,12 +116,25 @@
             <input type="color" id="mapColor" value="#000000">
             <button class="btn" id="notes">Notes</button>
             <button class="btn" id="save">Save</button>
+            <button class="btn" id="saveToAccount">Save to Account</button>
         </div>
 
         <div class="controls bottom-right">
+            <!-- Saved Projects Section -->
+            <div class="saved-projects" id="savedProjects" style="display: none;">
+                <div class="saved-projects-header">
+                    <h3>My Saved Projects</h3>
+                    <button class="refresh-btn" id="refreshSavedProjects">↻</button>
+                </div>
+                <div class="saved-projects-list" id="savedProjectsList">
+                    <!-- Saved projects will be loaded here -->
+                </div>
+            </div>
+            
+            <!-- Current Session Gallery -->
             <div class="gallery">
                 <div class="gallery-header">
-                    <h3>Gallery</h3>
+                    <h3>Session Gallery</h3>
                     <button class="add-image-btn">+</button>
                 </div>
                 <div class="gallery-accordion" id="galleryAccordion">
@@ -231,6 +244,9 @@
         }
     </script>
 
+    <!-- Storage Manager -->
+    <script src="js/storage-manager.js"></script>
+    
     <!-- Subscription Gate -->
     <script src="js/auth-redirect.js"></script>
     
