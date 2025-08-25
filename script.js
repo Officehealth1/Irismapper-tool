@@ -1298,7 +1298,7 @@ function updateHistogram() {
                 // Restore map state
                 if (state.mapState.selectedMap) {
                     currentMap = state.mapState.selectedMap;
-                    loadSVG(`grids/${currentMap}_${currentEye}.svg`, currentEye);
+                    loadSVG(currentMap, currentEye);
                 }
                 
                 // Restore map opacity and color
@@ -2244,6 +2244,15 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
             cancelText: 'Cancel',
             type: 'danger'
         });
+    };
+
+    // Override browser confirm and alert to prevent cached calls
+    window.confirm = async (message) => {
+        return await showDangerModal('Confirm', message, 'OK');
+    };
+    
+    window.alert = async (message) => {
+        return await showInfoModal('Notice', message, 'OK');
     };
 
     // Start the application
