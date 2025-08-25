@@ -246,6 +246,10 @@ class StorageManager {
         });
     }
 
+    async updateProjectName(projectId, newName) {
+        return this.updateProject(projectId, { projectName: newName });
+    }
+
     async getStorageUsage() {
         if (!this.db) await this.init();
 
