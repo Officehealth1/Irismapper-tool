@@ -1256,7 +1256,7 @@ function updateHistogram() {
             
             // Load the original image
             const img = new Image();
-            img.onload = function() {
+            img.onload = async function() {
                 // Set current eye
                 currentEye = state.currentEye;
                 isDualViewActive = state.isDualView;
