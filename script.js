@@ -17,8 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const histogramCanvas = document.getElementById('histogramCanvas');
     const progressIndicator = document.getElementById('progressIndicator');
     const controls = document.querySelectorAll('.controls');
-    const galleryAccordion = document.getElementById('galleryAccordion');
-    const addImageBtn = document.getElementById('addImageBtn');
     const availableMaps = [
         'Angerer_Map_DE_V1',
         'Bourdiol_Map_FR_V1',
@@ -1231,12 +1229,19 @@ function updateHistogram() {
         loadBtn.textContent = 'Load';
         loadBtn.onclick = () => loadSavedProject(project.id);
         
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'rename-btn';
+        renameBtn.textContent = '✏️';
+        renameBtn.title = 'Rename project';
+        renameBtn.onclick = () => startRenameProject(project.id, project.projectName, name);
+        
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'delete-btn';
         deleteBtn.textContent = 'Delete';
         deleteBtn.onclick = () => deleteSavedProject(project.id, project.projectName);
         
         actions.appendChild(loadBtn);
+        actions.appendChild(renameBtn);
         actions.appendChild(deleteBtn);
         
         item.appendChild(thumbnail);
@@ -1395,6 +1400,91 @@ function updateHistogram() {
                 '❌'
             );
         }
+    }
+
+    // Start rename project (inline edit)
+    async function startRenameProject(projectId, currentName, nameElement) {
+        // Create input element
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = currentName;
+        input.className = 'rename-input';
+        input.style.cssText = `
+            width: 100%;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: inherit;
+            font-family: inherit;
+            background: #fff;
+        `;
+        
+        // Store original content
+        const originalContent = nameElement.textContent;
+        
+        // Replace name with input
+        nameElement.textContent = '';
+        nameElement.appendChild(input);
+        input.focus();
+        input.select();
+        
+        // Save function
+        const saveRename = async () => {
+            const newName = input.value.trim();
+            
+            if (!newName) {
+                await showInfoModal(
+                    'Invalid Name',
+                    'Project name cannot be empty.',
+                    'OK',
+                    '❌'
+                );
+                nameElement.textContent = originalContent;
+                return;
+            }
+            
+            if (newName === currentName) {
+                nameElement.textContent = originalContent;
+                return;
+            }
+            
+            try {
+                await storageManager.updateProjectName(projectId, newName);
+                nameElement.textContent = newName;
+                await showSuccessModal(
+                    'Project Renamed',
+                    `Project renamed to "${newName}" successfully.`,
+                    'OK',
+                    '✅'
+                );
+            } catch (error) {
+                console.error('Error renaming project:', error);
+                await showInfoModal(
+                    'Rename Failed',
+                    'Failed to rename project. Please try again.',
+                    'OK',
+                    '❌'
+                );
+                nameElement.textContent = originalContent;
+            }
+        };
+        
+        // Cancel function
+        const cancelRename = () => {
+            nameElement.textContent = originalContent;
+        };
+        
+        // Event listeners
+        input.addEventListener('blur', saveRename);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveRename();
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                cancelRename();
+            }
+        });
     }
 
     // Refresh saved projects button
@@ -1576,8 +1666,7 @@ function updateHistogram() {
             if (key) {
                 localStorage.setItem(key, note);
                 savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
-                updateGalleryNoteIcon(currentImageId, !!note);
-                updateGalleryNoteData(currentImageId, note);
+                // Gallery functions removed - using My Saved Projects instead
             }
         });
     }
@@ -2082,25 +2171,6 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
             mapColor.value = svgSettings[currentEye].mapColor;
         }
 
-        // Initialize gallery
-        galleryAccordion.style.display = 'block';
-        
-        // Load saved session gallery
-        loadSessionGallery();
-        
-        // Set up Clear Session button
-        document.getElementById('clearSession')?.addEventListener('click', async () => {
-            const confirmed = await showWarningModal(
-                'Clear Session Gallery',
-                'This will remove all images from your current session.\n\nYour saved projects will not be affected.',
-                'Clear Session',
-                '🗑️'
-            );
-            if (confirmed) {
-                clearSessionGallery();
-            }
-        });
-        
     }
 
     // Custom Modal System
@@ -2284,7 +2354,6 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
                     }
                     resetAdjustments();
                     const thisImageId = getImageId(event.target.result);
-                    addToGallery(event.target.result, file.name);
                     // Only set currentImageId and update notes for the first image
                     if (firstImageId === null) {
                         firstImageId = thisImageId;
@@ -2517,11 +2586,8 @@ function moveImage(direction) {
     }
     
 
-    // Session Gallery Persistence Functions
-    const SESSION_GALLERY_KEY = 'irisMapper_sessionGallery';
-    const SESSION_EXPIRY_DAYS = 30;
-
-    function saveSessionGallery() {
+    // Removed Session Gallery functions - All functionality moved to "My Saved Projects"
+    /* function autoLevels() {
         try {
             const sessionData = {
                 timestamp: Date.now(),
@@ -2766,7 +2832,8 @@ function moveImage(direction) {
         // If you have a gallery array/object, update the note property here
         // For now, this is a placeholder for future extensibility
     }
-});
+}); 
+*/
 
 function autoLevels() {
     const settings = isDualViewActive ? ['L', 'R'] : [currentEye];
@@ -2909,5 +2976,5 @@ function convolve(src, dst, width, height, kernel) {
     }
 }
 
-
+});
 
