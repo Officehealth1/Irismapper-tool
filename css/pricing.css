@@ -1182,12 +1182,12 @@ details p {
     display: block;
     font-size: 1rem;
     font-weight: 500;
-    color: #ffffff;
+    color: #2d3748;
     margin-bottom: 12px;
     text-align: left;
 }
 
-.plan-toggle, .billing-toggle {
+.plan-toggle, .billing-toggle, .period-toggle {
     display: flex;
     justify-content: center;
     gap: 0;
