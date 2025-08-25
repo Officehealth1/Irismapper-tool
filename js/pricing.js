@@ -114,7 +114,7 @@ function showEmailModal() {
 function hideEmailModal() {
     emailModal.classList.remove('show');
     emailInput.value = '';
-    resetButton();
+    resetModalButton();
 }
 
 // Validate email
