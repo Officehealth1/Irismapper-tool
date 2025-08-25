@@ -241,44 +241,6 @@ body, html {
     padding: 0;
 }
 
-/* Gallery Styles */
-.gallery {
-    margin-bottom: 15px;
-}
-
-.gallery-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.gallery-header-buttons {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.clear-session-btn {
-    width: 30px;
-    height: 30px;
-    background-color: #f44336;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.clear-session-btn:hover {
-    background-color: #da190b;
-}
-
 /* Saved Projects Styles */
 .saved-projects {
     margin-bottom: 15px;
@@ -394,121 +356,16 @@ body, html {
     background: #da190b;
 }
 
-.gallery-item-controls {
-    flex-shrink: 0; /* Prevent controls from shrinking */
-    display: flex; /* Use flex to align buttons */
-    gap: 5px; /* Add space between buttons */
-    align-items: center; /* Vertically align buttons */
+.saved-project-actions .rename-btn {
+    background: #2196F3;
+    padding: 4px 6px;
+    min-width: 28px;
 }
 
-.gallery-item-controls .btn {
-    padding: 4px 8px; /* Reduced padding */
-    font-size: 11px; /* Slightly smaller font size */
-    background-color: #4A90E2; /* Primary blue background */
-    color: white; /* White text color */
-    border: none; /* Remove border */
-    width: auto; /* Allow buttons to size based on content */
+.saved-project-actions .rename-btn:hover {
+    background: #1976D2;
 }
 
-.gallery-item-controls .btn:hover {
-    background-color: #3A80D2; /* Darker blue on hover */
-}
-
-.gallery-item-header .image-name {
-    flex-grow: 1; /* Allow filename to take available space */
-    overflow: hidden; /* Hide overflowing text */
-    text-overflow: ellipsis; /* Show ellipsis for truncated text */
-    white-space: nowrap; /* Prevent text wrapping */
-}
-
-.add-image-btn {
-    width: 30px;
-    height: 30px;
-    background-color: #4A90E2;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 20px;
-    line-height: 1;
-}
-
-.gallery-accordion {
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.gallery-item {
-    border-bottom: 1px solid #ddd;
-}
-
-.gallery-item:last-child {
-    border-bottom: none;
-}
-
-.gallery-item-header {
-    position: relative;
-    padding: 8px;
-    background-color: #f5f5f5;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.gallery-item-content {
-    padding: 8px;
-    display: none;
-    position: relative;
-}
-
-.gallery-item-content.active {
-    display: block;
-}
-
-.gallery-item-content .gallery-delete-btn {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: #e74c3c;
-    color: #fff;
-    border: none;
-    font-size: 18px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    transition: background 0.2s, box-shadow 0.2s, transform 0.1s, opacity 0.2s;
-    opacity: 0;
-    pointer-events: none;
-}
-.gallery-item-content:hover .gallery-delete-btn,
-.gallery-item-content.active .gallery-delete-btn {
-    opacity: 1;
-    pointer-events: auto;
-}
-.gallery-delete-btn:hover, .gallery-delete-btn:focus {
-    background: #c0392b;
-    box-shadow: 0 4px 12px rgba(231,76,60,0.15);
-    outline: none;
-    transform: scale(1.08);
-}
-.gallery-delete-btn:active {
-    background: #a93226;
-    transform: scale(0.95);
-}
-.gallery-item img {
-    width: 100%;
-    height: auto;
-    border-radius: 4px;
-}
 
 .adjustment-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -1146,16 +1003,6 @@ body, html {
   will-change: transform;
 }
 
-/* Responsive Gallery */
-.gallery {
-  border-radius: var(--border-radius);
-  background: #ffffff;
-}
-
-.gallery-item {
-  touch-action: manipulation;
-}
-
 /* Mobile-Optimized Adjustments Panel */
 .image-adjustments {
   border-radius: var(--border-radius);
@@ -1223,9 +1070,6 @@ body, html {
     transform: translateX(50%);
   }
   
-  .gallery-item-header {
-    padding: calc(var(--spacing-unit) * 1.5);
-  }
 }
 
 @media (max-width: 576px) {
@@ -1256,13 +1100,6 @@ body, html {
     border-radius: 0;
   }
 
-  .gallery-item-content .gallery-delete-btn {
-    top: 4px;
-    right: 4px;
-    width: 32px;
-    height: 32px;
-    font-size: 22px;
-  }
 }
 
 /* Touch Device Optimizations */
