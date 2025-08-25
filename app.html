@@ -115,8 +115,7 @@
             <input type="range" id="opacitySlider" min="0" max="1" step="0.01" value="0.7">
             <input type="color" id="mapColor" value="#000000">
             <button class="btn" id="notes">Notes</button>
-            <button class="btn" id="save">Save</button>
-            <button class="btn" id="saveToAccount">Save to Account</button>
+            <button class="btn" id="save">Save Project</button>
         </div>
 
         <div class="controls bottom-right">
@@ -135,7 +134,10 @@
             <div class="gallery">
                 <div class="gallery-header">
                     <h3>Session Gallery</h3>
-                    <button class="add-image-btn">+</button>
+                    <div class="gallery-header-buttons">
+                        <button class="clear-session-btn" id="clearSession" title="Clear session gallery">🗑️</button>
+                        <button class="add-image-btn">+</button>
+                    </div>
                 </div>
                 <div class="gallery-accordion" id="galleryAccordion">
                 </div>
@@ -219,6 +221,26 @@
         </div>
     </div>
 
+    <!-- Custom Modal System -->
+    <div id="customModal" class="custom-modal" style="display:none;">
+        <div class="custom-modal-backdrop"></div>
+        <div class="custom-modal-container">
+            <div class="custom-modal-content">
+                <div class="custom-modal-header">
+                    <span class="custom-modal-icon" id="customModalIcon">ℹ️</span>
+                    <h3 class="custom-modal-title" id="customModalTitle">Modal Title</h3>
+                </div>
+                <div class="custom-modal-body">
+                    <p class="custom-modal-message" id="customModalMessage">Modal message content goes here.</p>
+                </div>
+                <div class="custom-modal-footer">
+                    <button class="custom-modal-btn custom-modal-btn-secondary" id="customModalCancel">Cancel</button>
+                    <button class="custom-modal-btn custom-modal-btn-primary" id="customModalConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Web Worker Script -->
     <script id="workerScript" type="javascript/worker">
         self.addEventListener('message', function(e) {
@@ -296,7 +318,12 @@
                     window.location.href = '/login';
                 } catch (error) {
                     console.error('Logout error:', error);
-                    alert('Error logging out. Please try again.');
+                    showInfoModal(
+                        'Logout Error',
+                        'Unable to log out properly. Please try again or refresh the page.',
+                        'OK',
+                        '❌'
+                    );
                 }
             });
             
@@ -334,7 +361,13 @@
                     if (!response.ok) {
                         console.error('Portal session response not ok:', response.status);
                         // For now, redirect to pricing page as fallback
-                        if (confirm('Would you like to view subscription options?')) {
+                        const viewPricing = await showConfirmModal(
+                            'Portal Unavailable',
+                            'Unable to access your billing portal right now.\n\nWould you like to view subscription options instead?',
+                            'View Pricing',
+                            '💳'
+                        );
+                        if (viewPricing) {
                             window.location.href = '/pricing';
                         }
                         return;
@@ -347,14 +380,26 @@
                         window.location.href = data.url;
                     } else {
                         // Fallback to pricing page
-                        if (confirm('Unable to access portal. View subscription options?')) {
+                        const viewOptions = await showConfirmModal(
+                            'Portal Error',
+                            'Unable to access the billing portal.\n\nWould you like to view subscription options?',
+                            'View Options',
+                            '💳'
+                        );
+                        if (viewOptions) {
                             window.location.href = '/pricing';
                         }
                     }
                 } catch (error) {
                     console.error('Error accessing subscription portal:', error);
                     // Fallback to pricing page
-                    if (confirm('Error accessing portal. View subscription options?')) {
+                    const tryAgain = await showConfirmModal(
+                        'Connection Error',
+                        'Unable to connect to billing portal due to a network error.\n\nWould you like to view subscription options?',
+                        'View Options',
+                        '🔄'
+                    );
+                    if (tryAgain) {
                         window.location.href = '/pricing';
                     }
                 }
@@ -369,20 +414,40 @@
                     if (user && user.email) {
                         // Send password reset email
                         await firebase.auth().sendPasswordResetEmail(user.email);
-                        alert(`Password reset email sent to ${user.email}. Please check your inbox.`);
+                        await showSuccessModal(
+                            'Reset Email Sent',
+                            `A password reset link has been sent to:\n${user.email}\n\nPlease check your inbox and spam folder.`,
+                            'OK',
+                            '✅'
+                        );
                     } else {
-                        alert('Unable to send password reset email. Please try again.');
+                        await showInfoModal(
+                            'Reset Failed',
+                            'Unable to send password reset email. Please ensure you are logged in and try again.',
+                            'OK',
+                            '❌'
+                        );
                     }
                 } catch (error) {
                     console.error('Error sending password reset:', error);
-                    alert('Error sending password reset email. Please try again.');
+                    await showInfoModal(
+                        'Reset Error',
+                        'Failed to send password reset email. Please check your connection and try again.',
+                        'OK',
+                        '❌'
+                    );
                 }
             });
             
             // Account Settings (placeholder for now)
             accountSettings.addEventListener('click', function() {
                 profileDropdown.classList.remove('show');
-                alert('Account settings page coming soon!');
+                showInfoModal(
+                    'Coming Soon',
+                    'Account settings page is currently under development.\n\nIn the meantime, you can manage your subscription and change your password using the options above.',
+                    'Got it',
+                    'ℹ️'
+                );
                 // In the future, this could navigate to a dedicated settings page
                 // window.location.href = '/settings';
             });
