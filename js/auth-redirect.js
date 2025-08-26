@@ -4,9 +4,14 @@
     
     // Skip redirect if we're already on pricing or success pages
     const currentPath = window.location.pathname;
-    if (currentPath.includes('pricing') || 
-        currentPath.includes('success') || 
-        currentPath.includes('login')) {
+    if (currentPath.includes('/pricing') || 
+        currentPath.includes('/success') || 
+        currentPath.includes('/login') ||
+        currentPath === '/' ||
+        currentPath.includes('/forgot-password') ||
+        currentPath.includes('/reset-password') ||
+        currentPath.includes('/setup-password') ||
+        currentPath.includes('/verify-email')) {
         return;
     }
     
@@ -60,7 +65,7 @@
     
     function redirectToPricing() {
         const basePath = getBasePath();
-        window.location.href = basePath + '#pricing-cards';
+        window.location.href = basePath + 'pricing';
     }
     
     function getBasePath() {

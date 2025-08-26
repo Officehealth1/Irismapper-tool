@@ -4,18 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Iris Mapper Pro is a web-based SaaS application for iris mapping diagnostics. Users can upload iris photographs, apply professional image adjustments, overlay diagnostic iris maps, and export results. The application supports both single and dual eye views with multiple iris mapping systems.
+Iris Mapper Pro is a web-based iris mapping application that allows users to overlay diagnostic iris maps onto iris photographs. The application supports single and dual eye views, image adjustments, and multiple iris mapping templates.
 
 ## Tech Stack
 
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Backend**: Netlify Functions (serverless)
-- **Authentication**: Firebase Auth
-- **Database**: Firebase Firestore
-- **Payments**: Stripe (subscriptions & checkout)
-- **Email**: SendGrid (transactional emails)
-- **Hosting**: Netlify
-- **Image Processing**: Canvas API, Web Workers
+- **Libraries**: 
+  - html2canvas (for image export)
+  - DOMPurify (for sanitisation)
+  - Firebase (authentication and database)
+- **Image Processing**: Canvas API with Web Workers for histogram calculations
+- **Build Tools**: Netlify (hosting), Node.js (serverless functions), Stripe (payments)
 
 ## Development Commands
 
@@ -23,137 +22,157 @@ Iris Mapper Pro is a web-based SaaS application for iris mapping diagnostics. Us
 # Install dependencies
 npm install
 
-# Run local development server with Netlify Dev
+# Development with Netlify Dev (includes serverless functions)
 npm run dev
 
-# No build process required - static files served directly
-# No test suite configured
-# No linting configured
+# Manual Netlify dev server
+netlify dev
+
+# Build command (returns success - no build process needed)
+npm run build
+
+# No test runner or linting configured
 ```
 
 ## Architecture
 
-### Application Pages
+### Core Components
 
-1. **Main Application** (`app.html`, `script.js`)
-   - Core iris mapping functionality
-   - Protected by authentication & subscription
-
-2. **Authentication Flow**
-   - `login.html` - User login with Firebase
-   - `forgot-password.html` - Password reset initiation
-   - `reset-password.html` - Password reset completion
-   - `setup-password.html` - Initial password setup
-   - `verify-email.html` - Email verification
-
-3. **Subscription System**
-   - `pricing.html` - Pricing tiers & checkout
-   - `success.html` - Post-payment confirmation
-   - Stripe integration via Netlify Functions
-
-### Netlify Functions (serverless endpoints)
-
-```
-netlify/functions/
-├── create-checkout.js          # Stripe checkout session
-├── stripe-webhook.js           # Handle Stripe events
-├── check-subscription.js       # Verify subscription status
-├── create-portal-session.js    # Customer billing portal
-├── setup-user-password.js      # Password setup flow
-├── validate-setup-token.js     # Token validation
-└── cleanup-expired-tokens.js   # Maintenance task
-```
-
-### Core Features
-
-1. **Image Processing**
-   - Real-time adjustments (exposure, contrast, saturation, hue, etc.)
+1. **Main Application** (`script.js`)
+   - Image upload and management
+   - SVG map overlay system
+   - Image adjustment controls (exposure, contrast, saturation, etc.)
+   - Gallery management for multiple images
    - Histogram analysis with Web Workers
-   - Auto-level calculation
-   - Multi-image gallery management
+   - Save/export functionality
 
-2. **Iris Maps** (8 systems, 16 total maps)
-   - Angerer (DE), Bourdiol (FR), IrisLAB (EN/FR)
-   - Jaussas (FR), Jensen (EN/FR), Roux (FR)
-   - Left/Right eye variants for each
+2. **Authentication & Subscription System** 
+   - `js/auth-check.js`: Firebase authentication check for main app
+   - `js/auth-redirect.js`: Subscription gate for main app access
+   - `js/admin.js`: Admin panel functionality with user management
+   - `js/pricing.js`: Stripe payment integration with modal system
+   - `netlify/functions/`: Serverless payment processing functions
 
-3. **Subscription Tiers**
-   - Practitioner: £10/month, £80/year, £120/2years
-   - Clinic: £30/month, £160/year, £240/2years
-   - 14-day free trial for all plans
+3. **UI Structure**
+   - Single mapper view and dual mapper view (L+R eyes)
+   - Control panels (top-left menu, bottom controls, gallery)
+   - Modal system for map selection and notes
+   - Real-time image adjustments with sliders
 
-### State Management
+### Key Features
 
-- **Authentication**: Firebase Auth state
-- **Subscription**: Stored in Firebase custom claims
-- **Image State**: Global variables in script.js
-- **Gallery**: Accordion-based multi-image management
+- **Map Overlays**: 8 different iris mapping systems (Angerer, Bourdiol, IrisLAB, Jaussas, Jensen, Roux) with left/right eye variants
+- **Image Processing**: Real-time adjustments using Canvas filters
+- **Histogram Analysis**: Web Worker-based histogram calculation for auto-levels
+- **Multi-image Support**: Gallery with accordion-style image management
+- **Authentication**: Firebase-based access control with Stripe subscription gating
+- **Payment System**: Stripe integration with 14-day free trials and tiered pricing
 
-## Deployment Configuration
+### File Structure
 
-### Required Environment Variables
-
-```bash
-# Stripe (Test Mode)
-STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# Stripe Price IDs
-PRICE_PRACTITIONER_MONTHLY=price_...
-PRICE_PRACTITIONER_YEARLY=price_...
-PRICE_PRACTITIONER_2YEAR=price_...
-PRICE_CLINIC_MONTHLY=price_...
-PRICE_CLINIC_YEARLY=price_...
-PRICE_CLINIC_2YEAR=price_...
-
-# SendGrid
-SENDGRID_API_KEY=SG...
-SENDGRID_FROM_EMAIL=noreply@irismapper.com
-
-# Firebase Admin SDK
-FIREBASE_SERVICE_ACCOUNT={"type":"service_account"...}
+```
+/
+├── grids/              # SVG iris map templates
+├── css/                # Stylesheets (admin, auth, login, pricing)
+├── js/                 # JavaScript modules
+│   ├── admin.js        # Admin panel logic
+│   ├── auth-check.js   # Authentication verification
+│   ├── auth-redirect.js # Subscription access control
+│   ├── pricing.js      # Stripe payment integration
+│   └── firebase-config.js # Firebase configuration
+├── netlify/
+│   └── functions/      # Serverless payment functions
+├── app.html            # Main iris mapping application
+├── pricing.html        # Homepage with subscription plans
+├── success.html        # Post-payment confirmation
+├── login.html          # User authentication
+├── script.js           # Core application logic
+├── style.css           # Main stylesheet
+├── histogramWorker.js  # Web Worker for histogram
+├── _redirects          # Netlify routing configuration
+└── netlify.toml        # Netlify deployment configuration
 ```
 
-### Email Configuration
-
-See `EMAIL_SETUP.md` for SendGrid domain authentication:
-- SPF records configured
-- DKIM authentication pending
-- DMARC policy optional
-
-## Key Implementation Details
+## Important Patterns
 
 ### Image Processing Pipeline
-
-1. Upload → Canvas rendering
-2. Apply CSS filters for adjustments
-3. Overlay SVG map with opacity control
+1. Image upload → Canvas rendering
+2. Apply adjustments via CSS filters
+3. Overlay SVG map with configurable opacity
 4. Calculate histogram in Web Worker
-5. Export via html2canvas
+5. Export combined result with html2canvas
 
-### Authentication Flow
+### State Management
+- Global variables in `script.js` for current image, map, and adjustment values
+- Gallery state maintained in accordion structure with image data persistence
+- Authentication state managed by Firebase with subscription gating
+- Image adjustments stored per-image in gallery using CSS filter strings
 
-1. User visits site → Redirects to pricing
-2. Selects plan → Email collection modal
-3. Stripe checkout → 14-day trial begins
-4. Email verification → Access granted
-5. Firebase custom claims store subscription
+### Firebase Integration
+- User authentication required for app access
+- Admin panel for user management
+- Path detection for deployment flexibility
 
-### Adding New Features
+### Netlify Serverless Functions
+- Payment processing via Stripe webhooks
+- Subscription status verification
+- Auto-login token generation for seamless user experience
+- CORS headers configured for cross-origin requests
 
-**New Iris Maps:**
-- Add SVG to `/grids/` with pattern: `Name_Map_LANG_V1_L/R.svg`
-- Update `availableMaps` array in script.js
+## Common Tasks
 
-**New Image Adjustments:**
-- Add to `adjustmentSliders` object
-- Implement filter in Canvas processing
+### Adding New Iris Maps
+1. Add SVG files to `/grids/` directory with naming pattern: `MapName_Map_LANG_Version_L/R.svg`
+2. Update `availableMaps` array in `script.js` around line 22
+3. Maps automatically appear in modal selection with left/right eye variants
 
-## Security Considerations
+### Modifying Image Adjustments
+- Adjustment sliders defined in `adjustmentSliders` object in `script.js:33`
+- Processing applied via Canvas filter strings (exposure, contrast, saturation, etc.)
+- Values persist per image in gallery structure
+- Histogram calculations performed in `histogramWorker.js`
 
-- Never commit API keys or secrets
-- Firebase config is public (OK by design)
-- Stripe keys use test mode for development
-- All sensitive operations in serverless functions
-- CORS headers configured in netlify.toml
+### Working with Authentication
+- Firebase config in `js/firebase-config.js` (not in repo for security)
+- Authentication check runs on page load via `js/auth-check.js`
+- Admin status verification for admin panel access in `js/admin.js`
+- Subscription gating enforced via `js/auth-redirect.js` before main app access
+
+### Payment System Development
+- Use Stripe test keys for development (4242 4242 4242 4242)
+- Environment variables required for Netlify deployment
+- Functions handle checkout, subscription checks, and webhook processing
+- Email modal system for user data collection before payment in `js/pricing.js`
+
+### Debugging Tips
+- Check browser console for Canvas/CORS errors with image uploads
+- Firebase auth state changes logged in browser console
+- Netlify function logs available in deployment dashboard
+- SVG map rendering issues usually related to file paths or naming conventions
+
+### User Flow
+- **Homepage** (`https://irismapper.com/`) → Serves pricing page content with clean URL
+- **"Start Free Trial" buttons** throughout page → Scroll to pricing cards section (`#pricing-cards`)
+- **Pricing card buttons** → Email modal → Stripe checkout → Success page → Main app
+- **Login** accessible via `/login` for existing users with active subscriptions
+
+## Subscription System
+
+### Pricing Tiers
+**Practitioner:** £10/month, £80/year, £120/2years  
+**Clinic:** £30/month, £160/year, £240/2years  
+All plans include 14-day free trial
+
+### Environment Variables Required
+Set these in Netlify deployment:
+- `STRIPE_PUBLISHABLE_KEY` / `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- Price IDs for each tier (`PRICE_PRACTITIONER_MONTHLY`, etc.)
+- Firebase service account credentials
+
+### Netlify Functions
+- `create-checkout.js` - Stripe checkout session creation
+- `stripe-webhook.js` - Payment event processing  
+- `check-subscription.js` - Subscription status verification
+- `manage-billing.js` - Customer portal access
+- `create-auto-login.js` - Seamless post-payment authentication

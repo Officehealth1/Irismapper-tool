@@ -53,17 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     
-    // Testimonials CTA (fix ID mismatch)
-    const testimonialsCta = document.getElementById('testimonials-cta');
-    if (testimonialsCta) {
-        testimonialsCta.addEventListener('click', () => openEmailModal('testimonials'));
-    }
-    
-    // Contact CTA
-    const contactCta = document.getElementById('contactCta');
-    if (contactCta) {
-        contactCta.addEventListener('click', () => openEmailModal('contact'));
-    }
+    // These CTAs link directly to pricing section via href, no JS needed
+    // Removed unnecessary event listeners for non-existent elements
     
     // Modal event listeners
     startTrialBtn.addEventListener('click', handleSubscribe);
@@ -425,14 +416,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Please fill in all required fields.');
                 }
                 
-                // Log form data (replace with actual API call)
-                console.log('Contact form submitted:', Object.fromEntries(formData));
+                // Send to backend API
+                const response = await fetch('/.netlify/functions/send-contact-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        subject: formData.get('subject') || '',
+                        message: message
+                    })
+                });
+
+                // Handle different response scenarios
+                let result;
+                const contentType = response.headers.get('content-type');
                 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    result = { error: text || 'Unknown server error' };
+                }
+                
+                if (!response.ok) {
+                    if (response.status === 405) {
+                        throw new Error('Contact form is not available in development. Please use "npm run dev" or deploy to test the contact form.');
+                    }
+                    throw new Error(result.error || `Server error: ${response.status}`);
+                }
                 
                 // Success
-                alert('Message sent successfully! We\'ll respond within 24 hours.');
+                alert(result.message || 'Message sent successfully! We\'ll respond within 24 hours.');
                 contactForm.reset();
                 
             } catch (error) {
@@ -473,4 +490,5 @@ if (STRIPE_PUBLIC_KEY.includes('test')) {
     testBadge.style.cssText = 'position: fixed; top: 10px; right: 10px; background: orange; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999;';
     testBadge.textContent = 'TEST MODE';
     document.body.appendChild(testBadge);
+
 }

@@ -1,6 +1,6 @@
-// This is a simpler authentication check specifically for index.html
+// This is a simpler authentication check specifically for app.html
 (function() {
-    console.log("Auth check running for index.html");
+    console.log("Auth check running for app.html");
     
     // Function to get base path
     function getBasePath() {

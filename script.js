@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const histogramCanvas = document.getElementById('histogramCanvas');
     const progressIndicator = document.getElementById('progressIndicator');
     const controls = document.querySelectorAll('.controls');
+    const galleryAccordion = document.getElementById('galleryAccordion');
+    const addImageBtn = document.getElementById('addImageBtn');
     const availableMaps = [
         'Angerer_Map_DE_V1',
         'Bourdiol_Map_FR_V1',
@@ -917,98 +919,14 @@ function updateHistogram() {
         this.classList.add('active');
     });
 
-    // Combined Save functionality - Save to Account + Download option
-    document.getElementById('save')?.addEventListener('click', async () => {
-        const settings = imageSettings[currentEye];
-        if (!settings.image) {
-            await showInfoModal(
-                'Upload Required',
-                'Please upload an iris image first before saving a project.\n\nClick the "Upload Image(s)" button to get started.',
-                'Got it',
-                'ℹ️'
-            );
-            return;
-        }
+    // Save functionality
+    document.getElementById('save')?.addEventListener('click', () => {
+        const containerToCapture = isDualViewActive ? dualMapperContainer : singleMapperContainer;
+        if (!containerToCapture) return;
 
-        // Ensure storage is initialized
-        if (!storageInitialized) {
-            await initializeStorageWithAuth();
-        }
+        progressIndicator.style.display = 'flex';
 
-        try {
-            progressIndicator.style.display = 'flex';
-
-            // Step 1: Save to Account (IndexedDB)
-            // Get the original image data
-            const originalCanvas = document.createElement('canvas');
-            const originalCtx = originalCanvas.getContext('2d');
-            originalCanvas.width = settings.image.width;
-            originalCanvas.height = settings.image.height;
-            originalCtx.drawImage(settings.image, 0, 0);
-            
-            // Convert to blob (preserving original quality)
-            const originalBlob = await new Promise(resolve => {
-                originalCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
-            });
-
-            // Create thumbnail
-            const thumbnailCanvas = document.createElement('canvas');
-            const thumbnailCtx = thumbnailCanvas.getContext('2d');
-            const thumbScale = 200 / settings.image.width;
-            thumbnailCanvas.width = 200;
-            thumbnailCanvas.height = settings.image.height * thumbScale;
-            thumbnailCtx.drawImage(settings.image, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
-            
-            const thumbnailBlob = await new Promise(resolve => {
-                thumbnailCanvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.7);
-            });
-
-            // Get current notes
-            const noteKey = 'notes_' + currentImageId + '_' + currentEye;
-            const notes = localStorage.getItem(noteKey) || '';
-
-            // Generate automatic project name with timestamp
-            const timestamp = new Date().toLocaleString();
-            const projectName = `Iris ${currentEye} - ${timestamp}`;
-
-            // Prepare project data with complete state
-            const projectData = {
-                projectName: projectName,
-                originalImage: originalBlob,
-                thumbnail: thumbnailBlob,
-                currentEye: currentEye,
-                isDualView: isDualViewActive,
-                adjustments: { ...settings.adjustments },
-                selectedMap: currentMap,
-                mapOpacity: svgSettings[currentEye].opacity,
-                mapColor: svgSettings[currentEye].mapColor,
-                mapPosition: {
-                    x: settings.translateX,
-                    y: settings.translateY,
-                    scale: settings.scale,
-                    rotation: settings.rotation
-                },
-                imageTransform: {
-                    zoom: settings.scale,
-                    rotation: settings.rotation,
-                    offsetX: settings.translateX,
-                    offsetY: settings.translateY
-                },
-                notes: notes,
-                fileName: currentImageId || 'Unknown',
-                fileSize: originalBlob.size,
-                imageDimensions: `${settings.image.width}x${settings.image.height}`
-            };
-
-            // Save to IndexedDB
-            await storageManager.saveProject(projectData);
-            
-            // Refresh saved projects list
-            await loadSavedProjects();
-
-            // Step 2: Generate export image and offer download
-            const containerToCapture = isDualViewActive ? dualMapperContainer : singleMapperContainer;
-            
+        setTimeout(() => {
             html2canvas(containerToCapture, {
                 useCORS: true,
                 allowTaint: false,
@@ -1018,478 +936,18 @@ function updateHistogram() {
                 height: containerToCapture.offsetHeight,
                 windowWidth: containerToCapture.scrollWidth,
                 windowHeight: containerToCapture.scrollHeight,
-            }).then(async (canvas) => {
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `iris_map_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
                 progressIndicator.style.display = 'none';
-                
-                // Ask user if they want to download
-                const downloadRequested = await showSuccessModal(
-                    'Project Saved Successfully',
-                    'Your project has been saved to your account!\n\nWould you like to also download the image?',
-                    'Download Image 📥',
-                    '✅'
-                );
-                
-                if (downloadRequested) {
-                    const link = document.createElement('a');
-                    link.download = `iris_map_${Date.now()}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                }
-            }).catch(async (error) => {
-                console.error('Error generating export:', error);
+            }).catch(error => {
+                console.error('Error saving image:', error);
+                alert('Failed to save the image. Please try again.');
                 progressIndicator.style.display = 'none';
-                await showInfoModal(
-                    'Project Saved',
-                    'Your project has been saved to your account!\n\nDownload failed but your project is safe and can be accessed later.',
-                    'OK',
-                    '✅'
-                );
             });
-            
-        } catch (error) {
-            progressIndicator.style.display = 'none';
-            console.error('Error saving project:', error);
-            await showInfoModal(
-                'Save Failed',
-                'Unable to save your project. Please check your connection and try again.',
-                'OK',
-                '❌'
-            );
-        }
-    });
-
-    // Storage Manager Instance - Initialize but wait for auth
-    const storageManager = new StorageManager();
-    let storageInitialized = false;
-    
-    // Function to initialize storage and load projects after auth
-    async function initializeStorageWithAuth() {
-        if (!storageInitialized) {
-            try {
-                await storageManager.init();
-                console.log('Storage manager initialized');
-                storageInitialized = true;
-                
-                // Load saved projects after auth and storage are ready
-                await loadSavedProjects();
-                console.log('Saved projects loaded for user');
-            } catch (err) {
-                console.error('Failed to initialize storage:', err);
-            }
-        }
-    }
-    
-    // Listen for auth state changes and initialize storage when user is authenticated
-    firebase.auth().onAuthStateChanged(async (user) => {
-        if (user) {
-            console.log('User authenticated in script.js:', user.email);
-            // Initialize storage and load projects when user is authenticated
-            await initializeStorageWithAuth();
-        }
-    });
-
-    // Auto-save function (called after image upload)
-    async function autoSaveProject(fileName) {
-        try {
-            // Ensure storage is initialized
-            if (!storageInitialized) {
-                await initializeStorageWithAuth();
-            }
-            
-            const settings = imageSettings[currentEye];
-            if (!settings.image) return;
-            
-            // Get the original image data
-            const originalCanvas = document.createElement('canvas');
-            const originalCtx = originalCanvas.getContext('2d');
-            originalCanvas.width = settings.image.width;
-            originalCanvas.height = settings.image.height;
-            originalCtx.drawImage(settings.image, 0, 0);
-            
-            // Convert to blob (preserving original quality)
-            const originalBlob = await new Promise(resolve => {
-                originalCanvas.toBlob(blob => resolve(blob), 'image/png', 1.0);
-            });
-
-            // Create thumbnail
-            const thumbnailCanvas = document.createElement('canvas');
-            const thumbnailCtx = thumbnailCanvas.getContext('2d');
-            const thumbScale = 200 / settings.image.width;
-            thumbnailCanvas.width = 200;
-            thumbnailCanvas.height = settings.image.height * thumbScale;
-            thumbnailCtx.drawImage(settings.image, 0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
-            
-            const thumbnailBlob = await new Promise(resolve => {
-                thumbnailCanvas.toBlob(blob => resolve(blob), 'image/jpeg', 0.7);
-            });
-
-            // Get current notes
-            const noteKey = 'notes_' + currentImageId + '_' + currentEye;
-            const notes = localStorage.getItem(noteKey) || '';
-
-            // Generate automatic project name
-            const timestamp = new Date().toLocaleString();
-            const projectName = `${fileName} - ${currentEye} - ${timestamp}`;
-
-            // Prepare project data with complete state
-            const projectData = {
-                projectName: projectName,
-                originalImage: originalBlob,
-                thumbnail: thumbnailBlob,
-                currentEye: currentEye,
-                isDualView: isDualViewActive,
-                adjustments: { ...settings.adjustments },
-                selectedMap: currentMap,
-                mapOpacity: svgSettings[currentEye].opacity,
-                mapColor: svgSettings[currentEye].mapColor,
-                mapPosition: {
-                    x: settings.translateX,
-                    y: settings.translateY,
-                    scale: settings.scale,
-                    rotation: settings.rotation
-                },
-                imageTransform: {
-                    zoom: settings.scale,
-                    rotation: settings.rotation,
-                    offsetX: settings.translateX,
-                    offsetY: settings.translateY
-                },
-                notes: notes,
-                fileName: fileName,
-                fileSize: originalBlob.size,
-                imageDimensions: `${settings.image.width}x${settings.image.height}`
-            };
-
-            // Save to IndexedDB
-            await storageManager.saveProject(projectData);
-            
-            // Refresh saved projects list
-            await loadSavedProjects();
-            
-            console.log(`Auto-saved project: ${projectName}`);
-            
-        } catch (error) {
-            console.error('Auto-save failed:', error);
-            // Don't alert user for auto-save failures, just log them
-        }
-    }
-
-    // Load saved projects
-    async function loadSavedProjects() {
-        try {
-            const projects = await storageManager.getUserProjects(20);
-            const savedProjectsSection = document.getElementById('savedProjects');
-            const savedProjectsList = document.getElementById('savedProjectsList');
-            
-            if (projects.length > 0) {
-                savedProjectsSection.style.display = 'block';
-                savedProjectsList.innerHTML = '';
-                
-                projects.forEach(project => {
-                    const projectItem = createSavedProjectItem(project);
-                    savedProjectsList.appendChild(projectItem);
-                });
-            } else {
-                savedProjectsSection.style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Error loading saved projects:', error);
-        }
-    }
-
-    // Create saved project item element
-    function createSavedProjectItem(project) {
-        const item = document.createElement('div');
-        item.className = 'saved-project-item';
-        
-        const thumbnail = document.createElement('img');
-        thumbnail.className = 'saved-project-thumbnail';
-        if (project.thumbnail) {
-            thumbnail.src = URL.createObjectURL(project.thumbnail);
-        }
-        
-        const info = document.createElement('div');
-        info.className = 'saved-project-info';
-        
-        const name = document.createElement('div');
-        name.className = 'saved-project-name';
-        name.textContent = project.projectName;
-        
-        const date = document.createElement('div');
-        date.className = 'saved-project-date';
-        date.textContent = new Date(project.timestamp).toLocaleString();
-        
-        info.appendChild(name);
-        info.appendChild(date);
-        
-        const actions = document.createElement('div');
-        actions.className = 'saved-project-actions';
-        
-        const loadBtn = document.createElement('button');
-        loadBtn.textContent = 'Load';
-        loadBtn.onclick = () => loadSavedProject(project.id);
-        
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'rename-btn';
-        renameBtn.textContent = '✏️';
-        renameBtn.title = 'Rename project';
-        renameBtn.onclick = () => startRenameProject(project.id, project.projectName, name);
-        
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'delete-btn';
-        deleteBtn.textContent = 'Delete';
-        deleteBtn.onclick = () => deleteSavedProject(project.id, project.projectName);
-        
-        actions.appendChild(loadBtn);
-        actions.appendChild(renameBtn);
-        actions.appendChild(deleteBtn);
-        
-        item.appendChild(thumbnail);
-        item.appendChild(info);
-        item.appendChild(actions);
-        
-        return item;
-    }
-
-    // Load a saved project
-    async function loadSavedProject(projectId) {
-        try {
-            progressIndicator.style.display = 'flex';
-            
-            const project = await storageManager.loadProject(projectId);
-            const state = project.applicationState;
-            
-            // Load the original image
-            const img = new Image();
-            img.onload = async function() {
-                // Set current eye
-                currentEye = state.currentEye;
-                isDualViewActive = state.isDualView;
-                
-                // Update UI for eye selection
-                if (isDualViewActive) {
-                    document.getElementById('bothEyes').click();
-                } else {
-                    document.getElementById(currentEye === 'L' ? 'leftEye' : 'rightEye').click();
-                }
-                
-                // Load image
-                imageSettings[currentEye].image = img;
-                if (isDualViewActive) {
-                    imageSettings['L'].image = img;
-                    imageSettings['R'].image = img;
-                    createCanvasForEye('L');
-                    createCanvasForEye('R');
-                    loadImageForSpecificEye('L');
-                    loadImageForSpecificEye('R');
-                } else {
-                    createCanvasForEye(currentEye);
-                    loadImageForSpecificEye(currentEye);
-                }
-                
-                // Restore all adjustments
-                Object.keys(state.adjustments).forEach(key => {
-                    const slider = adjustmentSliders[key];
-                    if (slider) {
-                        slider.value = state.adjustments[key];
-                        const valueDisplay = slider.nextElementSibling;
-                        if (valueDisplay) {
-                            valueDisplay.textContent = state.adjustments[key];
-                        }
-                        imageSettings[currentEye].adjustments[key] = state.adjustments[key];
-                    }
-                });
-                
-                // Restore map state
-                if (state.mapState.selectedMap) {
-                    currentMap = state.mapState.selectedMap;
-                    loadSVG(currentMap, currentEye);
-                }
-                
-                // Restore map opacity and color
-                opacitySlider.value = state.mapState.mapOpacity;
-                mapColor.value = state.mapState.mapColor;
-                svgSettings[currentEye].opacity = state.mapState.mapOpacity;
-                svgSettings[currentEye].mapColor = state.mapState.mapColor;
-                
-                if (isDualViewActive) {
-                    leftSvgContainer.style.opacity = state.mapState.mapOpacity;
-                    rightSvgContainer.style.opacity = state.mapState.mapOpacity;
-                } else {
-                    svgContainer.style.opacity = state.mapState.mapOpacity;
-                }
-                
-                // Restore transformations
-                imageSettings[currentEye].translateX = state.imageTransform.offsetX;
-                imageSettings[currentEye].translateY = state.imageTransform.offsetY;
-                imageSettings[currentEye].scale = state.imageTransform.zoom;
-                imageSettings[currentEye].rotation = state.imageTransform.rotation;
-                
-                // Apply transformations
-                if (imageSettings[currentEye].canvas) {
-                    imageSettings[currentEye].canvas.style.transform = `
-                        translate(-50%, -50%)
-                        translate(${imageSettings[currentEye].translateX}px, ${imageSettings[currentEye].translateY}px)
-                        rotate(${imageSettings[currentEye].rotation}deg)
-                        scale(${imageSettings[currentEye].scale})
-                    `;
-                }
-                
-                // Restore notes
-                if (state.notes) {
-                    const noteKey = 'notes_' + currentImageId + '_' + currentEye;
-                    localStorage.setItem(noteKey, state.notes);
-                    updateNotesArea();
-                }
-                
-                // Update histogram
-                updateHistogram();
-                
-                progressIndicator.style.display = 'none';
-                
-                await showSuccessModal(
-                    'Project Loaded',
-                    `"${project.projectName}" has been loaded successfully!\n\nAll settings, adjustments, and map positions have been restored.`,
-                    'OK',
-                    '✅'
-                );
-            };
-            
-            img.src = URL.createObjectURL(project.originalImage);
-            
-        } catch (error) {
-            progressIndicator.style.display = 'none';
-            console.error('Error loading project:', error);
-            await showInfoModal(
-                'Load Failed',
-                'Unable to load the selected project. The file may be corrupted or unavailable.\n\nPlease try again or select a different project.',
-                'OK',
-                '❌'
-            );
-        }
-    }
-
-    // Delete a saved project
-    async function deleteSavedProject(projectId, projectName) {
-        const confirmed = await showDangerModal(
-            'Delete Saved Project',
-            `Are you sure you want to delete "${projectName}"?\n\nThis action cannot be undone.`,
-            'Delete Project',
-            '🗑️'
-        );
-        
-        if (!confirmed) {
-            return;
-        }
-        
-        try {
-            await storageManager.deleteProject(projectId);
-            await showSuccessModal(
-                'Project Deleted',
-                `"${projectName}" has been deleted successfully.`,
-                'OK',
-                '✅'
-            );
-            loadSavedProjects(); // Refresh the list
-        } catch (error) {
-            console.error('Error deleting project:', error);
-            await showInfoModal(
-                'Delete Failed',
-                'Failed to delete project. Please try again.',
-                'OK',
-                '❌'
-            );
-        }
-    }
-
-    // Start rename project (inline edit)
-    async function startRenameProject(projectId, currentName, nameElement) {
-        // Create input element
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentName;
-        input.className = 'rename-input';
-        input.style.cssText = `
-            width: 100%;
-            padding: 2px 4px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-            font-size: inherit;
-            font-family: inherit;
-            background: #fff;
-        `;
-        
-        // Store original content
-        const originalContent = nameElement.textContent;
-        
-        // Replace name with input
-        nameElement.textContent = '';
-        nameElement.appendChild(input);
-        input.focus();
-        input.select();
-        
-        // Save function
-        const saveRename = async () => {
-            const newName = input.value.trim();
-            
-            if (!newName) {
-                await showInfoModal(
-                    'Invalid Name',
-                    'Project name cannot be empty.',
-                    'OK',
-                    '❌'
-                );
-                nameElement.textContent = originalContent;
-                return;
-            }
-            
-            if (newName === currentName) {
-                nameElement.textContent = originalContent;
-                return;
-            }
-            
-            try {
-                await storageManager.updateProjectName(projectId, newName);
-                nameElement.textContent = newName;
-                await showSuccessModal(
-                    'Project Renamed',
-                    `Project renamed to "${newName}" successfully.`,
-                    'OK',
-                    '✅'
-                );
-            } catch (error) {
-                console.error('Error renaming project:', error);
-                await showInfoModal(
-                    'Rename Failed',
-                    'Failed to rename project. Please try again.',
-                    'OK',
-                    '❌'
-                );
-                nameElement.textContent = originalContent;
-            }
-        };
-        
-        // Cancel function
-        const cancelRename = () => {
-            nameElement.textContent = originalContent;
-        };
-        
-        // Event listeners
-        input.addEventListener('blur', saveRename);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                saveRename();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                cancelRename();
-            }
-        });
-    }
-
-    // Refresh saved projects button
-    document.getElementById('refreshSavedProjects')?.addEventListener('click', () => {
-        loadSavedProjects();
+        }, 100);
     });
 
     // SVG and opacity controls
@@ -1666,7 +1124,8 @@ function updateHistogram() {
             if (key) {
                 localStorage.setItem(key, note);
                 savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
-                // Gallery functions removed - using My Saved Projects instead
+                updateGalleryNoteIcon(currentImageId, !!note);
+                updateGalleryNoteData(currentImageId, note);
             }
         });
     }
@@ -1710,15 +1169,10 @@ function updateHistogram() {
                     // Apply current color settings after loading
                     changeMapColor(svgSettings[eye].mapColor, eye);
                 })
-                .catch(async (error) => {
+                .catch(error => {
                     console.error('Error loading SVG:', error);
                     if (container) container.innerHTML = '';
-                    await showInfoModal(
-                        'Map Load Failed',
-                        `Unable to load the iris map "${svgFile}" for ${eye === 'L' ? 'left' : 'right'} eye.\n\nPlease try selecting a different map or refresh the page.`,
-                        'OK',
-                        '❌'
-                    );
+                    alert(`Failed to load SVG: ${svgFile}_${eye}.svg`);
                 });
         }
     }
@@ -2171,159 +1625,10 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
             mapColor.value = svgSettings[currentEye].mapColor;
         }
 
+        // Initialize gallery
+        galleryAccordion.style.display = 'block';
+        
     }
-
-    // Custom Modal System
-    class CustomModal {
-        constructor() {
-            this.modal = document.getElementById('customModal');
-            this.backdrop = this.modal.querySelector('.custom-modal-backdrop');
-            this.icon = document.getElementById('customModalIcon');
-            this.title = document.getElementById('customModalTitle');
-            this.message = document.getElementById('customModalMessage');
-            this.cancelBtn = document.getElementById('customModalCancel');
-            this.confirmBtn = document.getElementById('customModalConfirm');
-            
-            this.setupEventListeners();
-        }
-        
-        setupEventListeners() {
-            // Close on backdrop click
-            this.backdrop.addEventListener('click', () => this.close(false));
-            
-            // Close on Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.modal.classList.contains('show')) {
-                    this.close(false);
-                }
-            });
-            
-            // Enter key triggers confirm
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && this.modal.classList.contains('show')) {
-                    this.close(true);
-                }
-            });
-        }
-        
-        show(options) {
-            const {
-                icon = 'ℹ️',
-                title = 'Confirmation',
-                message = 'Are you sure?',
-                confirmText = 'Confirm',
-                cancelText = 'Cancel',
-                type = 'primary' // primary, danger, success
-            } = options;
-            
-            return new Promise((resolve) => {
-                this.resolve = resolve;
-                
-                // Set content
-                this.icon.textContent = icon;
-                this.title.textContent = title;
-                this.message.textContent = message;
-                this.confirmBtn.textContent = confirmText;
-                this.cancelBtn.textContent = cancelText;
-                
-                // Set button styles
-                this.confirmBtn.className = `custom-modal-btn custom-modal-btn-${type}`;
-                this.cancelBtn.className = 'custom-modal-btn custom-modal-btn-secondary';
-                
-                // Show modal
-                this.modal.style.display = 'flex';
-                requestAnimationFrame(() => {
-                    this.modal.classList.add('show');
-                });
-                
-                // Set up button handlers
-                this.cancelBtn.onclick = () => this.close(false);
-                this.confirmBtn.onclick = () => this.close(true);
-                
-                // Focus confirm button
-                setTimeout(() => this.confirmBtn.focus(), 300);
-            });
-        }
-        
-        close(result) {
-            this.modal.classList.remove('show');
-            setTimeout(() => {
-                this.modal.style.display = 'none';
-                if (this.resolve) {
-                    this.resolve(result);
-                    this.resolve = null;
-                }
-            }, 300);
-        }
-    }
-    
-    // Initialize custom modal
-    const customModal = new CustomModal();
-    
-    // Helper functions for different modal types
-    window.showConfirmModal = (title, message, confirmText = 'Confirm', icon = '❓') => {
-        return customModal.show({
-            icon,
-            title,
-            message,
-            confirmText,
-            cancelText: 'Cancel',
-            type: 'primary'
-        });
-    };
-    
-    window.showDangerModal = (title, message, confirmText = 'Delete', icon = '⚠️') => {
-        return customModal.show({
-            icon,
-            title,
-            message,
-            confirmText,
-            cancelText: 'Cancel',
-            type: 'danger'
-        });
-    };
-    
-    window.showSuccessModal = (title, message, actionText = 'OK', icon = '✅') => {
-        return customModal.show({
-            icon,
-            title,
-            message,
-            confirmText: actionText,
-            cancelText: 'Close',
-            type: 'success'
-        });
-    };
-    
-    window.showInfoModal = (title, message, actionText = 'Got it', icon = 'ℹ️') => {
-        return customModal.show({
-            icon,
-            title,
-            message,
-            confirmText: actionText,
-            cancelText: '',
-            type: 'primary'
-        });
-    };
-    
-    window.showWarningModal = (title, message, confirmText = 'Continue', icon = '🗑️') => {
-        return customModal.show({
-            icon,
-            title,
-            message,
-            confirmText,
-            cancelText: 'Cancel',
-            type: 'danger'
-        });
-    };
-
-    // Override browser confirm and alert to prevent cached calls
-    window.confirm = async (message) => {
-        return await showDangerModal('Confirm', message, 'OK');
-    };
-    
-    window.alert = async (message) => {
-        return await showInfoModal('Notice', message, 'OK');
-    };
 
     // Start the application
     initialize();
@@ -2354,17 +1659,13 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
                     }
                     resetAdjustments();
                     const thisImageId = getImageId(event.target.result);
+                    addToGallery(event.target.result, file.name);
                     // Only set currentImageId and update notes for the first image
                     if (firstImageId === null) {
                         firstImageId = thisImageId;
                         firstImageDataUrl = event.target.result;
                         currentImageId = firstImageId;
                         updateNotesArea();
-                        
-                        // Auto-save the project immediately after upload
-                        setTimeout(() => {
-                            autoSaveProject(file.name);
-                        }, 1000); // Small delay to ensure everything is properly loaded
                     }
                 };
                 img.src = event.target.result;
@@ -2586,112 +1887,6 @@ function moveImage(direction) {
     }
     
 
-    // Removed Session Gallery functions - All functionality moved to "My Saved Projects"
-    /* function autoLevels() {
-        try {
-            const sessionData = {
-                timestamp: Date.now(),
-                items: []
-            };
-            
-            const galleryItems = document.querySelectorAll('.gallery-item');
-            galleryItems.forEach(item => {
-                const imageId = item.dataset.imageId;
-                const imageName = item.querySelector('.image-name').textContent;
-                const img = item.querySelector('img');
-                const noteKey = 'notes_' + imageId + '_' + currentEye;
-                const note = localStorage.getItem(noteKey) || '';
-                
-                if (img && img.src) {
-                    sessionData.items.push({
-                        imageId: imageId,
-                        imageName: imageName,
-                        imageDataUrl: img.src,
-                        note: note
-                    });
-                }
-            });
-            
-            localStorage.setItem(SESSION_GALLERY_KEY, JSON.stringify(sessionData));
-        } catch (error) {
-            console.error('Failed to save session gallery:', error);
-        }
-    }
-
-    function loadSessionGallery() {
-        try {
-            const savedData = localStorage.getItem(SESSION_GALLERY_KEY);
-            if (!savedData) return;
-            
-            const sessionData = JSON.parse(savedData);
-            
-            // Check if session is expired (older than 30 days)
-            const daysDiff = (Date.now() - sessionData.timestamp) / (1000 * 60 * 60 * 24);
-            if (daysDiff > SESSION_EXPIRY_DAYS) {
-                localStorage.removeItem(SESSION_GALLERY_KEY);
-                return;
-            }
-            
-            // Clear current gallery
-            galleryAccordion.innerHTML = '';
-            
-            // Restore session items
-            sessionData.items.forEach(item => {
-                const galleryItem = document.createElement('div');
-                galleryItem.className = 'gallery-item';
-                galleryItem.dataset.imageId = item.imageId;
-                galleryItem.innerHTML = `
-                    <div class="gallery-item-header">
-                        <span class="image-name">${item.imageName}</span>
-                        <span class="note-icon" style="display:${item.note ? 'inline' : 'none'};">📝</span>
-                        <div class="gallery-item-controls">
-                            <button class="btn rename-btn">Rename</button>
-                            <button class="btn load-btn">Load</button>
-                        </div>
-                    </div>
-                    <div class="gallery-item-content">
-                        <img src="${item.imageDataUrl}" alt="${item.imageName}" loading="lazy">
-                        <button class="gallery-delete-btn" title="Delete image" tabindex="0" aria-label="Delete image">×</button>
-                    </div>
-                `;
-                
-                // Restore notes to localStorage if they exist
-                if (item.note) {
-                    const noteKey = 'notes_' + item.imageId + '_' + currentEye;
-                    localStorage.setItem(noteKey, item.note);
-                }
-                
-                setupGalleryItemEvents(galleryItem, item.imageDataUrl, item.note);
-                galleryAccordion.appendChild(galleryItem);
-            });
-            
-            console.log(`Restored ${sessionData.items.length} items from session gallery`);
-        } catch (error) {
-            console.error('Failed to load session gallery:', error);
-            localStorage.removeItem(SESSION_GALLERY_KEY);
-        }
-    }
-
-    function clearSessionGallery() {
-        // Clear from localStorage
-        localStorage.removeItem(SESSION_GALLERY_KEY);
-        
-        // Clear from DOM
-        galleryAccordion.innerHTML = '';
-        
-        // Clear any related notes (optional - you might want to keep notes)
-        const keysToRemove = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key && key.startsWith('notes_')) {
-                keysToRemove.push(key);
-            }
-        }
-        keysToRemove.forEach(key => localStorage.removeItem(key));
-        
-        console.log('Session gallery cleared');
-    }
-
     // Gallery Functions
     function addToGallery(imageDataUrl, name) {
         const imageId = getImageId(imageDataUrl);
@@ -2716,9 +1911,6 @@ function moveImage(direction) {
         `;
         setupGalleryItemEvents(galleryItem, imageDataUrl, note);
         galleryAccordion.appendChild(galleryItem);
-        
-        // Auto-save session after adding item
-        saveSessionGallery();
     }
 
     function setupGalleryItemEvents(galleryItem, imageDataUrl, note) {
@@ -2735,8 +1927,6 @@ function moveImage(direction) {
             const newName = prompt('Enter new name:', currentName);
             if (newName?.trim()) {
                 imageNameElement.textContent = newName.trim();
-                // Auto-save session after rename
-                saveSessionGallery();
             }
         });
 
@@ -2746,27 +1936,15 @@ function moveImage(direction) {
         });
 
         // Delete button logic (click and keyboard)
-        async function handleDelete(e) {
+        function handleDelete(e) {
             if (e.type === 'click' || (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' '))) {
                 e.stopPropagation();
-                
-                const imageName = imageNameElement.textContent;
-                const confirmed = await showDangerModal(
-                    'Delete Session Image',
-                    `Are you sure you want to delete "${imageName}" and its notes?\n\nThis action cannot be undone.`,
-                    'Delete Image',
-                    '🗑️'
-                );
-                
-                if (!confirmed) return;
-                
+                if (!confirm('Are you sure you want to delete this image and its notes?')) return;
                 // Remove notes for both eyes
                 localStorage.removeItem('notes_' + imageId + '_L');
                 localStorage.removeItem('notes_' + imageId + '_R');
                 // Remove from DOM
                 galleryItem.remove();
-                // Auto-save session after delete
-                saveSessionGallery();
                 // If this was the currently displayed image, switch to next or clear
                 if (currentImageId === imageId) {
                     const nextGalleryItem = document.querySelector('.gallery-item');
@@ -2832,8 +2010,7 @@ function moveImage(direction) {
         // If you have a gallery array/object, update the note property here
         // For now, this is a placeholder for future extensibility
     }
-}); 
-*/
+});
 
 function autoLevels() {
     const settings = isDualViewActive ? ['L', 'R'] : [currentEye];
@@ -2976,5 +2153,5 @@ function convolve(src, dst, width, height, kernel) {
     }
 }
 
-});
+
 

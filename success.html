@@ -4,17 +4,7 @@
     <meta charset="UTF-8">
     <title>Welcome to Iris Mapper Pro!</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Favicon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
-    <link rel="shortcut icon" href="/favicon.ico">
-    
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;600;700&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
@@ -22,21 +12,19 @@
         }
         
         body {
-            font-family: 'Josefin Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #1c262f;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            color: #ffffff;
-            line-height: 1.6;
         }
         
         .success-container {
             background: white;
-            border-radius: 12px;
-            padding: 50px 40px;
+            border-radius: 20px;
+            padding: 50px;
             max-width: 600px;
             text-align: center;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
@@ -46,7 +34,7 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: #0dc5a1;
+            background: #28a745;
             margin: 0 auto 30px;
             display: flex;
             align-items: center;
@@ -105,20 +93,18 @@
         .cta-button {
             display: inline-block;
             padding: 15px 40px;
-            background: #0dc5a1;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             text-decoration: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 1.1rem;
             font-weight: 600;
             transition: transform 0.2s, box-shadow 0.2s;
-            cursor: pointer;
         }
         
         .cta-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(13, 197, 161, 0.4);
-            background: #0ba085;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
         }
         
         .next-steps {
@@ -149,7 +135,7 @@
             content: '→';
             position: absolute;
             left: 0;
-            color: #0dc5a1;
+            color: #667eea;
         }
         
         /* Auto-login status styling */
@@ -223,7 +209,7 @@
         
         /* Success state for login status */
         .login-status.success {
-            background: #0dc5a1;
+            background: #28a745;
         }
         
         /* Error state for login status */
@@ -264,6 +250,11 @@
         
         <a href="#" class="cta-button" id="startUsingBtn">Start Using Iris Mapper Pro</a>
         
+        <!-- Email notice -->
+        <div id="emailNotice" class="email-notice" style="display: none;">
+            <p>📧 We've sent you a welcome email to: <strong id="userEmailDisplay"></strong></p>
+            <p class="small-text">Check your inbox to set up your password for future logins</p>
+        </div>
         
         <div class="next-steps">
             <h3>What's Next?</h3>
@@ -278,9 +269,8 @@
     </div>
     
     <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     
     <!-- Firebase Configuration -->
     <script src="js/firebase-config.js"></script>
@@ -300,7 +290,15 @@
         // UI elements
         const loginStatus = document.getElementById('loginStatus');
         const statusText = document.getElementById('statusText');
+        const emailNotice = document.getElementById('emailNotice');
+        const userEmailDisplay = document.getElementById('userEmailDisplay');
         const startBtn = document.getElementById('startUsingBtn');
+        
+        // Show email notice if we have email
+        if (userEmail) {
+            userEmailDisplay.textContent = userEmail;
+            emailNotice.style.display = 'block';
+        }
         
         // Handle "Start Using" button click
         startBtn.addEventListener('click', async (e) => {
@@ -368,7 +366,7 @@
                 
                 // Show friendly error message
                 loginStatus.classList.add('info');
-                statusText.innerHTML = '📧 Please check your email for login instructions';
+                statusText.innerHTML = '📧 Almost there! Check your email to complete setup';
                 startBtn.textContent = 'Go to Login Page';
                 startBtn.style.opacity = '1';
                 startBtn.style.pointerEvents = 'auto';

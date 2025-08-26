@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     firebase.auth().onAuthStateChanged((user) => {
         if (user) {
             console.log('User already logged in, redirecting to app');
-            window.location.href = 'app.html';
+            window.location.href = '/app';
         }
     });
 
@@ -34,11 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '/#pricing-cards';
     });
 
-    // Forgot password
-    forgotPasswordLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleForgotPassword();
-    });
+    // Forgot password - let the link navigate naturally
+    // No JavaScript override needed
 
     // Close error modal
     closeErrorModal.addEventListener('click', () => {
@@ -69,12 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (subscriptionStatus.hasSubscription) {
                 // Redirect to app
-                window.location.href = 'app.html';
+                window.location.href = '/app';
             } else {
                 // No active subscription, redirect to pricing
                 showError('Your subscription has expired. Please renew your subscription to continue using Iris Mapper Pro.');
                 setTimeout(() => {
-                    window.location.href = 'pricing.html';
+                    window.location.href = '/pricing';
                 }, 3000);
             }
             
@@ -98,24 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Handle forgot password
-    async function handleForgotPassword() {
-        const email = emailInput.value.trim();
-        
-        if (!email) {
-            showError('Please enter your email address first, then click "Forgot your password?"');
-            emailInput.focus();
-            return;
-        }
-
-        try {
-            await firebase.auth().sendPasswordResetEmail(email);
-            showError('Password reset email sent! Check your inbox and follow the instructions.', false);
-        } catch (error) {
-            console.error('Password reset error:', error);
-            showError(getErrorMessage(error.code));
-        }
-    }
 
     // Show/hide loading state
     function showLoading(loading) {
