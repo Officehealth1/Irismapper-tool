@@ -29,7 +29,9 @@
 <body>
     <div class="app-container">
         <div class="logo-container">
-            <img src="grids/watermark.png" alt="Logo" class="logo">
+            <a href="/" title="Back to Homepage">
+                <img src="grids/irismapper-logo.png" alt="IrisMapper Pro" class="logo">
+            </a>
             <span class="version-text">v5.1</span>
         </div>
 
@@ -457,7 +459,7 @@
                             '💳'
                         );
                         if (viewPricing) {
-                            window.location.href = '/pricing';
+                            window.location.href = '/#pricing-cards';
                         }
                         return;
                     }
@@ -476,7 +478,7 @@
                             '💳'
                         );
                         if (viewOptions) {
-                            window.location.href = '/pricing';
+                            window.location.href = '/#pricing-cards';
                         }
                     }
                 } catch (error) {
@@ -489,7 +491,7 @@
                         '🔄'
                     );
                     if (tryAgain) {
-                        window.location.href = '/pricing';
+                        window.location.href = '/#pricing-cards';
                     }
                 }
             });

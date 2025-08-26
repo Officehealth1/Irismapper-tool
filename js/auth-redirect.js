@@ -60,7 +60,7 @@
     
     function redirectToPricing() {
         const basePath = getBasePath();
-        window.location.href = basePath + 'pricing';
+        window.location.href = basePath + '#pricing-cards';
     }
     
     function getBasePath() {

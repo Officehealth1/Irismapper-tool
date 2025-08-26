@@ -18,62 +18,52 @@
     <!-- Simplified Header -->
     <header class="site-header">
         <div class="header-container">
-            <div class="header-left">
-                <img src="grids/watermark.png" alt="IrisMapper Pro" class="header-logo">
-            </div>
-            <nav class="header-nav">
-                <a href="#pricing" class="nav-link">Pricing</a>
-                <a href="#features" class="nav-link">Features</a>
-                <a href="#faq" class="nav-link">FAQ</a>
-            </nav>
-            <div class="header-right">
-                <a href="login" class="nav-link">Sign in</a>
-                <a href="#pricing" class="nav-cta">Start free trial</a>
-            </div>
+            <a href="/" class="header-logo-link">
+                <img src="grids/irismapper-logo.png" alt="IrisMapper Pro" class="header-logo">
+            </a>
+            <a href="login" class="account-icon" title="Account">👤</a>
         </div>
     </header>
 
     <div class="main-content">
         <!-- Simple Hero Section -->
-        <section class="hero" id="pricing">
-            <h1>Professional iris mapping software</h1>
-            <p>Trusted by healthcare practitioners for iris analysis and professional reporting.</p>
-            <a href="#pricing-cards" class="hero-cta">Start free trial</a>
+        <section class="hero" id="hero">
+            <div class="hero-overlay">
+                <h1>Professional iris mapping software</h1>
+                <a href="#pricing-cards" class="hero-cta">Start free trial</a>
+            </div>
         </section>
 
         <!-- Clean How It Works Section -->
         <section class="how-it-works" id="features">
             <div class="how-it-works-header">
                 <h2>How IrisMapper works</h2>
-                <p>Upload iris images, apply professional mapping systems, and generate detailed reports for your practice.</p>
             </div>
             
             <div class="videos-grid">
                 <div class="video-card">
                     <div class="video-thumbnail" data-video="walkthrough">
                         <img src="grids/watermark.png" alt="Product Walkthrough" class="video-thumb">
+                        <div class="video-title-overlay">
+                            <h3>Platform walkthrough</h3>
+                        </div>
                         <div class="play-overlay">
                             <div class="play-button">▶</div>
                         </div>
                         <span class="video-duration">90 sec</span>
-                    </div>
-                    <div class="video-info">
-                        <h3>Platform walkthrough</h3>
-                        <p>See how to upload iris images, apply mapping systems, and generate professional reports.</p>
                     </div>
                 </div>
                 
                 <div class="video-card">
                     <div class="video-thumbnail" data-video="practitioner">
                         <img src="grids/watermark.png" alt="Practitioner Demo" class="video-thumb">
+                        <div class="video-title-overlay">
+                            <h3>In practice</h3>
+                        </div>
                         <div class="play-overlay">
                             <div class="play-button">▶</div>
                         </div>
                         <span class="video-duration">2 min</span>
-                    </div>
-                    <div class="video-info">
-                        <h3>In practice</h3>
-                        <p>Watch a practitioner use IrisMapper during a patient consultation.</p>
                     </div>
                 </div>
             </div>
@@ -114,7 +104,8 @@
 
         <!-- Clean Pricing Cards -->
         <section class="pricing" id="pricing-cards">
-            <div class="pricing-header">
+            <div class="pricing-container">
+                <div class="pricing-header">
                 <h2>Professional iris mapping plans</h2>
                 <p>Start with a 14-day free trial. No credit card required.</p>
                 
@@ -172,7 +163,6 @@
                         <ul>
                             <li>Everything in Practitioner</li>
                             <li>Up to 5 team members</li>
-                            <li>Custom branding & logos</li>
                             <li>Priority support</li>
                             <li>Bulk processing</li>
                         </ul>
@@ -182,14 +172,14 @@
                 </div>
             </div>
             
-            <p class="pricing-note">14-day free trial • Cancel anytime</p>
-        </div>
+                <p class="pricing-note">14-day free trial • Cancel anytime</p>
+            </div>
+        </section>
 
         <!-- Clean FAQ Section -->
         <section class="faq" id="faq">
             <div class="faq-header">
                 <h2>Questions</h2>
-                <p>Everything you need to know to get started.</p>
             </div>
             
             <div class="faq-list">
@@ -199,7 +189,7 @@
                         <span class="expand-icon">+</span>
                     </summary>
                     <div class="faq-answer">
-                        <p>Full access to all iris mapping systems, image uploads, analysis tools, and export features for 14 days. No credit card required.</p>
+                        <p>Full access to all features for 14 days.</p>
                     </div>
                 </details>
 
@@ -209,7 +199,7 @@
                         <span class="expand-icon">+</span>
                     </summary>
                     <div class="faq-answer">
-                        <p>All plans include 8 professional mapping systems: Angerer, Bourdiol, IrisLAB, Jaussas, Jensen, and Roux systems in multiple languages.</p>
+                        <p>8 professional systems including Angerer, Jensen, and IrisLAB.</p>
                     </div>
                 </details>
 
@@ -219,7 +209,7 @@
                         <span class="expand-icon">+</span>
                     </summary>
                     <div class="faq-answer">
-                        <p>No downloads or installations required. IrisMapper Pro runs in any web browser on Windows, Mac, tablets, and mobile devices.</p>
+                        <p>No, it runs in any web browser.</p>
                     </div>
                 </details>
 
@@ -229,7 +219,7 @@
                         <span class="expand-icon">+</span>
                     </summary>
                     <div class="faq-answer">
-                        <p>We use enterprise-grade SSL encryption and secure cloud storage. Your data is completely private and GDPR compliant.</p>
+                        <p>SSL encryption and GDPR compliant storage.</p>
                     </div>
                 </details>
 
@@ -239,7 +229,7 @@
                         <span class="expand-icon">+</span>
                     </summary>
                     <div class="faq-answer">
-                        <p>Yes, you can upgrade or downgrade your plan at any time. Changes take effect at your next billing cycle.</p>
+                        <p>Yes, changes take effect at your next billing cycle.</p>
                     </div>
                 </details>
             </div>
@@ -249,26 +239,130 @@
             </div>
         </section>
 
-        <!-- Minimal Contact Section -->
+        <!-- Contact Form Section -->
         <section class="contact">
             <div class="contact-header">
                 <h2>Contact</h2>
-                <p>Get help when you need it.</p>
             </div>
             
-            <div class="contact-methods">
-                <div class="contact-method">
-                    <h3>Email Support</h3>
-                    <p><a href="mailto:team@irislab.com">team@irislab.com</a></p>
+            <form class="contact-form" id="contactForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contactName">Name *</label>
+                        <input type="text" id="contactName" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactEmail">Email *</label>
+                        <input type="email" id="contactEmail" name="email" required>
+                    </div>
                 </div>
-                <div class="contact-method">
-                    <h3>Help Centre</h3>
-                    <p><a href="/help">Browse guides and tutorials</a></p>
+                <div class="form-group">
+                    <label for="contactSubject">Subject</label>
+                    <input type="text" id="contactSubject" name="subject" placeholder="What can we help with?">
                 </div>
-            </div>
+                <div class="form-group">
+                    <label for="contactMessage">Message *</label>
+                    <textarea id="contactMessage" name="message" rows="4" required placeholder="Tell us how we can help..."></textarea>
+                </div>
+                <button type="submit" class="contact-submit-btn">
+                    <span class="btn-text">Send Message</span>
+                    <div class="btn-spinner" style="display: none;"></div>
+                </button>
+            </form>
             
             <div class="contact-cta">
                 <button class="contact-cta-btn" id="contactCta">Start free trial</button>
+            </div>
+        </section>
+
+        <!-- Timeline Section -->
+        <section class="timeline-section">
+            <div class="timeline-header">
+                <h2>Years of Innovation</h2>
+                <p>Continuous evolution to deliver the best iris mapping experience</p>
+            </div>
+            
+            <div class="timeline">
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <div class="timeline-year">Sep 2007</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2007.jpg" alt="IrisMapper 2007 Version" class="timeline-img">
+                        </div>
+                        <h3>Initial Launch</h3>
+                        <p>Core manual iris mapping with basic client photo upload</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <div class="timeline-year">May 2008</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2008.png" alt="IrisMapper 2008 Enhanced Platform" class="timeline-img">
+                        </div>
+                        <h3>Enhanced Platform</h3>
+                        <p>Improved UI/UX, streamlined workflows & batch processing</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <div class="timeline-year">Jan 2012</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2012.jpg" alt="IrisMapper 2012 Reporting Features" class="timeline-img">
+                        </div>
+                        <h3>Reporting Features</h3>
+                        <p>Basic reports, client history tracking & data export options</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <div class="timeline-year">Aug 2015</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2015.png" alt="IrisMapper 2015 Custom Mapping" class="timeline-img">
+                        </div>
+                        <h3>Custom Mapping</h3>
+                        <p>Custom map creation, zone annotation tools & comparisons</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <div class="timeline-item left">
+                    <div class="timeline-content">
+                        <div class="timeline-year">Jun 2018</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2018.png" alt="IrisMapper 2018 Enhanced Tools" class="timeline-img">
+                        </div>
+                        <h3>Enhanced Tools</h3>
+                        <p>Manual mapping with improved image enhancement & notes</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <div class="timeline-item right">
+                    <div class="timeline-content">
+                        <div class="timeline-year">Mar 2025</div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2025.jpg" alt="IrisMapper Pro 2025 AI-Powered Platform" class="timeline-img">
+                        </div>
+                        <h3>IrisMapper Pro</h3>
+                        <p>AI-powered analysis, smart alignment & instant web reporting</p>
+                    </div>
+                    <div class="timeline-dot current"></div>
+                </div>
+                
+                <div class="timeline-item left future">
+                    <div class="timeline-content future-content">
+                        <div class="timeline-year future-year">Coming Soon</div>
+                        <h3>Future Vision</h3>
+                        <p>Next-generation iris analysis technology</p>
+                    </div>
+                    <div class="timeline-dot future-dot"></div>
+                </div>
             </div>
         </section>
 
@@ -279,7 +373,7 @@
         <div class="modal-content">
             <button class="close-modal" id="closeModal">&times;</button>
             <h3>Get Started</h3>
-            <p>Enter your email address to begin your 14-day free trial. No credit card required.</p>
+            <p>Start your free trial</p>
             
             <input type="email" id="emailInput" class="email-input" placeholder="Enter your email address" required>
             
@@ -304,9 +398,8 @@
             <div class="footer-section">
                 <h4>Product</h4>
                 <ul>
-                    <li><a href="/help">Help Centre</a></li>
                     <li><a href="#features">Features</a></li>
-                    <li><a href="#pricing">Pricing</a></li>
+                    <li><a href="#pricing-cards">Pricing</a></li>
                 </ul>
             </div>
         </div>

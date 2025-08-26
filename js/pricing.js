@@ -161,7 +161,7 @@ async function handleSubscribe() {
                 tier: currentTier,
                 email: email,
                 successUrl: window.location.origin + '/success',
-                cancelUrl: window.location.origin + '/pricing'
+                cancelUrl: window.location.origin + '/'
             })
         });
         
@@ -400,33 +400,49 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Contact Form Handler
+    const contactForm = document.getElementById('contactForm');
     if (contactForm) {
         contactForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(contactForm);
-            const submitBtn = contactForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
+            const submitBtn = contactForm.querySelector('.contact-submit-btn');
+            const btnText = submitBtn.querySelector('.btn-text');
+            const btnSpinner = submitBtn.querySelector('.btn-spinner');
             
             try {
+                // Show loading state
                 submitBtn.disabled = true;
-                submitBtn.textContent = 'Sending...';
+                btnText.textContent = 'Sending...';
+                btnSpinner.style.display = 'block';
                 
-                // Placeholder for actual form submission
+                // Validate required fields
+                const name = formData.get('name');
+                const email = formData.get('email');
+                const message = formData.get('message');
+                
+                if (!name || !email || !message) {
+                    throw new Error('Please fill in all required fields.');
+                }
+                
+                // Log form data (replace with actual API call)
                 console.log('Contact form submitted:', Object.fromEntries(formData));
                 
                 // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 2000));
                 
+                // Success
                 alert('Message sent successfully! We\'ll respond within 24 hours.');
                 contactForm.reset();
                 
             } catch (error) {
                 console.error('Contact form error:', error);
-                alert('Failed to send message. Please try again.');
+                alert('Error: ' + error.message);
             } finally {
+                // Reset button state
                 submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
+                btnText.textContent = 'Send Message';
+                btnSpinner.style.display = 'none';
             }
         });
     }

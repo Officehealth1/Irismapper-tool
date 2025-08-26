@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Signup button
     signupBtn.addEventListener('click', () => {
-        window.location.href = '/pricing';
+        window.location.href = '/#pricing-cards';
     });
 
     // Forgot password - now handled by direct link to /forgot-password page
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // No active subscription, redirect to pricing
                 showError('Your subscription has expired. Please renew your subscription to continue using Iris Mapper Pro.');
                 setTimeout(() => {
-                    window.location.href = '/pricing';
+                    window.location.href = '/#pricing-cards';
                 }, 3000);
             }
             

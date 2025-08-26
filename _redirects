@@ -14,8 +14,11 @@
 /setup-password /setup-password.html 200
 /verify-email /verify-email.html 200
 
-# Redirect root to pricing page for new visitors
-/ /pricing 302
+# Serve pricing page as homepage
+/ /pricing.html 200
+
+# Keep pricing path available for internal links
+/pricing /pricing.html 200
 
 # Redirect .html extensions to clean URLs
 /app.html /app 301
