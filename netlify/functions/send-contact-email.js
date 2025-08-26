@@ -82,8 +82,8 @@ User Agent: ${event.headers['user-agent'] || 'Unknown'}
 
     // Email configuration
     const msg = {
-      to: process.env.SENDGRID_FROM_EMAIL, // Send to support email
-      from: process.env.SENDGRID_FROM_EMAIL, // From verified sender
+      to: 'team@irislab.com', // Send to IrisLab team
+      from: process.env.SENDGRID_FROM_EMAIL, // From verified sender (support@irismapper.com)
       replyTo: email, // Allow direct reply to customer
       subject: emailSubject,
       text: emailContent,
