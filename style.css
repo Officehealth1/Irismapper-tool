@@ -132,7 +132,7 @@ body, html {
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
-    transition: background-color 0.3s, transform 0.1s;
+    transition: background-color 0.3s, transform 0.1s, box-shadow 0.3s;
     text-align: center;
     width: 100%; /* Make all buttons full width within their container */
     box-sizing: border-box; /* Include padding and border in width */
@@ -145,6 +145,26 @@ body, html {
 
 .btn:active {
     transform: translateY(1px);
+}
+
+/* Active button state */
+.btn.active {
+    background-color: #10b981;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    transform: translateY(1px);
+    border: 1px solid #059862;
+}
+
+.btn.active:hover {
+    background-color: #059862;
+    transform: translateY(1px);
+}
+
+/* Eye selection buttons specific active state */
+.eye-selection-panel .btn.active {
+    background-color: #10b981;
+    font-weight: bold;
+    border: 1px solid #059862;
 }
 
 /* Disabled button style */
