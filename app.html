@@ -20,7 +20,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     
     <!-- Firebase Configuration and Auth Check -->
     <script src="js/firebase-config.js"></script>
@@ -380,10 +380,10 @@
                 if (user) {
                     // User is signed in - update email display
                     userEmailElement.textContent = user.email || 'User';
-                    // User authenticated
+                    console.log('User authenticated:', user.email);
                 } else {
                     // No user signed in - redirect to login
-                    // No user authenticated, redirecting to login
+                    console.log('No user authenticated, redirecting to login');
                     window.location.href = '/login';
                 }
             });
@@ -405,10 +405,10 @@
             logoutBtn.addEventListener('click', async function() {
                 try {
                     await firebase.auth().signOut();
-                    // User logged out successfully
+                    console.log('User logged out successfully');
                     window.location.href = '/login';
                 } catch (error) {
-                    // Logout error
+                    console.error('Logout error:', error);
                     showInfoModal(
                         'Logout Error',
                         'Unable to log out properly. Please try again or refresh the page.',
@@ -450,7 +450,7 @@
                     manageSubscription.style.pointerEvents = 'auto';
                     
                     if (!response.ok) {
-                        // Portal session response not ok
+                        console.error('Portal session response not ok:', response.status);
                         // For now, redirect to pricing page as fallback
                         const viewPricing = await showConfirmModal(
                             'Portal Unavailable',
@@ -482,7 +482,7 @@
                         }
                     }
                 } catch (error) {
-                    // Error accessing subscription portal
+                    console.error('Error accessing subscription portal:', error);
                     // Fallback to pricing page
                     const tryAgain = await showConfirmModal(
                         'Connection Error',
@@ -520,7 +520,7 @@
                         );
                     }
                 } catch (error) {
-                    // Error sending password reset
+                    console.error('Error sending password reset:', error);
                     await showInfoModal(
                         'Reset Error',
                         'Failed to send password reset email. Please check your connection and try again.',

@@ -1,6 +1,6 @@
 // This is a simpler authentication check specifically for app.html
 (function() {
-    // Auth check running for app.html
+    console.log("Auth check running for app.html");
     
     // Function to get base path
     function getBasePath() {
@@ -22,7 +22,7 @@
     // Check Firebase is loaded before continuing
     function checkFirebase() {
         if (typeof firebase === 'undefined' || !firebase.auth) {
-            // Firebase not loaded yet, checking again in 100ms
+            console.log("Firebase not loaded yet, checking again in 100ms");
             setTimeout(checkFirebase, 100);
             return;
         }
@@ -30,11 +30,11 @@
         // Once Firebase is loaded, check auth
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) {
-                // User not logged in, redirecting to login page
+                console.log("User not logged in, redirecting to login page");
                 const basePath = getBasePath();
                 window.location.href = basePath + 'login';
             } else {
-                // User authenticated
+                console.log("User authenticated:", user.email);
             }
         });
     }
