@@ -76,6 +76,65 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Notification Modal System
+function showNotification(type, title, message) {
+    const modal = document.getElementById('notificationModal');
+    const icon = document.getElementById('notificationIcon');
+    const titleEl = document.getElementById('notificationTitle');
+    const messageEl = document.getElementById('notificationMessage');
+    const okBtn = document.getElementById('notificationOk');
+    
+    // Set content
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    
+    // Reset classes
+    icon.className = 'notification-icon';
+    
+    // Set icon and style based on type
+    switch(type) {
+        case 'success':
+            icon.classList.add('success');
+            icon.textContent = '✓';
+            break;
+        case 'error':
+            icon.classList.add('error');
+            icon.textContent = '✕';
+            break;
+        case 'info':
+            icon.classList.add('info');
+            icon.textContent = 'ℹ';
+            break;
+        default:
+            icon.classList.add('success');
+            icon.textContent = '✓';
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Handle close
+    okBtn.onclick = () => {
+        modal.classList.remove('show');
+    };
+    
+    // Close on backdrop click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    };
+    
+    // Close on escape key
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            modal.classList.remove('show');
+            document.removeEventListener('keydown', handleKeydown);
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
+}
+
 // Update pricing display
 function updatePricingDisplay() {
     // Hide all price displays first
@@ -219,8 +278,6 @@ const resultsInlineCtas = document.querySelectorAll('[data-source^="results_"]')
 // Video thumbnails
 const videoThumbnails = document.querySelectorAll('.video-thumbnail');
 
-// Contact form
-const contactForm = document.getElementById('contactForm');
 
 // CTA Landing Functions
 function openEmailModal(source) {
@@ -390,79 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Contact Form Handler
-    const contactForm = document.getElementById('contactForm');
-    if (contactForm) {
-        contactForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(contactForm);
-            const submitBtn = contactForm.querySelector('.contact-submit-btn');
-            const btnText = submitBtn.querySelector('.btn-text');
-            const btnSpinner = submitBtn.querySelector('.btn-spinner');
-            
-            try {
-                // Show loading state
-                submitBtn.disabled = true;
-                btnText.textContent = 'Sending...';
-                btnSpinner.style.display = 'block';
-                
-                // Validate required fields
-                const name = formData.get('name');
-                const email = formData.get('email');
-                const message = formData.get('message');
-                
-                if (!name || !email || !message) {
-                    throw new Error('Please fill in all required fields.');
-                }
-                
-                // Send to backend API
-                const response = await fetch('/.netlify/functions/send-contact-email', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        email: email,
-                        subject: formData.get('subject') || '',
-                        message: message
-                    })
-                });
-
-                // Handle different response scenarios
-                let result;
-                const contentType = response.headers.get('content-type');
-                
-                if (contentType && contentType.includes('application/json')) {
-                    result = await response.json();
-                } else {
-                    const text = await response.text();
-                    result = { error: text || 'Unknown server error' };
-                }
-                
-                if (!response.ok) {
-                    if (response.status === 405) {
-                        throw new Error('Contact form is not available in development. Please use "npm run dev" or deploy to test the contact form.');
-                    }
-                    throw new Error(result.error || `Server error: ${response.status}`);
-                }
-                
-                // Success
-                alert(result.message || 'Message sent successfully! We\'ll respond within 24 hours.');
-                contactForm.reset();
-                
-            } catch (error) {
-                console.error('Contact form error:', error);
-                alert('Error: ' + error.message);
-            } finally {
-                // Reset button state
-                submitBtn.disabled = false;
-                btnText.textContent = 'Send Message';
-                btnSpinner.style.display = 'none';
-            }
-        });
-    }
     
     // Mobile sticky CTA visibility
     const mobileCta = document.getElementById('mobileCta');
@@ -482,6 +466,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+});
+
+// Brevo iframe auto-resize (progressive enhancement)
+document.addEventListener('DOMContentLoaded', () => {
+    const brevoIframe = document.getElementById('brevoForm');
+    if (!brevoIframe) return;
+
+    function setIframeHeight(nextHeightPx) {
+        const minHeight = 700;
+        const safeHeight = Math.max(Number(nextHeightPx) || 0, minHeight);
+        brevoIframe.style.height = safeHeight + 'px';
+    }
+
+    // Initial height based on viewport (fallback)
+    const vw = window.innerWidth;
+    const initial = vw < 400 ? 1250 : vw < 600 ? 1160 : vw < 900 ? 1080 : 1000;
+    setIframeHeight(initial);
+
+    // Listen for messages from Brevo form for dynamic height updates
+    window.addEventListener('message', (event) => {
+        try {
+            const isBrevo = typeof event.origin === 'string' && event.origin.includes('sibforms.com');
+            if (!isBrevo) return;
+
+            const data = event.data;
+            let nextHeight = null;
+
+            if (typeof data === 'number') {
+                nextHeight = data;
+            } else if (typeof data === 'string') {
+                const match = data.match(/height\s*[:=]\s*(\d{3,4})/i);
+                if (match) nextHeight = parseInt(match[1], 10);
+            } else if (data && typeof data === 'object') {
+                if (typeof data.height === 'number') nextHeight = data.height;
+                else if (typeof data.outerHeight === 'number') nextHeight = data.outerHeight;
+            }
+
+            if (nextHeight) {
+                // Add a little buffer to avoid clipping shadows/tooltips
+                setIframeHeight(nextHeight + 40);
+            }
+        } catch (err) {
+            // Silently ignore parsing errors
+        }
+    });
 });
 
 // Test mode indicator
