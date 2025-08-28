@@ -89,6 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'Jensen_Map_FR_V1',
         'Roux_Map_FR_V1'
     ];
+    
+    // Current selected SVG map
+    let currentSVGFile = 'Jensen_Map_EN_V1'; // Default map
 
     const adjustmentSliders = {
         exposure: document.getElementById('exposureSlider'),
@@ -1047,6 +1050,9 @@ function updateHistogram() {
                 const projectId = await storageManager.saveProject(projectData);
                 progressIndicator.style.display = 'none';
                 
+                // Refresh saved projects list
+                await loadSavedProjects();
+                
                 if (typeof showInfoModal === 'function') {
                     await showInfoModal('Project Saved', `Your project has been successfully saved to your local storage.\n\nProject ID: ${projectId}`, 'Great!', '✅');
                 } else {
@@ -1253,6 +1259,9 @@ function updateHistogram() {
 
     // SVG handling functions
     function loadSVG(svgFile, eye = currentEye) {
+        // Update current SVG file reference
+        currentSVGFile = svgFile;
+        
         const container = isDualViewActive ?
             (eye === 'L' ? leftSvgContainer : rightSvgContainer) : svgContainer;
 
@@ -2081,120 +2090,81 @@ function moveImage(direction) {
             await storageManager.saveProject(projectData);
             console.log('Project auto-saved successfully');
             
+            // Refresh saved projects list
+            await loadSavedProjects();
+            
         } catch (error) {
             console.warn('Auto-save failed:', error);
             // Don't show error to user for auto-save failures
         }
     }
 
-    // My Projects functionality
-    window.showMyProjects = async function() {
-        if (!storageManager) {
-            if (typeof showInfoModal === 'function') {
-                await showInfoModal('Storage Unavailable', 'Project storage is not available. Please refresh the page and try again.', 'OK', '⚠️');
-            } else {
-                alert('Project storage is not available.');
-            }
-            return;
-        }
+    // My Saved Projects functionality
+    const savedProjectsDiv = document.getElementById('savedProjects');
+    const savedProjectsList = document.getElementById('savedProjectsList');
+    const refreshSavedProjects = document.getElementById('refreshSavedProjects');
+
+    async function loadSavedProjects() {
+        if (!storageManager || !savedProjectsList) return;
 
         try {
             const projects = await storageManager.getUserProjects();
             
             if (projects.length === 0) {
-                if (typeof showInfoModal === 'function') {
-                    await showInfoModal('No Projects', 'You don\'t have any saved projects yet.\n\nUpload an image or click "Save Project" to create your first project!', 'Got it', '📁');
-                } else {
-                    alert('No saved projects found.');
-                }
+                savedProjectsDiv.style.display = 'none';
                 return;
             }
 
-            // Create projects list HTML
-            let projectsHTML = '<div class="projects-list">';
-            projects.forEach(project => {
-                const date = new Date(project.timestamp).toLocaleDateString();
-                const time = new Date(project.timestamp).toLocaleTimeString();
-                projectsHTML += `
-                    <div class="project-item" data-project-id="${project.id}">
-                        <div class="project-info">
-                            <strong>${project.projectName}</strong>
-                            <small>${date} ${time}</small>
-                        </div>
-                        <div class="project-actions">
-                            <button class="btn btn-sm load-project-btn" data-project-id="${project.id}">Load</button>
-                            <button class="btn btn-sm btn-danger delete-project-btn" data-project-id="${project.id}">Delete</button>
-                        </div>
-                    </div>
-                `;
-            });
-            projectsHTML += '</div>';
+            // Show the saved projects section
+            savedProjectsDiv.style.display = 'block';
+            
+            // Clear existing projects
+            savedProjectsList.innerHTML = '';
 
-            if (typeof showInfoModal === 'function') {
-                // Use a custom modal for projects list
-                const modal = document.getElementById('customModal');
-                const title = document.getElementById('customModalTitle');
-                const message = document.getElementById('customModalMessage');
-                const confirmBtn = document.getElementById('customModalConfirm');
-                const cancelBtn = document.getElementById('customModalCancel');
-                
-                title.textContent = `My Projects (${projects.length})`;
-                message.innerHTML = projectsHTML;
-                confirmBtn.textContent = 'Close';
-                cancelBtn.style.display = 'none';
-                
-                modal.style.display = 'block';
-                
-                // Add event handlers for project actions
-                addProjectActionHandlers();
-                
-                confirmBtn.onclick = () => {
-                    modal.style.display = 'none';
-                };
-            }
+            // Add each project
+            projects.forEach(project => {
+                const projectItem = createProjectItem(project);
+                savedProjectsList.appendChild(projectItem);
+            });
 
         } catch (error) {
-            console.error('Error loading projects:', error);
-            if (typeof showInfoModal === 'function') {
-                await showInfoModal('Error', 'Failed to load your projects. Please try again.', 'OK', '❌');
-            } else {
-                alert('Failed to load projects.');
-            }
+            console.error('Error loading saved projects:', error);
+            savedProjectsDiv.style.display = 'none';
         }
-    };
-
-    function addProjectActionHandlers() {
-        // Load project handlers
-        document.querySelectorAll('.load-project-btn').forEach(btn => {
-            btn.addEventListener('click', async function(e) {
-                e.stopPropagation();
-                const projectId = parseInt(this.dataset.projectId);
-                await loadProject(projectId);
-                document.getElementById('customModal').style.display = 'none';
-            });
-        });
-
-        // Delete project handlers
-        document.querySelectorAll('.delete-project-btn').forEach(btn => {
-            btn.addEventListener('click', async function(e) {
-                e.stopPropagation();
-                const projectId = parseInt(this.dataset.projectId);
-                
-                if (confirm('Are you sure you want to delete this project?')) {
-                    try {
-                        await storageManager.deleteProject(projectId);
-                        // Refresh the projects list
-                        showMyProjects();
-                    } catch (error) {
-                        console.error('Error deleting project:', error);
-                        alert('Failed to delete project.');
-                    }
-                }
-            });
-        });
     }
 
-    async function loadProject(projectId) {
+    function createProjectItem(project) {
+        const item = document.createElement('div');
+        item.className = 'saved-project-item';
+        item.dataset.projectId = project.id;
+
+        // Create thumbnail
+        let thumbnailSrc = '';
+        if (project.thumbnail) {
+            thumbnailSrc = URL.createObjectURL(project.thumbnail);
+        }
+
+        const date = new Date(project.timestamp);
+        const dateStr = date.toLocaleDateString();
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        item.innerHTML = `
+            <img class="project-thumbnail" src="${thumbnailSrc}" alt="Project thumbnail">
+            <div class="project-details">
+                <div class="project-name">${project.projectName}</div>
+                <div class="project-date">${dateStr} ${timeStr}</div>
+            </div>
+            <div class="project-buttons">
+                <button class="project-btn load" onclick="loadSavedProject(${project.id})">Load</button>
+                <button class="project-btn delete" onclick="deleteSavedProject(${project.id})">Delete</button>
+            </div>
+        `;
+
+        return item;
+    }
+
+    // Global functions for project actions
+    window.loadSavedProject = async function(projectId) {
         try {
             const project = await storageManager.loadProject(projectId);
             
@@ -2212,21 +2182,17 @@ function moveImage(direction) {
                 // Restore adjustments
                 const adj = project.applicationState.adjustments;
                 if (adj) {
-                    document.getElementById('exposureSlider').value = adj.exposure || 0;
-                    document.getElementById('contrastSlider').value = adj.contrast || 0;
-                    document.getElementById('saturationSlider').value = adj.saturation || 0;
-                    document.getElementById('hueSlider').value = adj.hue || 0;
-                    document.getElementById('shadowsSlider').value = adj.shadows || 0;
-                    document.getElementById('highlightsSlider').value = adj.highlights || 0;
-                    document.getElementById('temperatureSlider').value = adj.temperature || 0;
-                    document.getElementById('sharpnessSlider').value = adj.sharpness || 0;
+                    Object.keys(adj).forEach(key => {
+                        const slider = document.getElementById(key + 'Slider');
+                        if (slider) slider.value = adj[key] || 0;
+                    });
                 }
                 
                 // Restore map settings
                 if (project.applicationState.mapState) {
                     currentSVGFile = project.applicationState.mapState.selectedMap;
-                    opacitySlider.value = (project.applicationState.mapState.mapOpacity * 100) || 50;
-                    mapColor.value = project.applicationState.mapState.mapColor || '#ff0000';
+                    if (opacitySlider) opacitySlider.value = (project.applicationState.mapState.mapOpacity * 100) || 50;
+                    if (mapColor) mapColor.value = project.applicationState.mapState.mapColor || '#ff0000';
                 }
                 
                 // Update UI
@@ -2235,7 +2201,7 @@ function moveImage(direction) {
                 loadSVG(currentSVGFile, currentEye);
                 
                 if (typeof showInfoModal === 'function') {
-                    showInfoModal('Project Loaded', `"${project.projectName}" has been loaded successfully!`, 'Great!', '✅');
+                    showInfoModal('Project Loaded', `"${project.projectName}" loaded successfully!`, 'Great!', '✅');
                 } else {
                     alert('Project loaded successfully!');
                 }
@@ -2246,12 +2212,41 @@ function moveImage(direction) {
         } catch (error) {
             console.error('Error loading project:', error);
             if (typeof showInfoModal === 'function') {
-                await showInfoModal('Load Failed', 'Failed to load the project. Please try again.', 'OK', '❌');
+                showInfoModal('Load Failed', 'Failed to load project. Please try again.', 'OK', '❌');
             } else {
                 alert('Failed to load project.');
             }
         }
+    };
+
+    window.deleteSavedProject = async function(projectId) {
+        if (!confirm('Are you sure you want to delete this project?')) return;
+
+        try {
+            await storageManager.deleteProject(projectId);
+            await loadSavedProjects(); // Refresh the list
+            
+            if (typeof showInfoModal === 'function') {
+                showInfoModal('Project Deleted', 'Project deleted successfully.', 'OK', '✅');
+            }
+        } catch (error) {
+            console.error('Error deleting project:', error);
+            if (typeof showInfoModal === 'function') {
+                showInfoModal('Delete Failed', 'Failed to delete project. Please try again.', 'OK', '❌');
+            } else {
+                alert('Failed to delete project.');
+            }
+        }
+    };
+
+    // Refresh button functionality
+    if (refreshSavedProjects) {
+        refreshSavedProjects.addEventListener('click', loadSavedProjects);
     }
+
+    // Load saved projects on page load
+    setTimeout(loadSavedProjects, 1000); // Wait for storage manager to initialize
+
 
     function setupGalleryItemEvents(galleryItem, imageDataUrl, note) {
         const imageNameElement = galleryItem.querySelector('.image-name');
