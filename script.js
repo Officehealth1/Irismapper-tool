@@ -982,7 +982,7 @@ function updateHistogram() {
         this.classList.add('active');
     });
 
-    // Save Project to IndexedDB
+    // Save Project to IndexedDB and Download High-Quality Image
     async function saveCurrentProject() {
         if (!currentImageId) {
             if (typeof showInfoModal === 'function') {
@@ -1002,7 +1002,13 @@ function updateHistogram() {
                 throw new Error('No image data found');
             }
 
-            // Convert image to blob
+            // Create project name with timestamp
+            const now = new Date();
+            const dateStr = now.toLocaleDateString().replace(/\//g, '-');
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(/:/g, '-');
+            const projectName = `Project ${dateStr} ${timeStr}`;
+
+            // Prepare project data for IndexedDB
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             canvas.width = currentImage.width;
@@ -1013,12 +1019,10 @@ function updateHistogram() {
                 canvas.toBlob(resolve, 'image/jpeg', 0.95);
             });
 
-            // Create thumbnail
             const thumbnail = storageManager ? await storageManager.createThumbnail(imageBlob) : null;
 
-            // Collect project data
             const projectData = {
-                projectName: `Project ${new Date().toLocaleString()}`,
+                projectName: projectName,
                 originalImage: imageBlob,
                 thumbnail: thumbnail,
                 currentEye: currentEye,
@@ -1038,7 +1042,7 @@ function updateHistogram() {
                 },
                 imageTransform: imageSettings[currentEye] || {},
                 notes: await getNote(`notes_${currentImageId}_${currentEye}`),
-                fileName: `iris_project_${Date.now()}`,
+                fileName: `IrisMap_${projectName}`,
                 fileSize: imageBlob.size,
                 imageDimensions: {
                     width: currentImage.width,
@@ -1046,32 +1050,108 @@ function updateHistogram() {
                 }
             };
 
-            if (storageManager) {
-                const projectId = await storageManager.saveProject(projectData);
-                progressIndicator.style.display = 'none';
-                
-                // Refresh saved projects list
+            // Execute both save and download in parallel
+            const results = await Promise.allSettled([
+                // Save to IndexedDB
+                storageManager ? storageManager.saveProject(projectData) : Promise.resolve(null),
+                // Download high-quality image
+                downloadHighQualityImage(projectName)
+            ]);
+
+            // Check results
+            const saveResult = results[0];
+            const downloadResult = results[1];
+
+            let successMessage = '';
+            let hasErrors = false;
+
+            if (saveResult.status === 'fulfilled' && saveResult.value) {
                 await loadSavedProjects();
-                
-                if (typeof showInfoModal === 'function') {
-                    await showInfoModal('Project Saved', `Your project has been successfully saved to your local storage.\n\nProject ID: ${projectId}`, 'Great!', '✅');
-                } else {
-                    alert('Project saved successfully!');
-                }
+                successMessage += 'Project saved successfully!\n';
+            } else if (saveResult.status === 'rejected') {
+                successMessage += 'Failed to save project to storage.\n';
+                hasErrors = true;
+            }
+
+            if (downloadResult.status === 'fulfilled') {
+                successMessage += 'High-quality image downloaded!';
+            } else if (downloadResult.status === 'rejected') {
+                successMessage += 'Failed to download image.';
+                hasErrors = true;
+            }
+
+            progressIndicator.style.display = 'none';
+
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal(
+                    hasErrors ? 'Partial Success' : 'Success',
+                    successMessage,
+                    'OK',
+                    hasErrors ? '⚠️' : '✅'
+                );
             } else {
-                throw new Error('Storage Manager not available');
+                alert(successMessage);
             }
 
         } catch (error) {
-            console.error('Error saving project:', error);
+            console.error('Error in save operation:', error);
             progressIndicator.style.display = 'none';
             
             if (typeof showInfoModal === 'function') {
-                await showInfoModal('Save Failed', `Failed to save project: ${error.message}\n\nPlease try again.`, 'OK', '❌');
+                await showInfoModal('Save Failed', `Error: ${error.message}\n\nPlease try again.`, 'OK', '❌');
             } else {
                 alert('Failed to save project. Please try again.');
             }
         }
+    }
+
+    // Download high-quality image function
+    async function downloadHighQualityImage(projectName) {
+        return new Promise((resolve, reject) => {
+            const containerToCapture = isDualViewActive ? dualMapperContainer : singleMapperContainer;
+            if (!containerToCapture) {
+                reject(new Error('No container to capture'));
+                return;
+            }
+
+            // Use html2canvas with high-quality settings
+            html2canvas(containerToCapture, {
+                scale: 3, // 3x resolution for high quality
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: null,
+                logging: false,
+                imageTimeout: 0,
+                width: containerToCapture.offsetWidth,
+                height: containerToCapture.offsetHeight,
+                windowWidth: containerToCapture.scrollWidth,
+                windowHeight: containerToCapture.scrollHeight,
+                onclone: function(clonedDoc) {
+                    // Ensure cloned elements are properly sized
+                    const clonedContainer = clonedDoc.querySelector('#' + containerToCapture.id);
+                    if (clonedContainer) {
+                        clonedContainer.style.width = containerToCapture.offsetWidth + 'px';
+                        clonedContainer.style.height = containerToCapture.offsetHeight + 'px';
+                    }
+                }
+            }).then(canvas => {
+                // Create download link with high quality
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    const fileName = `IrisMap_${projectName.replace(/[^a-z0-9]/gi, '_')}.png`;
+                    link.download = fileName;
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                    
+                    // Clean up
+                    setTimeout(() => URL.revokeObjectURL(link.href), 100);
+                    resolve();
+                }, 'image/png', 1.0); // Maximum PNG quality
+            }).catch(error => {
+                console.error('Error capturing image:', error);
+                reject(error);
+            });
+        });
     }
 
     // Save functionality
