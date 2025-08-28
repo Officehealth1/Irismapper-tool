@@ -76,6 +76,65 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// Notification Modal System
+function showNotification(type, title, message) {
+    const modal = document.getElementById('notificationModal');
+    const icon = document.getElementById('notificationIcon');
+    const titleEl = document.getElementById('notificationTitle');
+    const messageEl = document.getElementById('notificationMessage');
+    const okBtn = document.getElementById('notificationOk');
+    
+    // Set content
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    
+    // Reset classes
+    icon.className = 'notification-icon';
+    
+    // Set icon and style based on type
+    switch(type) {
+        case 'success':
+            icon.classList.add('success');
+            icon.textContent = '✓';
+            break;
+        case 'error':
+            icon.classList.add('error');
+            icon.textContent = '✕';
+            break;
+        case 'info':
+            icon.classList.add('info');
+            icon.textContent = 'ℹ';
+            break;
+        default:
+            icon.classList.add('success');
+            icon.textContent = '✓';
+    }
+    
+    // Show modal
+    modal.classList.add('show');
+    
+    // Handle close
+    okBtn.onclick = () => {
+        modal.classList.remove('show');
+    };
+    
+    // Close on backdrop click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.classList.remove('show');
+        }
+    };
+    
+    // Close on escape key
+    const handleKeydown = (e) => {
+        if (e.key === 'Escape') {
+            modal.classList.remove('show');
+            document.removeEventListener('keydown', handleKeydown);
+        }
+    };
+    document.addEventListener('keydown', handleKeydown);
+}
+
 // Update pricing display
 function updatePricingDisplay() {
     // Hide all price displays first
@@ -449,12 +508,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Success
-                alert(result.message || 'Message sent successfully! We\'ll respond within 24 hours.');
+                showNotification('success', 'Message Sent!', result.message || 'Message sent successfully! We\'ll respond within 24 hours.');
                 contactForm.reset();
                 
             } catch (error) {
                 console.error('Contact form error:', error);
-                alert('Error: ' + error.message);
+                showNotification('error', 'Sending Failed', error.message);
             } finally {
                 // Reset button state
                 submitBtn.disabled = false;
