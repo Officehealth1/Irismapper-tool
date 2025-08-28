@@ -2312,54 +2312,78 @@ function moveImage(direction) {
                 if (project.applicationState.imageTransform) {
                     const transformData = project.applicationState.imageTransform;
                     
-                    // Handle both old format (direct transform) and new format (with currentEye/L/R)
-                    let currentTransform;
-                    if (transformData.currentEye) {
-                        // New format - restore current eye transforms
-                        currentTransform = transformData.currentEye;
+                    // Debug logging to see actual data structure
+                    console.log('Transform data loaded:', transformData);
+                    console.log('Current eye from saved project:', currentEye);
+                    
+                    // The save function saves complete imageSettings objects, so we need to read from them correctly
+                    
+                    // Restore L eye transforms if available
+                    if (transformData.L && imageSettings['L']) {
+                        const lSavedSettings = transformData.L; // This is a complete imageSettings object
+                        console.log('L eye saved data:', { 
+                            scale: lSavedSettings.scale, 
+                            rotation: lSavedSettings.rotation,
+                            translateX: lSavedSettings.translateX,
+                            translateY: lSavedSettings.translateY 
+                        });
                         
-                        // Also restore both eye transforms if in dual view or if they exist
-                        if (transformData.L && imageSettings['L']) {
-                            const lTransform = transformData.L;
-                            imageSettings['L'].scale = lTransform.scale || 1;
-                            imageSettings['L'].rotation = lTransform.rotation || 0;
-                            imageSettings['L'].translateX = lTransform.translateX || 0;
-                            imageSettings['L'].translateY = lTransform.translateY || 0;
-                            imageSettings['L'].skewX = lTransform.skewX || 0;
-                            imageSettings['L'].skewY = lTransform.skewY || 0;
-                        }
-                        
-                        if (transformData.R && imageSettings['R']) {
-                            const rTransform = transformData.R;
-                            imageSettings['R'].scale = rTransform.scale || 1;
-                            imageSettings['R'].rotation = rTransform.rotation || 0;
-                            imageSettings['R'].translateX = rTransform.translateX || 0;
-                            imageSettings['R'].translateY = rTransform.translateY || 0;
-                            imageSettings['R'].skewX = rTransform.skewX || 0;
-                            imageSettings['R'].skewY = rTransform.skewY || 0;
-                        }
-                    } else {
-                        // Old format - direct transform object
-                        currentTransform = transformData;
+                        imageSettings['L'].scale = lSavedSettings.scale || 1;
+                        imageSettings['L'].rotation = lSavedSettings.rotation || 0;
+                        imageSettings['L'].translateX = lSavedSettings.translateX || 0;
+                        imageSettings['L'].translateY = lSavedSettings.translateY || 0;
+                        imageSettings['L'].skewX = lSavedSettings.skewX || 0;
+                        imageSettings['L'].skewY = lSavedSettings.skewY || 0;
+                        // Also restore isAutoFitted state
+                        imageSettings['L'].isAutoFitted = lSavedSettings.isAutoFitted || false;
                     }
                     
-                    // Restore current eye transforms
-                    if (currentTransform) {
-                        const settings = imageSettings[currentEye];
-                        settings.scale = currentTransform.scale || 1;
-                        settings.rotation = currentTransform.rotation || 0;
-                        settings.translateX = currentTransform.translateX || 0;
-                        settings.translateY = currentTransform.translateY || 0;
-                        settings.skewX = currentTransform.skewX || 0;
-                        settings.skewY = currentTransform.skewY || 0;
-                        
-                        console.log('Restored transforms for', currentEye, ':', {
-                            scale: settings.scale,
-                            rotation: settings.rotation,
-                            translateX: settings.translateX,
-                            translateY: settings.translateY
+                    // Restore R eye transforms if available  
+                    if (transformData.R && imageSettings['R']) {
+                        const rSavedSettings = transformData.R; // This is a complete imageSettings object
+                        console.log('R eye saved data:', { 
+                            scale: rSavedSettings.scale, 
+                            rotation: rSavedSettings.rotation,
+                            translateX: rSavedSettings.translateX,
+                            translateY: rSavedSettings.translateY 
                         });
+                        
+                        imageSettings['R'].scale = rSavedSettings.scale || 1;
+                        imageSettings['R'].rotation = rSavedSettings.rotation || 0;
+                        imageSettings['R'].translateX = rSavedSettings.translateX || 0;
+                        imageSettings['R'].translateY = rSavedSettings.translateY || 0;
+                        imageSettings['R'].skewX = rSavedSettings.skewX || 0;
+                        imageSettings['R'].skewY = rSavedSettings.skewY || 0;
+                        // Also restore isAutoFitted state
+                        imageSettings['R'].isAutoFitted = rSavedSettings.isAutoFitted || false;
                     }
+                    
+                    // Restore current eye transforms from currentEye data (for backward compatibility)
+                    if (transformData.currentEye) {
+                        const currentEyeSavedSettings = transformData.currentEye; // This is a complete imageSettings object
+                        console.log('Current eye saved data:', { 
+                            scale: currentEyeSavedSettings.scale, 
+                            rotation: currentEyeSavedSettings.rotation,
+                            translateX: currentEyeSavedSettings.translateX,
+                            translateY: currentEyeSavedSettings.translateY 
+                        });
+                        
+                        const settings = imageSettings[currentEye];
+                        settings.scale = currentEyeSavedSettings.scale || 1;
+                        settings.rotation = currentEyeSavedSettings.rotation || 0;
+                        settings.translateX = currentEyeSavedSettings.translateX || 0;
+                        settings.translateY = currentEyeSavedSettings.translateY || 0;
+                        settings.skewX = currentEyeSavedSettings.skewX || 0;
+                        settings.skewY = currentEyeSavedSettings.skewY || 0;
+                        settings.isAutoFitted = currentEyeSavedSettings.isAutoFitted || false;
+                    }
+                    
+                    console.log('Final restored transforms for', currentEye, ':', {
+                        scale: imageSettings[currentEye].scale,
+                        rotation: imageSettings[currentEye].rotation,
+                        translateX: imageSettings[currentEye].translateX,
+                        translateY: imageSettings[currentEye].translateY
+                    });
                 }
                 
                 // Switch to correct view mode first
