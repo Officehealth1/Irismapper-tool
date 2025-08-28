@@ -1040,7 +1040,15 @@ function updateHistogram() {
                     temperature: parseFloat(document.getElementById('temperatureSlider')?.value || 0),
                     sharpness: parseFloat(document.getElementById('sharpnessSlider')?.value || 0)
                 },
-                imageTransform: imageSettings[currentEye] || {},
+                imageTransform: {
+                    // Save current eye transforms
+                    currentEye: imageSettings[currentEye] || {},
+                    // Save both eye transforms for dual view projects  
+                    L: imageSettings['L'] || {},
+                    R: imageSettings['R'] || {},
+                    // Also save which eye was active
+                    activeEye: currentEye
+                },
                 notes: await getNote(`notes_${currentImageId}_${currentEye}`),
                 fileName: `IrisMap_${projectName}`,
                 fileSize: imageBlob.size,
@@ -2290,10 +2298,81 @@ function moveImage(direction) {
                     if (mapColor) mapColor.value = project.applicationState.mapState.mapColor || '#ff0000';
                 }
                 
+                // Restore image transforms (zoom, rotation, pan, skew)
+                if (project.applicationState.imageTransform) {
+                    const transformData = project.applicationState.imageTransform;
+                    
+                    // Handle both old format (direct transform) and new format (with currentEye/L/R)
+                    let currentTransform;
+                    if (transformData.currentEye) {
+                        // New format - restore current eye transforms
+                        currentTransform = transformData.currentEye;
+                        
+                        // Also restore both eye transforms if in dual view or if they exist
+                        if (transformData.L && imageSettings['L']) {
+                            const lTransform = transformData.L;
+                            imageSettings['L'].scale = lTransform.scale || 1;
+                            imageSettings['L'].rotation = lTransform.rotation || 0;
+                            imageSettings['L'].translateX = lTransform.translateX || 0;
+                            imageSettings['L'].translateY = lTransform.translateY || 0;
+                            imageSettings['L'].skewX = lTransform.skewX || 0;
+                            imageSettings['L'].skewY = lTransform.skewY || 0;
+                        }
+                        
+                        if (transformData.R && imageSettings['R']) {
+                            const rTransform = transformData.R;
+                            imageSettings['R'].scale = rTransform.scale || 1;
+                            imageSettings['R'].rotation = rTransform.rotation || 0;
+                            imageSettings['R'].translateX = rTransform.translateX || 0;
+                            imageSettings['R'].translateY = rTransform.translateY || 0;
+                            imageSettings['R'].skewX = rTransform.skewX || 0;
+                            imageSettings['R'].skewY = rTransform.skewY || 0;
+                        }
+                    } else {
+                        // Old format - direct transform object
+                        currentTransform = transformData;
+                    }
+                    
+                    // Restore current eye transforms
+                    if (currentTransform) {
+                        const settings = imageSettings[currentEye];
+                        settings.scale = currentTransform.scale || 1;
+                        settings.rotation = currentTransform.rotation || 0;
+                        settings.translateX = currentTransform.translateX || 0;
+                        settings.translateY = currentTransform.translateY || 0;
+                        settings.skewX = currentTransform.skewX || 0;
+                        settings.skewY = currentTransform.skewY || 0;
+                        
+                        console.log('Restored transforms for', currentEye, ':', {
+                            scale: settings.scale,
+                            rotation: settings.rotation,
+                            translateX: settings.translateX,
+                            translateY: settings.translateY
+                        });
+                    }
+                }
+                
                 // Update UI
                 createCanvasForEye(currentEye);
                 loadImageForSpecificEye(currentEye);
                 loadSVG(currentSVGFile, currentEye);
+                
+                // Apply restored transforms to canvas
+                if (project.applicationState.imageTransform) {
+                    // Small delay to ensure canvas is created
+                    setTimeout(() => {
+                        if (isDualViewActive) {
+                            // Apply transforms to both eyes in dual view
+                            updateCanvasTransform('L');
+                            updateCanvasTransform('R');
+                        } else {
+                            // Apply transform to current eye only
+                            updateCanvasTransform(currentEye);
+                        }
+                        
+                        console.log('Applied canvas transforms for', isDualViewActive ? 'both eyes' : currentEye);
+                    }, 150);
+                }
                 
                 if (typeof showInfoModal === 'function') {
                     showInfoModal('Project Loaded', `"${project.projectName}" loaded successfully!`, 'Great!', '✅');
