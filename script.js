@@ -2231,14 +2231,29 @@ function moveImage(direction) {
         item.innerHTML = `
             <img class="project-thumbnail" src="${thumbnailSrc}" alt="Project thumbnail">
             <div class="project-details">
-                <div class="project-name">${project.projectName}</div>
+                <div class="project-name" id="project-name-${project.id}">${project.projectName}</div>
+                <input type="text" class="project-name-input" id="project-input-${project.id}" value="${project.projectName}">
                 <div class="project-date">${dateStr} ${timeStr}</div>
             </div>
             <div class="project-buttons">
-                <button class="project-btn load" onclick="loadSavedProject(${project.id})">Load</button>
-                <button class="project-btn delete" onclick="deleteSavedProject(${project.id})">Delete</button>
+                <button class="project-icon-btn load" onclick="loadSavedProject(${project.id})" title="Load">📥</button>
+                <button class="project-icon-btn edit" onclick="editProjectName(${project.id})" title="Rename">✏️</button>
+                <button class="project-icon-btn delete" onclick="deleteSavedProject(${project.id})" title="Delete">🗑️</button>
             </div>
         `;
+
+        // Add event listener for input to save on Enter key
+        const input = item.querySelector(`#project-input-${project.id}`);
+        if (input) {
+            input.addEventListener('keypress', async function(e) {
+                if (e.key === 'Enter') {
+                    await saveProjectName(project.id);
+                }
+            });
+            input.addEventListener('blur', async function() {
+                await saveProjectName(project.id);
+            });
+        }
 
         return item;
     }
@@ -2317,6 +2332,45 @@ function moveImage(direction) {
                 alert('Failed to delete project.');
             }
         }
+    };
+
+    // Edit project name functionality
+    window.editProjectName = function(projectId) {
+        const nameElement = document.getElementById(`project-name-${projectId}`);
+        const inputElement = document.getElementById(`project-input-${projectId}`);
+        
+        if (nameElement && inputElement) {
+            nameElement.classList.add('editing');
+            inputElement.classList.add('editing');
+            inputElement.focus();
+            inputElement.select();
+        }
+    };
+
+    // Save project name functionality
+    window.saveProjectName = async function(projectId) {
+        const nameElement = document.getElementById(`project-name-${projectId}`);
+        const inputElement = document.getElementById(`project-input-${projectId}`);
+        
+        if (!nameElement || !inputElement) return;
+        
+        const newName = inputElement.value.trim();
+        if (!newName) {
+            inputElement.value = nameElement.textContent;
+        } else if (newName !== nameElement.textContent) {
+            try {
+                // Update project name in storage
+                await storageManager.updateProjectName(projectId, newName);
+                nameElement.textContent = newName;
+            } catch (error) {
+                console.error('Error updating project name:', error);
+                inputElement.value = nameElement.textContent;
+            }
+        }
+        
+        // Hide input, show name
+        nameElement.classList.remove('editing');
+        inputElement.classList.remove('editing');
     };
 
     // Refresh button functionality

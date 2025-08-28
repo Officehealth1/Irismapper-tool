@@ -1296,6 +1296,7 @@ body {
   border-radius: 6px;
   padding: 8px;
   transition: background-color 0.2s ease;
+  position: relative;
 }
 
 .saved-project-item:hover {
@@ -1303,8 +1304,8 @@ body {
 }
 
 .project-thumbnail {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   border-radius: 4px;
   object-fit: cover;
   margin-right: 10px;
@@ -1315,16 +1316,36 @@ body {
 .project-details {
   flex: 1;
   min-width: 0;
+  padding-right: 8px;
 }
 
 .project-name {
   font-size: 12px;
   font-weight: 500;
   color: #333;
-  margin: 0 0 2px 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin: 0 0 3px 0;
+  word-wrap: break-word;
+  display: block;
+}
+
+.project-name.editing {
+  display: none;
+}
+
+.project-name-input {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  padding: 2px 4px;
+  border: 1px solid #4A90E2;
+  border-radius: 3px;
+  width: 100%;
+  display: none;
+  background: white;
+}
+
+.project-name-input.editing {
+  display: block;
 }
 
 .project-date {
@@ -1335,36 +1356,64 @@ body {
 
 .project-buttons {
   display: flex;
-  gap: 4px;
+  flex-direction: column;
+  gap: 2px;
   flex-shrink: 0;
 }
 
-.project-btn {
-  padding: 4px 8px;
-  font-size: 10px;
+.project-icon-btn {
+  background: none;
   border: none;
-  border-radius: 3px;
   cursor: pointer;
-  font-weight: 500;
-  min-width: 40px;
+  font-size: 14px;
+  padding: 2px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
   transition: all 0.2s ease;
+  position: relative;
 }
 
-.project-btn.load {
-  background: #28a745;
+.project-icon-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
+}
+
+.project-icon-btn.load:hover {
+  background: rgba(40, 167, 69, 0.2);
+}
+
+.project-icon-btn.edit:hover {
+  background: rgba(74, 144, 226, 0.2);
+}
+
+.project-icon-btn.delete:hover {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+/* Tooltip for icon buttons */
+.project-icon-btn::after {
+  content: attr(title);
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 5px;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.8);
   color: white;
+  font-size: 10px;
+  border-radius: 3px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 }
 
-.project-btn.load:hover {
-  background: #218838;
-}
-
-.project-btn.delete {
-  background: #dc3545;
-  color: white;
-}
-
-.project-btn.delete:hover {
-  background: #c82333;
+.project-icon-btn:hover::after {
+  opacity: 1;
 }
 
