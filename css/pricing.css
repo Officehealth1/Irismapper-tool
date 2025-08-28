@@ -102,6 +102,19 @@ body {
     background: #1c262f;
 }
 
+/* Hero pin wrapper to create scroll runway */
+.hero-pin {
+    position: relative;
+    height: 200vh; /* runway length controls animation duration */
+}
+
+/* Make hero stick while scrolling through the runway */
+.hero-pin .hero {
+    position: sticky;
+    top: 80px; /* match fixed header height */
+    min-height: calc(100vh - 80px);
+}
+
 /* Parallax Layers */
 .parallax-layer {
     position: absolute;
@@ -266,6 +279,15 @@ body {
         min-height: 70vh;
         padding-top: 65px;
     }
+
+    .hero-pin {
+        height: 180vh;
+    }
+
+    .hero-pin .hero {
+        top: 56px;
+        min-height: calc(100vh - 56px);
+    }
     
     .parallax-map img {
         width: 95%;
@@ -295,12 +317,12 @@ body {
 /* Clean How It Works Section */
 .how-it-works {
     background: #1c262f;
-    padding: 80px 24px;
+    padding: 120px 24px;
 }
 
 .how-it-works-header {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 64px;
 }
 
 .how-it-works-header h2 {
@@ -322,7 +344,7 @@ body {
 
 .video-container {
     max-width: 900px;
-    margin: 0 auto 48px;
+    margin: 0 auto 64px;
     border-radius: 12px;
     overflow: hidden;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
@@ -440,12 +462,12 @@ body {
 
 @media (max-width: 768px) {
     .how-it-works {
-        padding: 60px 16px;
+        padding: 80px 16px;
     }
     
     .how-it-works-header h2 {
         font-size: 28px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
     }
     
     .how-it-works-header p {
@@ -478,19 +500,19 @@ body {
 /* Clean Pricing Section */
 .pricing {
     background: #ffffff;
-    padding: 80px 0;
+    padding: 120px 0;
     margin: 0;
 }
 
 .pricing-container {
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 0 24px;
 }
 
 .pricing-header {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 64px;
 }
 
 .pricing-header h2 {
@@ -511,9 +533,9 @@ body {
     display: inline-flex;
     background: #ffffff;
     border-radius: 8px;
-    padding: 4px;
+    padding: 6px;
     border: 1px solid #e5e7eb;
-    margin-bottom: 32px;
+    margin-bottom: 40px;
 }
 
 .period-btn {
@@ -564,15 +586,15 @@ body {
 .pricing-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+    gap: 32px;
+    margin-bottom: 40px;
 }
 
 .pricing-card {
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
-    padding: 32px;
+    padding: 40px;
     position: relative;
     transition: all 0.3s ease;
     display: flex;
@@ -597,7 +619,7 @@ body {
 }
 
 .card-header {
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 .card-header h3 {
@@ -624,7 +646,7 @@ body {
 }
 
 .card-price {
-    margin-bottom: 32px;
+    margin-bottom: 36px;
 }
 
 .price {
@@ -643,7 +665,7 @@ body {
 
 .card-features {
     flex-grow: 1;
-    margin-bottom: 32px;
+    margin-bottom: 36px;
 }
 
 .card-features ul {
@@ -655,7 +677,7 @@ body {
 .card-features li {
     font-size: 14px;
     color: #374151;
-    padding: 8px 0;
+    padding: 12px 0;
     position: relative;
     padding-left: 20px;
 }
@@ -874,15 +896,15 @@ body {
     text-align: center;
     font-size: 14px;
     color: #6b7280;
-    margin: 0;
+    margin: 8px 0 0 0;
 }
 
 /* Clean Testimonials Section */
 .testimonials {
     background: #1c262f;
-    max-width: 900px;
+    max-width: 1000px;
     margin: 0 auto;
-    padding: 80px 24px;
+    padding: 120px 24px;
 }
 
 .testimonials-cta {
@@ -891,7 +913,7 @@ body {
 
 .testimonials-header {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 64px;
 }
 
 .testimonials-header h2 {
@@ -905,15 +927,15 @@ body {
 .testimonials-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 32px;
-    margin-bottom: 48px;
+    gap: 40px;
+    margin-bottom: 56px;
 }
 
 .testimonial {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
-    padding: 32px;
+    padding: 40px;
     text-align: left;
 }
 
@@ -957,29 +979,29 @@ body {
 
 @media (max-width: 768px) {
     .testimonials {
-        padding: 60px 16px;
+        padding: 80px 16px;
     }
     
     .testimonials-header h2 {
         font-size: 28px;
-        margin-bottom: 32px;
+        margin-bottom: 40px;
     }
     
     .testimonials-grid {
         grid-template-columns: 1fr;
-        gap: 24px;
-        margin-bottom: 32px;
+        gap: 28px;
+        margin-bottom: 40px;
     }
     
     .testimonial {
-        padding: 24px;
+        padding: 28px;
     }
 }
 
 /* Clean FAQ Section */
 .faq {
     background: #1c262f;
-    padding: 80px 24px;
+    padding: 120px 24px;
     width: 100%;
 }
 
@@ -991,7 +1013,7 @@ body {
 
 .faq-header {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: 64px;
 }
 
 .faq-header h2 {
@@ -1012,7 +1034,7 @@ body {
 }
 
 .faq-list {
-    margin-bottom: 48px;
+    margin-bottom: 56px;
 }
 
 .faq-item {
@@ -1025,7 +1047,7 @@ body {
 }
 
 .faq-question {
-    padding: 20px 0;
+    padding: 28px 0;
     font-size: 16px;
     font-weight: 500;
     color: #ffffff;
@@ -1061,7 +1083,7 @@ body {
 }
 
 .faq-answer {
-    padding-bottom: 20px;
+    padding-bottom: 28px;
     text-align: left;
 }
 
@@ -1075,6 +1097,7 @@ body {
 
 .faq-cta {
     text-align: center;
+    margin-top: 40px;
 }
 
 .faq-cta-btn {
@@ -1096,7 +1119,7 @@ body {
 
 @media (max-width: 768px) {
     .faq {
-        padding: 60px 16px;
+        padding: 72px 16px;
     }
     
     .faq-header h2 {
@@ -1110,7 +1133,7 @@ body {
     }
     
     .faq-question {
-        padding: 16px 0;
+        padding: 24px 0;
         font-size: 15px;
     }
     
@@ -1120,7 +1143,7 @@ body {
     }
     
     .faq-answer {
-        padding-bottom: 16px;
+        padding-bottom: 24px;
     }
     
     .faq-answer p {
@@ -1131,7 +1154,7 @@ body {
 /* Minimal Contact Section */
 .contact {
     background: #1c262f;
-    padding: 80px 24px;
+    padding: 120px 24px;
     text-align: center;
     width: 100%;
 }
@@ -1172,6 +1195,51 @@ body {
     padding: 32px;
     border-radius: 12px;
     border: 1px solid #e5e7eb;
+}
+
+/* Brevo Form Container */
+.brevo-form-container {
+    margin-bottom: 64px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.brevo-form-container iframe {
+    width: 100% !important;
+    max-width: 540px;
+    height: 0 !important; /* default; will be set via script or media queries */
+    min-height: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    overflow: hidden;
+}
+
+/* Responsive fallback heights if auto-resize is unavailable */
+@media (max-width: 399px) {
+    .brevo-form-container iframe { height: 1200px !important; }
+}
+
+@media (min-width: 400px) and (max-width: 599px) {
+    .brevo-form-container iframe { height: 1120px !important; }
+}
+
+@media (min-width: 600px) and (max-width: 899px) {
+    .brevo-form-container iframe { height: 1040px !important; }
+}
+
+@media (min-width: 900px) {
+    .brevo-form-container iframe { height: 980px !important; }
 }
 
 .form-row {
@@ -1279,9 +1347,14 @@ body {
     background: #0aa08b;
 }
 
+/* Add breathing room above contact CTA */
+.contact-cta {
+    margin-top: 40px;
+}
+
 @media (max-width: 768px) {
     .contact {
-        padding: 60px 16px;
+        padding: 72px 16px;
     }
     
     .contact-header h2 {
@@ -1296,6 +1369,12 @@ body {
     .contact-form {
         margin: 0 auto 32px;
         padding: 24px;
+    }
+
+    .brevo-form-container {
+        max-width: 600px;
+        padding: 24px;
+        margin-bottom: 48px;
     }
     
     .form-row {
@@ -1316,7 +1395,7 @@ body {
 /* Timeline Section */
 .timeline-section {
     background: #1c262f;
-    padding: 80px 24px;
+    padding: 120px 24px;
     width: 100%;
 }
 
@@ -1341,12 +1420,12 @@ body {
 
 .timeline {
     position: relative;
-    max-width: 1200px;
+    max-width: min(1600px, calc(100vw - 64px));
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 20px;
+    gap: 40px;
 }
 
 /* Horizontal timeline line */
@@ -1366,7 +1445,7 @@ body {
     background: transparent;
     flex: 1;
     text-align: center;
-    max-width: 200px;
+    max-width: 330px;
 }
 
 /* Timeline dots */
@@ -1392,11 +1471,33 @@ body {
 /* Timeline content */
 .timeline-content {
     background: rgba(255, 255, 255, 0.1);
-    padding: 20px 16px;
+    padding: 24px 20px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.3s ease;
-    margin-top: 60px;
+    margin-top: 72px;
+    display: grid;
+    grid-template-rows: 32px auto auto 1fr;
+    row-gap: 10px;
+}
+
+/* Meta row: year + version */
+.timeline-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 32px;
+}
+
+.timeline-badge {
+    display: inline-block;
+    background: #0dc5a1;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 24px;
 }
 
 .timeline-content:hover {
@@ -1431,7 +1532,7 @@ body {
 
 /* Timeline images */
 .timeline-image {
-    margin: 12px 0 16px 0;
+    margin: 16px 0 20px 0;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -1455,7 +1556,7 @@ body {
     .timeline {
         flex-direction: column;
         align-items: center;
-        gap: 40px;
+        gap: 48px;
     }
     
     .timeline::after {
@@ -1467,7 +1568,7 @@ body {
     }
     
     .timeline-item {
-        max-width: 300px;
+        max-width: 320px;
         width: 100%;
     }
     
@@ -1538,7 +1639,7 @@ body {
 /* Mobile responsiveness */
 @media (max-width: 768px) {
     .timeline-section {
-        padding: 60px 16px;
+        padding: 80px 16px;
     }
     
     .timeline-header h2 {
@@ -1664,7 +1765,7 @@ body {
 
 @media (max-width: 768px) {
     .pricing {
-        padding: 60px 0;
+        padding: 80px 0;
     }
     
     .pricing-container {
@@ -1677,11 +1778,11 @@ body {
     
     .pricing-grid {
         grid-template-columns: 1fr;
-        gap: 16px;
+        gap: 24px;
     }
     
     .pricing-card {
-        padding: 24px;
+        padding: 28px;
     }
     
     .billing-toggle {
@@ -1957,7 +2058,7 @@ body {
 
 /* FAQ */
 /* Removed duplicate FAQ styles that were overriding dark background */
-}
+
 
 .faq h3 {
     text-align: center;
@@ -1968,7 +2069,6 @@ body {
 }
 
 /* FAQ Details Styling - Removed conflicting styles */
-}
 
 summary::before {
     content: '▶';
@@ -2903,7 +3003,6 @@ details p {
 }
 
 /* Removed duplicate .faq-item that was adding white background */
-}
 
 .faq-item:hover {
     border-color: #cbd5e0;
@@ -3672,8 +3771,6 @@ details p {
 }
 
 /* Removed duplicate .contact-form with transparency */
-    max-width: 500px;
-}
 
 .contact-form h3 {
     margin-bottom: 20px;

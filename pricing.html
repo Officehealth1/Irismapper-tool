@@ -46,14 +46,15 @@
     </div>
 
     <div class="main-content">
-        <!-- Parallax Hero Section -->
+        <!-- Parallax Hero Section (Pinned Scroll Wrapper) -->
+        <div class="hero-pin" id="heroPin">
         <section class="hero" id="hero">
             <!-- Background Layer: Eye Image -->
             <div class="parallax-layer parallax-eye"></div>
             
             <!-- Single Jensen Map Layer -->
             <div class="parallax-layer parallax-map" id="jensen-map">
-                <img src="grids/Jensen_Map_EN_V1_R.svg" alt="Jensen Iris Map">
+                <img src="grids/IrisLAB_Map_EN_V2_R.svg" alt="IrisLAB Iris Map">
             </div>
             
             <!-- Foreground Layer: Text Content -->
@@ -63,6 +64,7 @@
                 <a href="#pricing-cards" class="hero-cta" id="hero-cta">Start free trial</a>
             </div>
         </section>
+        </div>
 
         <!-- Clean How It Works Section -->
         <section class="how-it-works" id="features">
@@ -260,7 +262,7 @@
             </div>
             
             <div class="brevo-form-container">
-                <iframe width="540" height="305" src="https://8cbbc43f.sibforms.com/serve/MUIFALhMvRZhWyExHdinShO4ptJgthPxNfiifwKPQC1H8eCfNEDf5Ve9ndBn-VsRuCFwGf473sVo2rXWqRWEz6IFWQgASLLZXiixg4wASy-xBGVvsrISA8cKvg4lrJh8rdySZLD_YPM7k9NlO9Hf8L_H7GtlwhfnpsazBAoq-33NEyb_F9CTJ_fP9BsNia7lcCSHFQyBOAnK-klQ" frameborder="0" scrolling="auto" allowfullscreen style="display: block;margin-left: auto;margin-right: auto;max-width: 100%;"></iframe>
+                <iframe id="brevoForm" width="100%" height="0" src="https://8cbbc43f.sibforms.com/serve/MUIFADeL-h7xb0vmiQVZR_0s5i4KilvUq4yKPNgAGlLf78v4i4Dzdd4StFS45mdD7AQK3jOWRtqSqdYPCMaxyPhLy6CSthsL6A0D--pYU95LcHwp3wviSctoxUedm72oPO_mi4gIXn71bk6z4wDxQ9zFimz_dLZEj5S3bZPO5lKujcA9e5sdpNvbaD80zku6VcJ0ZuA2-9DeY6iQ" frameborder="0" scrolling="no" loading="lazy" allowfullscreen style="display: block; margin-left: auto; margin-right: auto; max-width: 100%;"></iframe>
             </div>
             
             <div class="contact-cta">
@@ -276,11 +278,12 @@
             </div>
             
             <div class="timeline">
+                <!-- 2007 - Version 1.0 -->
                 <div class="timeline-item">
                     <div class="timeline-content">
-                        <div class="timeline-year">Version 1.0</div>
+                        <div class="timeline-meta"><span class="timeline-badge">2007 • v1.0</span></div>
                         <div class="timeline-image">
-                            <img src="grids/timeline-2007.jpg" alt="IrisMapper Version 1.0" class="timeline-img">
+                            <img src="grids/timeline-2007.jpg" alt="Version 1.0 (2007)" class="timeline-img">
                         </div>
                         <h3>Initial Launch</h3>
                         <p>Core manual iris mapping with basic client photo upload</p>
@@ -288,11 +291,25 @@
                     <div class="timeline-dot"></div>
                 </div>
                 
+                <!-- 2008 - Version 1.1 -->
                 <div class="timeline-item">
                     <div class="timeline-content">
-                        <div class="timeline-year">Version 2.0</div>
+                        <div class="timeline-meta"><span class="timeline-badge">2008 • v1.1</span></div>
                         <div class="timeline-image">
-                            <img src="grids/timeline-2012.jpg" alt="IrisMapper Version 2.0" class="timeline-img">
+                            <img src="grids/timeline-2008.png" alt="Version 1.1 (2008)" class="timeline-img">
+                        </div>
+                        <h3>Improved UI/UX</h3>
+                        <p>Streamlined workflows and batch image processing</p>
+                    </div>
+                    <div class="timeline-dot"></div>
+                </div>
+                
+                <!-- 2012 - Version 2.0 -->
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-meta"><span class="timeline-badge">2012 • v2.0</span></div>
+                        <div class="timeline-image">
+                            <img src="grids/timeline-2012.jpg" alt="Version 2.0 (2012)" class="timeline-img">
                         </div>
                         <h3>Reporting Features</h3>
                         <p>Basic reports, client history tracking & data export options</p>
@@ -300,11 +317,12 @@
                     <div class="timeline-dot"></div>
                 </div>
                 
+                <!-- 2015 - Version 3.0 -->
                 <div class="timeline-item">
                     <div class="timeline-content">
-                        <div class="timeline-year">Version 3.0</div>
+                        <div class="timeline-meta"><span class="timeline-badge">2015 • v3.0</span></div>
                         <div class="timeline-image">
-                            <img src="grids/timeline-2015.png" alt="IrisMapper Version 3.0" class="timeline-img">
+                            <img src="grids/timeline-2015.png" alt="Version 3.0 (2015)" class="timeline-img">
                         </div>
                         <h3>Custom Mapping</h3>
                         <p>Custom map creation, zone annotation tools & comparisons</p>
@@ -312,11 +330,12 @@
                     <div class="timeline-dot"></div>
                 </div>
                 
+                <!-- 2018 - Version 4.0 -->
                 <div class="timeline-item">
                     <div class="timeline-content">
-                        <div class="timeline-year">Version 4.0</div>
+                        <div class="timeline-meta"><span class="timeline-badge">2018 • v4.0</span></div>
                         <div class="timeline-image">
-                            <img src="grids/timeline-2018.png" alt="IrisMapper Version 4.0" class="timeline-img">
+                            <img src="grids/timeline-2018.png" alt="Version 4.0 (2018)" class="timeline-img">
                         </div>
                         <h3>Enhanced Tools</h3>
                         <p>Manual mapping with improved image enhancement & notes</p>
@@ -324,11 +343,12 @@
                     <div class="timeline-dot"></div>
                 </div>
                 
+                <!-- 2025 - Version 5.0 -->
                 <div class="timeline-item">
                     <div class="timeline-content">
-                        <div class="timeline-year">Version 5.0</div>
+                        <div class="timeline-meta"><span class="timeline-badge">2025 • v5.0</span></div>
                         <div class="timeline-image">
-                            <img src="grids/timeline-2025.jpg" alt="IrisMapper Pro Version 5.0" class="timeline-img">
+                            <img src="grids/timeline-2025.jpg" alt="Version 5.0 (2025)" class="timeline-img">
                         </div>
                         <h3>IrisMapper Pro</h3>
                         <p>AI-powered analysis, smart alignment & instant web reporting</p>
@@ -336,13 +356,14 @@
                     <div class="timeline-dot current"></div>
                 </div>
                 
-                <div class="timeline-item left future">
-                    <div class="timeline-content future-content">
-                        <div class="timeline-year future-year">Coming Soon</div>
+                <!-- Future Vision (no coming soon) -->
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-meta"><span class="timeline-badge">Future</span></div>
                         <h3>Future Vision</h3>
                         <p>Next-generation iris analysis technology</p>
                     </div>
-                    <div class="timeline-dot future-dot"></div>
+                    <div class="timeline-dot"></div>
                 </div>
             </div>
         </section>
