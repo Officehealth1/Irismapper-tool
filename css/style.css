@@ -1073,7 +1073,7 @@ body {
 }
 
 .profile-menu {
-  padding: 8px 0;
+  padding: 0;
 }
 
 .profile-menu-item {
@@ -1086,10 +1086,19 @@ body {
   background: none;
   width: 100%;
   text-align: left;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 .profile-menu-item:hover {
   background-color: #f0f0f0;
+}
+
+.profile-menu-divider {
+  height: 1px;
+  background-color: #e5e5e5;
+  margin: 4px 0;
+  width: 100%;
 }
 
 .menu-icon {
