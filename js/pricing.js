@@ -513,11 +513,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Test mode indicator
-if (STRIPE_PUBLIC_KEY.includes('test')) {
-    const testBadge = document.createElement('div');
-    testBadge.style.cssText = 'position: fixed; top: 10px; right: 10px; background: orange; color: white; padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 9999;';
-    testBadge.textContent = 'TEST MODE';
-    document.body.appendChild(testBadge);
-
-}
+// Test mode badge removed for production readiness; Stripe key will be provided separately.
