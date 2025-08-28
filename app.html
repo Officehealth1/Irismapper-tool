@@ -57,6 +57,10 @@
                         <span class="menu-icon">🔑</span>
                         <span class="menu-text">Change Password</span>
                     </div>
+                    <div class="profile-menu-item" id="myProjects">
+                        <span class="menu-icon">📁</span>
+                        <span class="menu-text">My Projects</span>
+                    </div>
                     <div class="profile-menu-divider"></div>
                     <div class="profile-menu-item logout-item" id="logoutBtn">
                         <span class="menu-icon">🚪</span>
@@ -541,6 +545,13 @@
                 );
                 // In the future, this could navigate to a dedicated settings page
                 // window.location.href = '/settings';
+            });
+            
+            // My Projects functionality
+            const myProjects = document.getElementById('myProjects');
+            myProjects.addEventListener('click', async function() {
+                profileDropdown.classList.remove('show');
+                await showMyProjects();
             });
             
             // Prevent dropdown from closing when clicking inside it

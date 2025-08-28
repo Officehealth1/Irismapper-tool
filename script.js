@@ -19,6 +19,66 @@ document.addEventListener('DOMContentLoaded', function() {
     const controls = document.querySelectorAll('.controls');
     const galleryAccordion = document.getElementById('galleryAccordion');
     const addImageBtn = document.getElementById('addImageBtn');
+    
+    // Initialize Storage Manager
+    let storageManager = null;
+    
+    async function initStorageManager() {
+        try {
+            storageManager = new StorageManager();
+            await storageManager.init();
+            console.log('Storage Manager initialized successfully');
+        } catch (error) {
+            console.error('Failed to initialize Storage Manager:', error);
+            // Fall back to localStorage if IndexedDB fails
+            storageManager = null;
+        }
+    }
+    
+    // Initialize storage on page load
+    initStorageManager();
+    
+    // Storage helper functions
+    async function saveNote(key, note) {
+        if (storageManager) {
+            try {
+                // For now, store notes in localStorage format until full project save is implemented
+                localStorage.setItem(key, note);
+            } catch (error) {
+                console.error('Error saving note:', error);
+                localStorage.setItem(key, note);
+            }
+        } else {
+            localStorage.setItem(key, note);
+        }
+    }
+    
+    async function getNote(key) {
+        if (storageManager) {
+            try {
+                return localStorage.getItem(key) || '';
+            } catch (error) {
+                console.error('Error getting note:', error);
+                return localStorage.getItem(key) || '';
+            }
+        } else {
+            return localStorage.getItem(key) || '';
+        }
+    }
+    
+    async function removeNote(key) {
+        if (storageManager) {
+            try {
+                localStorage.removeItem(key);
+            } catch (error) {
+                console.error('Error removing note:', error);
+                localStorage.removeItem(key);
+            }
+        } else {
+            localStorage.removeItem(key);
+        }
+    }
+    
     const availableMaps = [
         'Angerer_Map_DE_V1',
         'Bourdiol_Map_FR_V1',
@@ -919,36 +979,97 @@ function updateHistogram() {
         this.classList.add('active');
     });
 
-    // Save functionality
-    document.getElementById('save')?.addEventListener('click', () => {
-        const containerToCapture = isDualViewActive ? dualMapperContainer : singleMapperContainer;
-        if (!containerToCapture) return;
+    // Save Project to IndexedDB
+    async function saveCurrentProject() {
+        if (!currentImageId) {
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal('No Image', 'Please upload an image first before saving a project.', 'OK', '⚠️');
+            } else {
+                alert('Please upload an image first before saving a project.');
+            }
+            return;
+        }
 
-        progressIndicator.style.display = 'flex';
+        try {
+            progressIndicator.style.display = 'flex';
 
-        setTimeout(() => {
-            html2canvas(containerToCapture, {
-                useCORS: true,
-                allowTaint: false,
-                backgroundColor: null,
-                scale: 2,
-                width: containerToCapture.offsetWidth,
-                height: containerToCapture.offsetHeight,
-                windowWidth: containerToCapture.scrollWidth,
-                windowHeight: containerToCapture.scrollHeight,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `iris_map_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                progressIndicator.style.display = 'none';
-            }).catch(error => {
-                console.error('Error saving image:', error);
-                alert('Failed to save the image. Please try again.');
-                progressIndicator.style.display = 'none';
+            // Get current image data
+            const currentImage = imageSettings[currentEye]?.image;
+            if (!currentImage) {
+                throw new Error('No image data found');
+            }
+
+            // Convert image to blob
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = currentImage.width;
+            canvas.height = currentImage.height;
+            ctx.drawImage(currentImage, 0, 0);
+            
+            const imageBlob = await new Promise(resolve => {
+                canvas.toBlob(resolve, 'image/jpeg', 0.95);
             });
-        }, 100);
-    });
+
+            // Create thumbnail
+            const thumbnail = storageManager ? await storageManager.createThumbnail(imageBlob) : null;
+
+            // Collect project data
+            const projectData = {
+                projectName: `Project ${new Date().toLocaleString()}`,
+                originalImage: imageBlob,
+                thumbnail: thumbnail,
+                currentEye: currentEye,
+                isDualView: isDualViewActive,
+                selectedMap: currentSVGFile,
+                mapOpacity: parseFloat(opacitySlider.value) / 100,
+                mapColor: mapColor.value,
+                adjustments: {
+                    exposure: parseFloat(document.getElementById('exposureSlider')?.value || 0),
+                    contrast: parseFloat(document.getElementById('contrastSlider')?.value || 0),
+                    saturation: parseFloat(document.getElementById('saturationSlider')?.value || 0),
+                    hue: parseFloat(document.getElementById('hueSlider')?.value || 0),
+                    shadows: parseFloat(document.getElementById('shadowsSlider')?.value || 0),
+                    highlights: parseFloat(document.getElementById('highlightsSlider')?.value || 0),
+                    temperature: parseFloat(document.getElementById('temperatureSlider')?.value || 0),
+                    sharpness: parseFloat(document.getElementById('sharpnessSlider')?.value || 0)
+                },
+                imageTransform: imageSettings[currentEye] || {},
+                notes: await getNote(`notes_${currentImageId}_${currentEye}`),
+                fileName: `iris_project_${Date.now()}`,
+                fileSize: imageBlob.size,
+                imageDimensions: {
+                    width: currentImage.width,
+                    height: currentImage.height
+                }
+            };
+
+            if (storageManager) {
+                const projectId = await storageManager.saveProject(projectData);
+                progressIndicator.style.display = 'none';
+                
+                if (typeof showInfoModal === 'function') {
+                    await showInfoModal('Project Saved', `Your project has been successfully saved to your local storage.\n\nProject ID: ${projectId}`, 'Great!', '✅');
+                } else {
+                    alert('Project saved successfully!');
+                }
+            } else {
+                throw new Error('Storage Manager not available');
+            }
+
+        } catch (error) {
+            console.error('Error saving project:', error);
+            progressIndicator.style.display = 'none';
+            
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal('Save Failed', `Failed to save project: ${error.message}\n\nPlease try again.`, 'OK', '❌');
+            } else {
+                alert('Failed to save project. Please try again.');
+            }
+        }
+    }
+
+    // Save functionality
+    document.getElementById('save')?.addEventListener('click', saveCurrentProject);
 
     // SVG and opacity controls
     opacitySlider?.addEventListener('input', function() {
@@ -1097,9 +1218,9 @@ function updateHistogram() {
     }
 
     // Helper to update the notes area for the current image and eye
-    function updateNotesArea() {
+    async function updateNotesArea() {
         const key = getCurrentNotesKey();
-        const saved = key ? localStorage.getItem(key) : '';
+        const saved = key ? await getNote(key) : '';
         notesInput.value = saved || '';
         savedNotesArea.textContent = saved ? 'Saved Note: ' + saved : '';
     }
@@ -1118,11 +1239,11 @@ function updateHistogram() {
     }
 
     if (saveNoteBtn) {
-        saveNoteBtn.addEventListener('click', function() {
+        saveNoteBtn.addEventListener('click', async function() {
             const key = getCurrentNotesKey();
             const note = notesInput.value.trim();
             if (key) {
-                localStorage.setItem(key, note);
+                await saveNote(key, note);
                 savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
                 updateGalleryNoteIcon(currentImageId, !!note);
                 updateGalleryNoteData(currentImageId, note);
@@ -1888,10 +2009,10 @@ function moveImage(direction) {
     
 
     // Gallery Functions
-    function addToGallery(imageDataUrl, name) {
+    async function addToGallery(imageDataUrl, name) {
         const imageId = getImageId(imageDataUrl);
         const noteKey = 'notes_' + imageId + '_' + currentEye;
-        const note = localStorage.getItem(noteKey) || '';
+        const note = await getNote(noteKey);
         const galleryItem = document.createElement('div');
         galleryItem.className = 'gallery-item';
         galleryItem.dataset.imageId = imageId;
@@ -1911,6 +2032,225 @@ function moveImage(direction) {
         `;
         setupGalleryItemEvents(galleryItem, imageDataUrl, note);
         galleryAccordion.appendChild(galleryItem);
+        
+        // Auto-save project when new image is added
+        await autoSaveProject(imageDataUrl, name);
+    }
+    
+    async function autoSaveProject(imageDataUrl, fileName) {
+        if (!storageManager) return;
+        
+        try {
+            // Convert data URL to blob
+            const response = await fetch(imageDataUrl);
+            const imageBlob = await response.blob();
+            
+            // Create thumbnail
+            const thumbnail = await storageManager.createThumbnail(imageBlob);
+            
+            // Create auto-save project data
+            const projectData = {
+                projectName: `Auto-saved: ${fileName}`,
+                originalImage: imageBlob,
+                thumbnail: thumbnail,
+                currentEye: currentEye,
+                isDualView: isDualViewActive,
+                selectedMap: currentSVGFile || 'Jensen_Map_EN_V1',
+                mapOpacity: parseFloat(opacitySlider?.value || 50) / 100,
+                mapColor: mapColor?.value || '#ff0000',
+                adjustments: {
+                    exposure: parseFloat(document.getElementById('exposureSlider')?.value || 0),
+                    contrast: parseFloat(document.getElementById('contrastSlider')?.value || 0),
+                    saturation: parseFloat(document.getElementById('saturationSlider')?.value || 0),
+                    hue: parseFloat(document.getElementById('hueSlider')?.value || 0),
+                    shadows: parseFloat(document.getElementById('shadowsSlider')?.value || 0),
+                    highlights: parseFloat(document.getElementById('highlightsSlider')?.value || 0),
+                    temperature: parseFloat(document.getElementById('temperatureSlider')?.value || 0),
+                    sharpness: parseFloat(document.getElementById('sharpnessSlider')?.value || 0)
+                },
+                imageTransform: imageSettings[currentEye] || {},
+                notes: '',
+                fileName: fileName,
+                fileSize: imageBlob.size,
+                imageDimensions: {
+                    width: 0,
+                    height: 0
+                }
+            };
+            
+            await storageManager.saveProject(projectData);
+            console.log('Project auto-saved successfully');
+            
+        } catch (error) {
+            console.warn('Auto-save failed:', error);
+            // Don't show error to user for auto-save failures
+        }
+    }
+
+    // My Projects functionality
+    window.showMyProjects = async function() {
+        if (!storageManager) {
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal('Storage Unavailable', 'Project storage is not available. Please refresh the page and try again.', 'OK', '⚠️');
+            } else {
+                alert('Project storage is not available.');
+            }
+            return;
+        }
+
+        try {
+            const projects = await storageManager.getUserProjects();
+            
+            if (projects.length === 0) {
+                if (typeof showInfoModal === 'function') {
+                    await showInfoModal('No Projects', 'You don\'t have any saved projects yet.\n\nUpload an image or click "Save Project" to create your first project!', 'Got it', '📁');
+                } else {
+                    alert('No saved projects found.');
+                }
+                return;
+            }
+
+            // Create projects list HTML
+            let projectsHTML = '<div class="projects-list">';
+            projects.forEach(project => {
+                const date = new Date(project.timestamp).toLocaleDateString();
+                const time = new Date(project.timestamp).toLocaleTimeString();
+                projectsHTML += `
+                    <div class="project-item" data-project-id="${project.id}">
+                        <div class="project-info">
+                            <strong>${project.projectName}</strong>
+                            <small>${date} ${time}</small>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-sm load-project-btn" data-project-id="${project.id}">Load</button>
+                            <button class="btn btn-sm btn-danger delete-project-btn" data-project-id="${project.id}">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            projectsHTML += '</div>';
+
+            if (typeof showInfoModal === 'function') {
+                // Use a custom modal for projects list
+                const modal = document.getElementById('customModal');
+                const title = document.getElementById('customModalTitle');
+                const message = document.getElementById('customModalMessage');
+                const confirmBtn = document.getElementById('customModalConfirm');
+                const cancelBtn = document.getElementById('customModalCancel');
+                
+                title.textContent = `My Projects (${projects.length})`;
+                message.innerHTML = projectsHTML;
+                confirmBtn.textContent = 'Close';
+                cancelBtn.style.display = 'none';
+                
+                modal.style.display = 'block';
+                
+                // Add event handlers for project actions
+                addProjectActionHandlers();
+                
+                confirmBtn.onclick = () => {
+                    modal.style.display = 'none';
+                };
+            }
+
+        } catch (error) {
+            console.error('Error loading projects:', error);
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal('Error', 'Failed to load your projects. Please try again.', 'OK', '❌');
+            } else {
+                alert('Failed to load projects.');
+            }
+        }
+    };
+
+    function addProjectActionHandlers() {
+        // Load project handlers
+        document.querySelectorAll('.load-project-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const projectId = parseInt(this.dataset.projectId);
+                await loadProject(projectId);
+                document.getElementById('customModal').style.display = 'none';
+            });
+        });
+
+        // Delete project handlers
+        document.querySelectorAll('.delete-project-btn').forEach(btn => {
+            btn.addEventListener('click', async function(e) {
+                e.stopPropagation();
+                const projectId = parseInt(this.dataset.projectId);
+                
+                if (confirm('Are you sure you want to delete this project?')) {
+                    try {
+                        await storageManager.deleteProject(projectId);
+                        // Refresh the projects list
+                        showMyProjects();
+                    } catch (error) {
+                        console.error('Error deleting project:', error);
+                        alert('Failed to delete project.');
+                    }
+                }
+            });
+        });
+    }
+
+    async function loadProject(projectId) {
+        try {
+            const project = await storageManager.loadProject(projectId);
+            
+            // Create image from blob
+            const img = new Image();
+            const imageUrl = URL.createObjectURL(project.originalImage);
+            
+            img.onload = function() {
+                // Set image in viewer
+                imageSettings[project.applicationState.currentEye].image = img;
+                currentEye = project.applicationState.currentEye;
+                isDualViewActive = project.applicationState.isDualView;
+                currentImageId = getImageId(imageUrl);
+                
+                // Restore adjustments
+                const adj = project.applicationState.adjustments;
+                if (adj) {
+                    document.getElementById('exposureSlider').value = adj.exposure || 0;
+                    document.getElementById('contrastSlider').value = adj.contrast || 0;
+                    document.getElementById('saturationSlider').value = adj.saturation || 0;
+                    document.getElementById('hueSlider').value = adj.hue || 0;
+                    document.getElementById('shadowsSlider').value = adj.shadows || 0;
+                    document.getElementById('highlightsSlider').value = adj.highlights || 0;
+                    document.getElementById('temperatureSlider').value = adj.temperature || 0;
+                    document.getElementById('sharpnessSlider').value = adj.sharpness || 0;
+                }
+                
+                // Restore map settings
+                if (project.applicationState.mapState) {
+                    currentSVGFile = project.applicationState.mapState.selectedMap;
+                    opacitySlider.value = (project.applicationState.mapState.mapOpacity * 100) || 50;
+                    mapColor.value = project.applicationState.mapState.mapColor || '#ff0000';
+                }
+                
+                // Update UI
+                createCanvasForEye(currentEye);
+                loadImageForSpecificEye(currentEye);
+                loadSVG(currentSVGFile, currentEye);
+                
+                if (typeof showInfoModal === 'function') {
+                    showInfoModal('Project Loaded', `"${project.projectName}" has been loaded successfully!`, 'Great!', '✅');
+                } else {
+                    alert('Project loaded successfully!');
+                }
+            };
+            
+            img.src = imageUrl;
+            
+        } catch (error) {
+            console.error('Error loading project:', error);
+            if (typeof showInfoModal === 'function') {
+                await showInfoModal('Load Failed', 'Failed to load the project. Please try again.', 'OK', '❌');
+            } else {
+                alert('Failed to load project.');
+            }
+        }
     }
 
     function setupGalleryItemEvents(galleryItem, imageDataUrl, note) {
@@ -1936,13 +2276,13 @@ function moveImage(direction) {
         });
 
         // Delete button logic (click and keyboard)
-        function handleDelete(e) {
+        async function handleDelete(e) {
             if (e.type === 'click' || (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' '))) {
                 e.stopPropagation();
                 if (!confirm('Are you sure you want to delete this image and its notes?')) return;
                 // Remove notes for both eyes
-                localStorage.removeItem('notes_' + imageId + '_L');
-                localStorage.removeItem('notes_' + imageId + '_R');
+                await removeNote('notes_' + imageId + '_L');
+                await removeNote('notes_' + imageId + '_R');
                 // Remove from DOM
                 galleryItem.remove();
                 // If this was the currently displayed image, switch to next or clear
