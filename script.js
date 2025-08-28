@@ -19,66 +19,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const controls = document.querySelectorAll('.controls');
     const galleryAccordion = document.getElementById('galleryAccordion');
     const addImageBtn = document.getElementById('addImageBtn');
-    
-    // Initialize Storage Manager
-    let storageManager = null;
-    
-    async function initStorageManager() {
-        try {
-            storageManager = new StorageManager();
-            await storageManager.init();
-            console.log('Storage Manager initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize Storage Manager:', error);
-            // Fall back to localStorage if IndexedDB fails
-            storageManager = null;
-        }
-    }
-    
-    // Initialize storage on page load
-    initStorageManager();
-    
-    // Storage helper functions
-    async function saveNote(key, note) {
-        if (storageManager) {
-            try {
-                // For now, store notes in localStorage format until full project save is implemented
-                localStorage.setItem(key, note);
-            } catch (error) {
-                console.error('Error saving note:', error);
-                localStorage.setItem(key, note);
-            }
-        } else {
-            localStorage.setItem(key, note);
-        }
-    }
-    
-    async function getNote(key) {
-        if (storageManager) {
-            try {
-                return localStorage.getItem(key) || '';
-            } catch (error) {
-                console.error('Error getting note:', error);
-                return localStorage.getItem(key) || '';
-            }
-        } else {
-            return localStorage.getItem(key) || '';
-        }
-    }
-    
-    async function removeNote(key) {
-        if (storageManager) {
-            try {
-                localStorage.removeItem(key);
-            } catch (error) {
-                console.error('Error removing note:', error);
-                localStorage.removeItem(key);
-            }
-        } else {
-            localStorage.removeItem(key);
-        }
-    }
-    
     const availableMaps = [
         'Angerer_Map_DE_V1',
         'Bourdiol_Map_FR_V1',
@@ -1157,9 +1097,9 @@ function updateHistogram() {
     }
 
     // Helper to update the notes area for the current image and eye
-    async function updateNotesArea() {
+    function updateNotesArea() {
         const key = getCurrentNotesKey();
-        const saved = key ? await getNote(key) : '';
+        const saved = key ? localStorage.getItem(key) : '';
         notesInput.value = saved || '';
         savedNotesArea.textContent = saved ? 'Saved Note: ' + saved : '';
     }
@@ -1178,11 +1118,11 @@ function updateHistogram() {
     }
 
     if (saveNoteBtn) {
-        saveNoteBtn.addEventListener('click', async function() {
+        saveNoteBtn.addEventListener('click', function() {
             const key = getCurrentNotesKey();
             const note = notesInput.value.trim();
             if (key) {
-                await saveNote(key, note);
+                localStorage.setItem(key, note);
                 savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
                 updateGalleryNoteIcon(currentImageId, !!note);
                 updateGalleryNoteData(currentImageId, note);
@@ -1948,10 +1888,10 @@ function moveImage(direction) {
     
 
     // Gallery Functions
-    async function addToGallery(imageDataUrl, name) {
+    function addToGallery(imageDataUrl, name) {
         const imageId = getImageId(imageDataUrl);
         const noteKey = 'notes_' + imageId + '_' + currentEye;
-        const note = await getNote(noteKey);
+        const note = localStorage.getItem(noteKey) || '';
         const galleryItem = document.createElement('div');
         galleryItem.className = 'gallery-item';
         galleryItem.dataset.imageId = imageId;
@@ -1996,13 +1936,13 @@ function moveImage(direction) {
         });
 
         // Delete button logic (click and keyboard)
-        async function handleDelete(e) {
+        function handleDelete(e) {
             if (e.type === 'click' || (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' '))) {
                 e.stopPropagation();
                 if (!confirm('Are you sure you want to delete this image and its notes?')) return;
                 // Remove notes for both eyes
-                await removeNote('notes_' + imageId + '_L');
-                await removeNote('notes_' + imageId + '_R');
+                localStorage.removeItem('notes_' + imageId + '_L');
+                localStorage.removeItem('notes_' + imageId + '_R');
                 // Remove from DOM
                 galleryItem.remove();
                 // If this was the currently displayed image, switch to next or clear
