@@ -741,7 +741,7 @@ function updateHistogram() {
         `;
     }
 
-    function loadImageForSpecificEye(eye, skipAutoFit = false) {
+    function loadImageForSpecificEye(eye) {
         const container = isDualViewActive ? 
             (eye === 'L' ? leftImageContainer : rightImageContainer) : imageContainer;
         
@@ -752,10 +752,7 @@ function updateHistogram() {
         
         if (settings.canvas) {
             container.appendChild(settings.canvas);
-            // Only auto-fit if not loading from saved project
-            if (!skipAutoFit) {
-                autoFitImage(settings);
-            }
+            autoFitImage(settings);
             updateCanvasImage(eye);
         }
     }
@@ -2393,32 +2390,59 @@ function moveImage(direction) {
                     toggleDualView();
                 }
                 
-                // Update UI - skip autoFit when loading saved projects
+                // Update UI - allow autoFit to establish baseline, then we'll override with saved transforms
                 if (isDualViewActive) {
                     createCanvasForEye('L');
                     createCanvasForEye('R');
-                    loadImageForSpecificEye('L', true); // Skip autoFit for saved projects
-                    loadImageForSpecificEye('R', true); // Skip autoFit for saved projects
+                    loadImageForSpecificEye('L'); // Allow autoFit to establish baseline
+                    loadImageForSpecificEye('R'); // Allow autoFit to establish baseline
                     loadSVG(currentSVGFile, 'L');
                     loadSVG(currentSVGFile, 'R');
                 } else {
                     createCanvasForEye(currentEye);
-                    loadImageForSpecificEye(currentEye, true); // Skip autoFit for saved projects
+                    loadImageForSpecificEye(currentEye); // Allow autoFit to establish baseline
                     loadSVG(currentSVGFile, currentEye);
                 }
                 
-                // Apply restored transforms immediately (no timeout needed)
+                // Apply restored transforms after autoFit establishes baseline
                 if (project.applicationState.imageTransform) {
-                    if (isDualViewActive) {
-                        // Apply transforms to both eyes in dual view
-                        updateCanvasTransform('L');
-                        updateCanvasTransform('R');
-                    } else {
-                        // Apply transform to current eye only
-                        updateCanvasTransform(currentEye);
-                    }
-                    
-                    console.log('Applied canvas transforms for', isDualViewActive ? 'both eyes' : currentEye);
+                    // Small delay to ensure autoFit has completed and established baseline
+                    setTimeout(() => {
+                        console.log('Applying saved transforms over auto-fit baseline...');
+                        
+                        // Force re-establishment of auto-fit baseline for saved projects
+                        // Then immediately override with saved values
+                        if (isDualViewActive) {
+                            // For dual view, ensure both eyes have proper baseline
+                            ['L', 'R'].forEach(eye => {
+                                const settings = imageSettings[eye];
+                                // Temporarily reset isAutoFitted to allow baseline recalculation
+                                const wasAutoFitted = settings.isAutoFitted;
+                                settings.isAutoFitted = false;
+                                autoFitImage(settings);
+                                // Restore the saved isAutoFitted state
+                                settings.isAutoFitted = wasAutoFitted;
+                            });
+                            
+                            // Apply saved transforms over the baseline
+                            updateCanvasTransform('L');
+                            updateCanvasTransform('R');
+                        } else {
+                            // For single view
+                            const settings = imageSettings[currentEye];
+                            // Temporarily reset isAutoFitted to allow baseline recalculation
+                            const wasAutoFitted = settings.isAutoFitted;
+                            settings.isAutoFitted = false;
+                            autoFitImage(settings);
+                            // Restore the saved isAutoFitted state
+                            settings.isAutoFitted = wasAutoFitted;
+                            
+                            // Apply saved transforms over the baseline
+                            updateCanvasTransform(currentEye);
+                        }
+                        
+                        console.log('Applied canvas transforms for', isDualViewActive ? 'both eyes' : currentEye);
+                    }, 100); // Short delay to let initial autoFit attempt complete
                 }
                 
                 if (typeof showInfoModal === 'function') {
