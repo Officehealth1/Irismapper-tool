@@ -4,6 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const dualMapperContainer = document.getElementById('dual-mapper-container');
     const imageContainer = document.getElementById('image-container');
     const svgContainer = document.getElementById('svg-container');
+    
+    // Set default active state for left eye button
+    const leftEyeBtn = document.getElementById('leftEye');
+    if (leftEyeBtn) {
+        leftEyeBtn.classList.add('active');
+    }
     const leftImageContainer = document.getElementById('left-image-container');
     const rightImageContainer = document.getElementById('right-image-container');
     const leftSvgContainer = document.getElementById('left-svg-container');
@@ -722,7 +728,7 @@ function updateHistogram() {
     
     // Replace your existing resetAdjustments function with this updated version
     function resetAdjustments() {
-        console.log('Reset function called'); // Debug log
+        // Reset function called
     
         const defaultAdjustments = {
             exposure: 0,
@@ -736,7 +742,7 @@ function updateHistogram() {
         };
     
         const eyesToReset = isDualViewActive ? ['L', 'R'] : [currentEye];
-        console.log('Resetting eyes:', eyesToReset); // Debug log
+        // Resetting eyes: both/single
     
         eyesToReset.forEach(eye => {
             // Reset only histogram-related adjustments
@@ -870,7 +876,7 @@ function updateHistogram() {
             isDualViewActive = false;
             currentEye = 'L';
             
-            const btns = document.querySelectorAll('.eye-btn');
+            const btns = document.querySelectorAll('.eye-selection-panel .btn');
             btns.forEach(btn => btn.classList.remove('active'));
             document.getElementById('leftEye').classList.add('active');
             
@@ -882,7 +888,7 @@ function updateHistogram() {
             loadImageForSpecificEye('L');
         } else {
             switchEye('L');
-            const btns = document.querySelectorAll('.eye-btn');
+            const btns = document.querySelectorAll('.eye-selection-panel .btn');
             btns.forEach(btn => btn.classList.remove('active'));
             document.getElementById('leftEye').classList.add('active');
         }
@@ -893,7 +899,7 @@ function updateHistogram() {
             isDualViewActive = false;
             currentEye = 'R';
             
-            const btns = document.querySelectorAll('.eye-btn');
+            const btns = document.querySelectorAll('.eye-selection-panel .btn');
             btns.forEach(btn => btn.classList.remove('active'));
             document.getElementById('rightEye').classList.add('active');
             
@@ -905,7 +911,7 @@ function updateHistogram() {
             loadImageForSpecificEye('R');
         } else {
             switchEye('R');
-            const btns = document.querySelectorAll('.eye-btn');
+            const btns = document.querySelectorAll('.eye-selection-panel .btn');
             btns.forEach(btn => btn.classList.remove('active'));
             document.getElementById('rightEye').classList.add('active');
         }
@@ -913,6 +919,9 @@ function updateHistogram() {
 
     document.getElementById('bothEyes')?.addEventListener('click', function() {
         toggleDualView();
+        const btns = document.querySelectorAll('.eye-selection-panel .btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        document.getElementById('bothEyes').classList.add('active');
         
         const btns = document.querySelectorAll('.eye-btn');
         btns.forEach(btn => btn.classList.remove('active'));
@@ -1012,6 +1021,12 @@ function updateHistogram() {
                     loadSVG(currentMap, currentEye);
                 }
                 mapModal.style.display = 'none';
+                
+                // Add active state to Select Map button when a map is selected
+                const selectMapBtn = document.getElementById('selectMap');
+                if (selectMapBtn) {
+                    selectMapBtn.classList.add('active');
+                }
             };
             mapOptions.appendChild(option);
         });
@@ -1816,7 +1831,7 @@ function moveImage(direction) {
     // Zoom In
     if(zoomIn) {
         zoomIn.onclick = () => {
-            console.log('Zoom in clicked'); // Debug log
+            // Zoom in action
             if (isDualViewActive) {
                 ['L', 'R'].forEach(eye => {
                     let newScale = (imageSettings[eye].scale || 1) * 1.02;
@@ -1836,7 +1851,7 @@ function moveImage(direction) {
     // Zoom Out
     if(zoomOut) {
         zoomOut.onclick = () => {
-            console.log('Zoom out clicked'); // Debug log
+            // Zoom out action
             if (isDualViewActive) {
                 ['L', 'R'].forEach(eye => {
                     let newScale = (imageSettings[eye].scale || 1) / 1.02;
@@ -1856,7 +1871,7 @@ function moveImage(direction) {
     // Rotate Left
     if(rotateLeft) {
         rotateLeft.onclick = () => {
-            console.log('Rotate left clicked'); // Debug log
+            // Rotate left action
             if (isDualViewActive) {
                 ['L', 'R'].forEach(eye => {
                     imageSettings[eye].rotation -= rotationStep;
@@ -1872,7 +1887,7 @@ function moveImage(direction) {
     // Rotate Right
     if(rotateRight) {
         rotateRight.onclick = () => {
-            console.log('Rotate right clicked'); // Debug log
+            // Rotate right action
             if (isDualViewActive) {
                 ['L', 'R'].forEach(eye => {
                     imageSettings[eye].rotation += rotationStep;

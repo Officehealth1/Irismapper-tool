@@ -1,6 +1,6 @@
 // Subscription gate for main application
 (function() {
-    console.log('Checking subscription status...');
+    // Checking subscription status...
     
     // Skip redirect if we're already on pricing or success pages
     const currentPath = window.location.pathname;
@@ -20,14 +20,14 @@
         try {
             // First check if user is authenticated
             if (typeof firebase === 'undefined' || !firebase.auth) {
-                console.log('Firebase not loaded, redirecting to pricing');
+                // Firebase not loaded, redirecting to pricing
                 redirectToPricing();
                 return;
             }
             
             firebase.auth().onAuthStateChanged(async (user) => {
                 if (!user) {
-                    console.log('User not authenticated, redirecting to pricing');
+                    // User not authenticated, redirecting to pricing
                     redirectToPricing();
                     return;
                 }
@@ -38,7 +38,7 @@
                     const data = await response.json();
                     
                     if (!data.hasSubscription) {
-                        console.log('No active subscription, redirecting to pricing');
+                        // No active subscription, redirecting to pricing
                         redirectToPricing();
                         return;
                     }
@@ -48,17 +48,17 @@
                         showTrialBanner(data.trialDaysRemaining);
                     }
                     
-                    console.log('Subscription verified, allowing access');
+                    // Subscription verified, allowing access
                     
                 } catch (error) {
-                    console.error('Error checking subscription:', error);
+                    // Error checking subscription
                     // On error, redirect to pricing for safety
                     redirectToPricing();
                 }
             });
             
         } catch (error) {
-            console.error('Auth check error:', error);
+            // Auth check error
             redirectToPricing();
         }
     }
