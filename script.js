@@ -741,7 +741,7 @@ function updateHistogram() {
         `;
     }
 
-    function loadImageForSpecificEye(eye) {
+    function loadImageForSpecificEye(eye, skipAutoFit = false) {
         const container = isDualViewActive ? 
             (eye === 'L' ? leftImageContainer : rightImageContainer) : imageContainer;
         
@@ -752,7 +752,10 @@ function updateHistogram() {
         
         if (settings.canvas) {
             container.appendChild(settings.canvas);
-            autoFitImage(settings);
+            // Only auto-fit if not loading from saved project
+            if (!skipAutoFit) {
+                autoFitImage(settings);
+            }
             updateCanvasImage(eye);
         }
     }
@@ -2277,10 +2280,17 @@ function moveImage(direction) {
             
             img.onload = function() {
                 // Set image in viewer
-                imageSettings[project.applicationState.currentEye].image = img;
                 currentEye = project.applicationState.currentEye;
                 isDualViewActive = project.applicationState.isDualView;
                 currentImageId = getImageId(imageUrl);
+                
+                // Set image for appropriate eye(s)
+                if (isDualViewActive) {
+                    imageSettings['L'].image = img;
+                    imageSettings['R'].image = img;
+                } else {
+                    imageSettings[currentEye].image = img;
+                }
                 
                 // Restore adjustments
                 const adj = project.applicationState.adjustments;
@@ -2352,26 +2362,39 @@ function moveImage(direction) {
                     }
                 }
                 
-                // Update UI
-                createCanvasForEye(currentEye);
-                loadImageForSpecificEye(currentEye);
-                loadSVG(currentSVGFile, currentEye);
+                // Switch to correct view mode first
+                if (isDualViewActive && !document.body.classList.contains('dual-view')) {
+                    toggleDualView();
+                } else if (!isDualViewActive && document.body.classList.contains('dual-view')) {
+                    toggleDualView();
+                }
                 
-                // Apply restored transforms to canvas
+                // Update UI - skip autoFit when loading saved projects
+                if (isDualViewActive) {
+                    createCanvasForEye('L');
+                    createCanvasForEye('R');
+                    loadImageForSpecificEye('L', true); // Skip autoFit for saved projects
+                    loadImageForSpecificEye('R', true); // Skip autoFit for saved projects
+                    loadSVG(currentSVGFile, 'L');
+                    loadSVG(currentSVGFile, 'R');
+                } else {
+                    createCanvasForEye(currentEye);
+                    loadImageForSpecificEye(currentEye, true); // Skip autoFit for saved projects
+                    loadSVG(currentSVGFile, currentEye);
+                }
+                
+                // Apply restored transforms immediately (no timeout needed)
                 if (project.applicationState.imageTransform) {
-                    // Small delay to ensure canvas is created
-                    setTimeout(() => {
-                        if (isDualViewActive) {
-                            // Apply transforms to both eyes in dual view
-                            updateCanvasTransform('L');
-                            updateCanvasTransform('R');
-                        } else {
-                            // Apply transform to current eye only
-                            updateCanvasTransform(currentEye);
-                        }
-                        
-                        console.log('Applied canvas transforms for', isDualViewActive ? 'both eyes' : currentEye);
-                    }, 150);
+                    if (isDualViewActive) {
+                        // Apply transforms to both eyes in dual view
+                        updateCanvasTransform('L');
+                        updateCanvasTransform('R');
+                    } else {
+                        // Apply transform to current eye only
+                        updateCanvasTransform(currentEye);
+                    }
+                    
+                    console.log('Applied canvas transforms for', isDualViewActive ? 'both eyes' : currentEye);
                 }
                 
                 if (typeof showInfoModal === 'function') {
