@@ -91,7 +91,7 @@
             top: 0;
             left: 0;
             right: 0;
-            background: #0dc5a1;
+            background: #4A90E2;
             color: white;
             text-align: center;
             padding: 10px;
@@ -100,10 +100,7 @@
             font-family: 'Josefin Sans', sans-serif;
         `;
         banner.innerHTML = `
-            <strong>Free Trial:</strong> ${daysRemaining} days remaining 
-            <a href="/pricing" style="color: white; text-decoration: underline; margin-left: 15px;">
-                Upgrade Now
-            </a>
+            <strong>Free Trial:</strong> ${daysRemaining} days remaining
         `;
         document.body.appendChild(banner);
         
