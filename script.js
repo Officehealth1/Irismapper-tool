@@ -828,8 +828,6 @@ function updateHistogram() {
                 valueDisplay.textContent = value;
             }
         });
-        // Update notes area for the new eye
-        updateNotesArea();
     }
 
     function toggleDualView() {
@@ -863,8 +861,6 @@ function updateHistogram() {
             if (imageSettings[currentEye].canvas) updateCanvasImage(currentEye);
         }
         updateHistogram();
-        // Update notes area for the current eye
-        updateNotesArea();
     }
 
     function updateSVGContainers(eye) {
@@ -888,59 +884,51 @@ function updateHistogram() {
         }
     }
 
+    function setActiveEyeButton(target) {
+        const btns = document.querySelectorAll('.eye-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+        if (typeof target === 'string') {
+            const el = document.getElementById(target);
+            el && el.classList.add('active');
+        } else if (target && target.classList) {
+            target.classList.add('active');
+        }
+    }
+
     // Event Listeners for Eye Buttons
     document.getElementById('leftEye')?.addEventListener('click', () => {
         if (isDualViewActive) {
             isDualViewActive = false;
             currentEye = 'L';
-            
-            const btns = document.querySelectorAll('.eye-btn');
-            btns.forEach(btn => btn.classList.remove('active'));
-            document.getElementById('leftEye').classList.add('active');
-            
             dualMapperContainer.style.display = 'none';
             singleMapperContainer.style.display = 'block';
-            
             loadSVG(currentMap, 'L');
             updateSVGContainers('L');
             loadImageForSpecificEye('L');
         } else {
             switchEye('L');
-            const btns = document.querySelectorAll('.eye-btn');
-            btns.forEach(btn => btn.classList.remove('active'));
-            document.getElementById('leftEye').classList.add('active');
         }
+        setActiveEyeButton('leftEye');
     });
 
     document.getElementById('rightEye')?.addEventListener('click', () => {
         if (isDualViewActive) {
             isDualViewActive = false;
             currentEye = 'R';
-            
-            const btns = document.querySelectorAll('.eye-btn');
-            btns.forEach(btn => btn.classList.remove('active'));
-            document.getElementById('rightEye').classList.add('active');
-            
             dualMapperContainer.style.display = 'none';
             singleMapperContainer.style.display = 'block';
-            
             loadSVG(currentMap, 'R');
             updateSVGContainers('R');
             loadImageForSpecificEye('R');
         } else {
             switchEye('R');
-            const btns = document.querySelectorAll('.eye-btn');
-            btns.forEach(btn => btn.classList.remove('active'));
-            document.getElementById('rightEye').classList.add('active');
         }
+        setActiveEyeButton('rightEye');
     });
 
     document.getElementById('bothEyes')?.addEventListener('click', function() {
         toggleDualView();
-        
-        const btns = document.querySelectorAll('.eye-btn');
-        btns.forEach(btn => btn.classList.remove('active'));
-        this.classList.add('active');
+        setActiveEyeButton(this);
     });
 
     // Save Project to IndexedDB and Download High-Quality Image
