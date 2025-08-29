@@ -38,46 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize storage on page load
     initStorageManager();
     
-    // Storage helper functions
-    async function saveNote(key, note) {
-        if (storageManager) {
-            try {
-                // For now, store notes in localStorage format until full project save is implemented
-                localStorage.setItem(key, note);
-            } catch (error) {
-                console.error('Error saving note:', error);
-                localStorage.setItem(key, note);
-            }
-        } else {
-            localStorage.setItem(key, note);
-        }
-    }
-    
-    async function getNote(key) {
-        if (storageManager) {
-            try {
-                return localStorage.getItem(key) || '';
-            } catch (error) {
-                console.error('Error getting note:', error);
-                return localStorage.getItem(key) || '';
-            }
-        } else {
-            return localStorage.getItem(key) || '';
-        }
-    }
-    
-    async function removeNote(key) {
-        if (storageManager) {
-            try {
-                localStorage.removeItem(key);
-            } catch (error) {
-                console.error('Error removing note:', error);
-                localStorage.removeItem(key);
-            }
-        } else {
-            localStorage.removeItem(key);
-        }
-    }
+    // Notes functionality removed
     
     const availableMaps = [
         'Angerer_Map_DE_V1',
@@ -1049,7 +1010,6 @@ function updateHistogram() {
                     // Also save which eye was active
                     activeEye: currentEye
                 },
-                notes: await getNote(`notes_${currentImageId}_${currentEye}`),
                 fileName: `IrisMap_${projectName}`,
                 fileSize: imageBlob.size,
                 imageDimensions: {
@@ -1289,61 +1249,13 @@ function updateHistogram() {
         }
     });
 
-    // Notes Modal Logic
-    const notesBtn = document.getElementById('notes');
-    const notesModal = document.getElementById('notesModal');
-    const closeNotesModal = document.getElementById('closeNotesModal');
-    const notesInput = document.getElementById('notesInput');
-    const saveNoteBtn = document.getElementById('saveNoteBtn');
-    const savedNotesArea = document.getElementById('savedNotesArea');
-
     // Utility: Generate a unique ID for an image (using base64 data)
     function getImageId(imageDataUrl) {
         // Use a hash or just a substring of the data URL for uniqueness
         return 'img_' + btoa(imageDataUrl).substring(0, 16);
     }
 
-    // --- Modified Notes Modal Logic ---
-    let currentImageId = null;
-
-    // Helper to get a unique key for the current image and eye
-    function getCurrentNotesKey() {
-        return currentImageId && currentEye ? 'notes_' + currentImageId + '_' + currentEye : null;
-    }
-
-    // Helper to update the notes area for the current image and eye
-    async function updateNotesArea() {
-        const key = getCurrentNotesKey();
-        const saved = key ? await getNote(key) : '';
-        notesInput.value = saved || '';
-        savedNotesArea.textContent = saved ? 'Saved Note: ' + saved : '';
-    }
-
-    if (notesBtn && notesModal) {
-        notesBtn.addEventListener('click', function() {
-            notesModal.style.display = 'block';
-            updateNotesArea();
-        });
-    }
-
-    if (closeNotesModal && notesModal) {
-        closeNotesModal.addEventListener('click', function() {
-            notesModal.style.display = 'none';
-        });
-    }
-
-    if (saveNoteBtn) {
-        saveNoteBtn.addEventListener('click', async function() {
-            const key = getCurrentNotesKey();
-            const note = notesInput.value.trim();
-            if (key) {
-                await saveNote(key, note);
-                savedNotesArea.textContent = note ? 'Saved Note: ' + note : '';
-                updateGalleryNoteIcon(currentImageId, !!note);
-                updateGalleryNoteData(currentImageId, note);
-            }
-        });
-    }
+    // Notes UI removed
 
     // SVG handling functions
     function loadSVG(svgFile, eye = currentEye) {
@@ -2108,15 +2020,13 @@ function moveImage(direction) {
     // Gallery Functions
     async function addToGallery(imageDataUrl, name) {
         const imageId = getImageId(imageDataUrl);
-        const noteKey = 'notes_' + imageId + '_' + currentEye;
-        const note = await getNote(noteKey);
         const galleryItem = document.createElement('div');
         galleryItem.className = 'gallery-item';
         galleryItem.dataset.imageId = imageId;
         galleryItem.innerHTML = `
             <div class="gallery-item-header">
                 <span class="image-name">${name}</span>
-                <span class="note-icon" style="display:${note ? 'inline' : 'none'};">📝</span>
+                
                 <div class="gallery-item-controls">
                     <button class="btn rename-btn">Rename</button>
                     <button class="btn load-btn">Load</button>
@@ -2127,7 +2037,7 @@ function moveImage(direction) {
                 <button class="gallery-delete-btn" title="Delete image" tabindex="0" aria-label="Delete image">×</button>
             </div>
         `;
-        setupGalleryItemEvents(galleryItem, imageDataUrl, note);
+        setupGalleryItemEvents(galleryItem, imageDataUrl);
         galleryAccordion.appendChild(galleryItem);
         
         // Auto-save project when new image is added
@@ -2565,11 +2475,10 @@ function moveImage(direction) {
     setTimeout(loadSavedProjects, 1000); // Wait for storage manager to initialize
 
 
-    function setupGalleryItemEvents(galleryItem, imageDataUrl, note) {
+    function setupGalleryItemEvents(galleryItem, imageDataUrl) {
         const imageNameElement = galleryItem.querySelector('.image-name');
         const renameBtn = galleryItem.querySelector('.rename-btn');
         const loadBtn = galleryItem.querySelector('.load-btn');
-        const noteIcon = galleryItem.querySelector('.note-icon');
         const deleteBtn = galleryItem.querySelector('.gallery-delete-btn');
         const imageId = galleryItem.dataset.imageId;
 
@@ -2591,10 +2500,7 @@ function moveImage(direction) {
         async function handleDelete(e) {
             if (e.type === 'click' || (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' '))) {
                 e.stopPropagation();
-                if (!confirm('Are you sure you want to delete this image and its notes?')) return;
-                // Remove notes for both eyes
-                await removeNote('notes_' + imageId + '_L');
-                await removeNote('notes_' + imageId + '_R');
+                if (!confirm('Are you sure you want to delete this image?')) return;
                 // Remove from DOM
                 galleryItem.remove();
                 // If this was the currently displayed image, switch to next or clear
@@ -2607,10 +2513,8 @@ function moveImage(direction) {
                             loadImageFromGallery(nextImg.src, nextImageId);
                         }
                     } else {
-                        // No images left, clear display and notes
+                        // No images left, clear display
                         currentImageId = null;
-                        notesInput.value = '';
-                        savedNotesArea.textContent = '';
                     }
                 }
             }
@@ -2644,24 +2548,12 @@ function moveImage(direction) {
             }
             resetAdjustments();
             currentImageId = imageId;
-            updateNotesArea();
+            // notes removed
         };
         img.src = imageDataUrl;
     }
 
-    // Update note icon in gallery
-    function updateGalleryNoteIcon(imageId, hasNote) {
-        const galleryItem = document.querySelector(`.gallery-item[data-image-id='${imageId}'] .note-icon`);
-        if (galleryItem) {
-            galleryItem.style.display = hasNote ? 'inline' : 'none';
-        }
-    }
-
-    // Update note data in gallery (if you have a gallery array, update it here)
-    function updateGalleryNoteData(imageId, note) {
-        // If you have a gallery array/object, update the note property here
-        // For now, this is a placeholder for future extensibility
-    }
+    // Notes gallery hooks removed
 });
 
 function autoLevels() {
