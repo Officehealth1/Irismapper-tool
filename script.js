@@ -2215,26 +2215,9 @@ function moveImage(direction) {
                 savedProjectsList.appendChild(projectItem);
             });
 
-            // After rendering, set default max height to show ~2 items
+            // After rendering, constrain the list to show 2 items by default
             requestAnimationFrame(() => {
-                try {
-                    const persisted = localStorage.getItem('savedProjectsListHeight');
-                    const listEl = savedProjectsList;
-                    if (persisted) {
-                        listEl.style.maxHeight = persisted + 'px';
-                        return;
-                    }
-                    const sampleItem = listEl.querySelector('.saved-project-item');
-                    if (sampleItem) {
-                        const itemStyles = getComputedStyle(sampleItem);
-                        const itemHeight = sampleItem.getBoundingClientRect().height;
-                        const gap = parseFloat(getComputedStyle(listEl).gap || '8');
-                        const headerEl = savedProjectsDiv.querySelector('.saved-projects-header');
-                        const headerHeight = headerEl ? headerEl.getBoundingClientRect().height : 0;
-                        const desired = Math.round((itemHeight * 2) + gap + 2); // 2 items + 1 gap
-                        listEl.style.maxHeight = desired + 'px';
-                    }
-                } catch (e) { /* noop */ }
+                setSavedProjectsListDefaultHeight();
             });
 
         } catch (error) {
@@ -2288,118 +2271,33 @@ function moveImage(direction) {
         return item;
     }
 
-    // Saved Projects vertical resize
-    (function initSavedProjectsResizer(){
-        const resizer = document.getElementById('savedProjectsResizer');
-        if (!resizer || !savedProjectsList) return;
-
-        const MIN_H = 120;
-        const MAX_H = 600;
-        let startY = 0;
-        let startHeight = 0;
-        let active = false;
-
-        const onMove = (e) => {
-            if (!active) return;
-            const clientY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
-            const delta = clientY - startY;
-            let newH = Math.max(MIN_H, Math.min(MAX_H, startHeight + delta));
-            savedProjectsList.style.maxHeight = newH + 'px';
-        };
-
-        const onUp = () => {
-            if (!active) return;
-            active = false;
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('touchend', onUp);
-            const mh = parseFloat(getComputedStyle(savedProjectsList).maxHeight);
-            if (!isNaN(mh)) localStorage.setItem('savedProjectsListHeight', String(Math.round(mh)));
-        };
-
-        const onDown = (e) => {
-            active = true;
-            startY = (e.touches && e.touches[0]) ? e.touches[0].clientY : e.clientY;
-            startHeight = savedProjectsList.getBoundingClientRect().height;
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('touchend', onUp);
-            e.preventDefault();
-        };
-
-        resizer.addEventListener('mousedown', onDown);
-        resizer.addEventListener('touchstart', onDown, { passive: false });
-
-        resizer.addEventListener('dblclick', () => {
-            const listEl = savedProjectsList;
-            const sampleItem = listEl.querySelector('.saved-project-item');
-            if (sampleItem) {
-                const gap = parseFloat(getComputedStyle(listEl).gap || '8');
-                const h = sampleItem.getBoundingClientRect().height;
-                const desired = Math.round((h * 2) + gap + 2);
-                listEl.style.maxHeight = desired + 'px';
-                localStorage.setItem('savedProjectsListHeight', String(desired));
+    // Ensure the Saved Projects list shows only two items by default
+    function setSavedProjectsListDefaultHeight() {
+        try {
+            if (!savedProjectsList) return;
+            const items = savedProjectsList.querySelectorAll('.saved-project-item');
+            if (items.length === 0) {
+                savedProjectsList.style.maxHeight = '';
+                return;
             }
-        });
-    })();
 
-    // Right panel horizontal resize
-    (function initRightPanelResizer(){
-        const panel = document.querySelector('.controls.bottom-right');
-        const resizer = document.getElementById('rightPanelResizer');
-        if (!panel || !resizer) return;
+            const computedStyles = window.getComputedStyle(savedProjectsList);
+            const rowGap = parseFloat(computedStyles.rowGap || computedStyles.gap || '0') || 0;
 
-        const MIN_W = 220;
-        const MAX_W = 480;
-        let startX = 0;
-        let startW = 0;
-        let active = false;
+            let totalHeight = 0;
+            totalHeight += items[0].offsetHeight;
+            if (items.length > 1) {
+                totalHeight += rowGap + items[1].offsetHeight;
+            }
 
-        const applyWidth = (w) => {
-            panel.style.width = w + 'px';
-            document.documentElement.style.setProperty('--control-panel-width', w + 'px');
-            localStorage.setItem('rightPanelWidth', String(Math.round(w)));
-        };
-
-        const onMove = (e) => {
-            if (!active) return;
-            const clientX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-            const delta = startX - clientX; // dragging left increases width
-            let newW = Math.max(MIN_W, Math.min(MAX_W, startW + delta));
-            applyWidth(newW);
-        };
-
-        const onUp = () => {
-            if (!active) return;
-            active = false;
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-            document.removeEventListener('touchmove', onMove);
-            document.removeEventListener('touchend', onUp);
-        };
-
-        const onDown = (e) => {
-            active = true;
-            startX = (e.touches && e.touches[0]) ? e.touches[0].clientX : e.clientX;
-            startW = panel.getBoundingClientRect().width;
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-            document.addEventListener('touchmove', onMove, { passive: false });
-            document.addEventListener('touchend', onUp);
-            e.preventDefault();
-        };
-
-        resizer.addEventListener('mousedown', onDown);
-        resizer.addEventListener('touchstart', onDown, { passive: false });
-
-        // Apply persisted width on load
-        const saved = parseFloat(localStorage.getItem('rightPanelWidth'));
-        if (!isNaN(saved)) {
-            applyWidth(Math.max(MIN_W, Math.min(MAX_W, saved)));
+            savedProjectsList.style.maxHeight = totalHeight > 0 ? `${totalHeight}px` : '';
+        } catch (e) {
+            console.warn('Could not set default height for saved projects list:', e);
         }
-    })();
+    }
+
+    // Recalculate on resize (debounced)
+    window.addEventListener('resize', debounce(setSavedProjectsListDefaultHeight, 150));
 
     // Global functions for project actions
     window.loadSavedProject = async function(projectId) {
