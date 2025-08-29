@@ -150,12 +150,30 @@ body {
     transform: translateY(1px);
 }
 
+/* Persistent active/toggled state */
+.btn.active {
+    background-color: #2F6FBF; /* deeper primary for selected */
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+
+/* Danger variant active state */
+.reset-button:active,
+.reset-button.active {
+    background-color: #c64541;
+}
+
 /* Disabled button style */
 .eye-selection-panel .btn[disabled] {
     background-color: #cccccc; /* Gray background */
     color: #666666;          /* Darker gray text */
     cursor: not-allowed;      /* Show 'not-allowed' cursor */
     transform: none;          /* Remove any hover/active transforms */
+}
+
+/* Eye selection: make active more prominent */
+.eye-selection-panel .btn.active {
+    background-color: #2F6FBF;
+    border: 1px solid #245ca0;
 }
 
 /* Optional: Ensure hover effects are also disabled */
