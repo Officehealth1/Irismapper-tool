@@ -105,7 +105,6 @@ body {
     right: 10px;
     width: 270px;
     max-height: calc(100vh - 100px);
-    overflow-y: auto;
 }
 
 /* Eye Selection Panel Styles */
@@ -700,7 +699,6 @@ body {
   right: var(--spacing-unit);
   width: var(--control-panel-width);
   max-height: calc(100vh - 120px);
-  overflow-y: auto;
 }
 
 /* Mobile-Optimized Buttons */
