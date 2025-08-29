@@ -1,5 +1,5 @@
-// Stripe Public Key (Test Mode)
-const STRIPE_PUBLIC_KEY = 'pk_test_51RM3mWFqKKPQ6G55T0c4kmMJgVZGobBatUXrTWE16BrYJgDhrZ28LMaicuXveqQQ8k461fPFNLCL1v1IIlGq6OBR00lPAvZr1R';
+// Stripe Public Key (Live Mode)
+const STRIPE_PUBLIC_KEY = 'pk_live_51RM3mWFqKKPQ6G55mmnG4oLvOpqDV7yDUokjpuiotymBOQTk5cOHevGPc3w4RLhibBl9Yy4V6iYCfJDZK31aFgOa00WbV9g7cn';
 const stripe = Stripe(STRIPE_PUBLIC_KEY);
 
 // Pricing Configuration
