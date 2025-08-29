@@ -410,80 +410,17 @@
             
             // Manage Subscription - Opens Stripe Customer Portal
             manageSubscription.addEventListener('click', async function() {
-                try {
-                    profileDropdown.classList.remove('show');
-                    
-                    // Get current user
-                    const user = firebase.auth().currentUser;
-                    if (!user) {
-                        window.location.href = '/login';
-                        return;
-                    }
-                    
-                    // Show loading state
-                    manageSubscription.style.opacity = '0.5';
-                    manageSubscription.style.pointerEvents = 'none';
-                    
-                    // Create a portal session via Netlify function
-                    const response = await fetch('/.netlify/functions/create-portal-session', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ 
-                            email: user.email 
-                        })
-                    });
-                    
-                    // Reset button state
-                    manageSubscription.style.opacity = '1';
-                    manageSubscription.style.pointerEvents = 'auto';
-                    
-                    if (!response.ok) {
-                        console.error('Portal session response not ok:', response.status);
-                        // For now, redirect to pricing page as fallback
-                        const viewPricing = await showConfirmModal(
-                            'Portal Unavailable',
-                            'Unable to access your billing portal right now.\n\nWould you like to view subscription options instead?',
-                            'View Pricing',
-                            '💳'
-                        );
-                        if (viewPricing) {
-                            window.location.href = '/#pricing-cards';
-                        }
-                        return;
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (data.url) {
-                        // Redirect to Stripe Customer Portal
-                        window.location.href = data.url;
-                    } else {
-                        // Fallback to pricing page
-                        const viewOptions = await showConfirmModal(
-                            'Portal Error',
-                            'Unable to access the billing portal.\n\nWould you like to view subscription options?',
-                            'View Options',
-                            '💳'
-                        );
-                        if (viewOptions) {
-                            window.location.href = '/#pricing-cards';
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error accessing subscription portal:', error);
-                    // Fallback to pricing page
-                    const tryAgain = await showConfirmModal(
-                        'Connection Error',
-                        'Unable to connect to billing portal due to a network error.\n\nWould you like to view subscription options?',
-                        'View Options',
-                        '🔄'
-                    );
-                    if (tryAgain) {
-                        window.location.href = '/#pricing-cards';
-                    }
+                profileDropdown.classList.remove('show');
+                
+                // Get current user
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    window.location.href = '/login';
+                    return;
                 }
+                
+                // Direct link to Stripe Customer Portal
+                window.location.href = 'https://billing.stripe.com/p/login/bJebJ15MN39E2QY3JN1gs00';
             });
             
             // Change Password functionality
