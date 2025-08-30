@@ -314,6 +314,23 @@ body {
     }
 }
 
+/* Portrait orientation fix for tall screens */
+@media only screen and (orientation: portrait) and (max-width: 768px) {
+    .parallax-map {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .parallax-map img {
+        width: auto;
+        height: auto;
+        max-width: 85vw;
+        max-height: 45vh;
+        object-fit: contain;
+    }
+}
+
 /* Clean How It Works Section */
 .how-it-works {
     background: #1c262f;
@@ -1202,14 +1219,14 @@ body {
     margin-bottom: 64px;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     width: 100%;
-    max-width: 720px;
+    max-width: 600px;
     margin-left: auto;
     margin-right: auto;
     background: #ffffff;
     border-radius: 12px;
-    padding: 32px;
+    padding: 8px 8px 24px 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
 }
@@ -1217,8 +1234,8 @@ body {
 .brevo-form-container iframe {
     width: 100% !important;
     max-width: 540px;
-    height: 0 !important; /* default; will be set via script or media queries */
-    min-height: 0;
+    height: auto !important;
+    min-height: 850px;
     border: none;
     border-radius: 8px;
     background: transparent;
@@ -1227,19 +1244,19 @@ body {
 
 /* Responsive fallback heights if auto-resize is unavailable */
 @media (max-width: 399px) {
-    .brevo-form-container iframe { height: 1200px !important; }
+    .brevo-form-container iframe { min-height: 1350px !important; }
 }
 
 @media (min-width: 400px) and (max-width: 599px) {
-    .brevo-form-container iframe { height: 1120px !important; }
+    .brevo-form-container iframe { min-height: 1250px !important; }
 }
 
 @media (min-width: 600px) and (max-width: 899px) {
-    .brevo-form-container iframe { height: 1040px !important; }
+    .brevo-form-container iframe { min-height: 1150px !important; }
 }
 
 @media (min-width: 900px) {
-    .brevo-form-container iframe { height: 980px !important; }
+    .brevo-form-container iframe { min-height: 1050px !important; }
 }
 
 .form-row {
@@ -1373,7 +1390,7 @@ body {
 
     .brevo-form-container {
         max-width: 600px;
-        padding: 24px;
+        padding: 24px 24px 40px 24px;
         margin-bottom: 48px;
     }
     
