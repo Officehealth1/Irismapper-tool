@@ -296,8 +296,16 @@
                 const result = await response.json();
                 
                 if (response.ok && result.success) {
-                    // Show success modal
-                    document.getElementById('successMessage').textContent = `Invitation sent to ${email}${result.couponId ? ' with coupon code' : ''}`;
+                    // Show success modal with detailed info
+                    let successMessage = `Invitation sent to ${email}`;
+                    if (result.couponId) {
+                        successMessage += ` with coupon code: ${result.couponId}`;
+                    }
+                    if (result.trackingError) {
+                        successMessage += ` (Note: Email sent but tracking failed)`;
+                    }
+                    
+                    document.getElementById('successMessage').textContent = successMessage;
                     document.getElementById('successModal').classList.add('show');
                     
                     // Clear form
