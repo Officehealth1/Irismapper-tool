@@ -111,6 +111,46 @@ exports.handler = async (event) => {
       };
     }
 
+    // Check if user has invitation-based access
+    if (userData.invitationRedeemed === true || userData.freeAccessGranted === true) {
+      console.log('Invitation-based access detected:', email);
+      
+      let isTrialing = false;
+      let trialDaysRemaining = 0;
+      
+      // Check for extended trial
+      if (userData.subscriptionPlan === 'extended_trial' && userData.trialEndDate) {
+        const trialEnd = userData.trialEndDate.toDate();
+        const daysRemaining = Math.ceil((trialEnd - now) / (1000 * 60 * 60 * 24));
+        
+        if (daysRemaining > 0) {
+          isTrialing = true;
+          trialDaysRemaining = daysRemaining;
+        }
+      }
+      
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          hasSubscription: true,
+          isAdmin: false,
+          isTrialing: isTrialing,
+          trialDaysRemaining: trialDaysRemaining,
+          subscriptionTier: userData.subscriptionTier || 'unlimited',
+          subscriptionPlan: userData.subscriptionPlan || 'invitation',
+          subscriptionStatus: userData.subscriptionStatus || 'active',
+          currentPeriodEnd: userData.trialEndDate ? userData.trialEndDate.toDate().toISOString() : null,
+          cancelAtPeriodEnd: false,
+          bypassSubscription: true,
+          invitationBased: true
+        })
+      };
+    }
+
     // Check subscription status
     let isActive = false;
     let isTrialing = false;
