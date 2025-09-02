@@ -33,6 +33,31 @@ exports.handler = async (event) => {
         body: JSON.stringify({ error: 'User ID or email required' })
       };
     }
+    
+    // Hard-coded admin email bypass (safety net)
+    const ADMIN_EMAILS = ['team@irislab.com'];
+    if (email && ADMIN_EMAILS.includes(email.toLowerCase())) {
+      console.log('Admin email detected (hardcoded):', email);
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          hasSubscription: true,
+          isAdmin: true,
+          isTrialing: false,
+          trialDaysRemaining: 0,
+          subscriptionTier: 'unlimited',
+          subscriptionPlan: 'admin',
+          subscriptionStatus: 'admin',
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+          bypassSubscription: true
+        })
+      };
+    }
 
     let userDoc;
     
@@ -61,6 +86,30 @@ exports.handler = async (event) => {
 
     const userData = userDoc.data();
     const now = new Date();
+    
+    // Check if user is admin - bypass all subscription checks
+    if (userData.isAdmin === true || userData.role === 'admin') {
+      console.log('Admin user detected:', email);
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          hasSubscription: true,
+          isAdmin: true,
+          isTrialing: false,
+          trialDaysRemaining: 0,
+          subscriptionTier: userData.subscriptionTier || 'unlimited',
+          subscriptionPlan: userData.subscriptionPlan || 'admin',
+          subscriptionStatus: 'admin',
+          currentPeriodEnd: null,
+          cancelAtPeriodEnd: false,
+          bypassSubscription: true
+        })
+      };
+    }
 
     // Check subscription status
     let isActive = false;

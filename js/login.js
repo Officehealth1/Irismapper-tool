@@ -14,12 +14,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const errorModal = document.getElementById('errorModal');
     const errorMessage = document.getElementById('errorMessage');
     const closeErrorModal = document.getElementById('closeErrorModal');
+    
+    // Check if user is admin - Define this first before using it
+    async function checkAdminStatus(user) {
+        try {
+            const db = firebase.firestore();
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                return userData.role === 'admin' || userData.isAdmin === true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error checking admin status:', error);
+            return false;
+        }
+    }
 
     // Check if user is already logged in
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
-            console.log('User already logged in, redirecting to app');
-            window.location.href = '/app';
+            // Check if admin
+            const isAdmin = await checkAdminStatus(user);
+            if (isAdmin) {
+                console.log('Admin already logged in, redirecting to admin dashboard');
+                window.location.href = '/admin-dashboard';
+            } else {
+                console.log('User already logged in, redirecting to app');
+                window.location.href = '/app';
+            }
         }
     });
 
@@ -61,7 +85,16 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('Login successful:', user.email);
             
-            // Check subscription status
+            // Check if user is admin first
+            const isAdmin = await checkAdminStatus(user);
+            
+            if (isAdmin) {
+                console.log('Admin user detected, redirecting to admin dashboard');
+                window.location.href = '/admin-dashboard';
+                return;
+            }
+            
+            // For regular users, check subscription status
             const subscriptionStatus = await checkUserSubscription(user.email);
             
             if (subscriptionStatus.hasSubscription) {

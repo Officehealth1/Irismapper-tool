@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - IrisMapper Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/admin-dashboard.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="header-left">
+            <img src="grids/irismapper-logo.png" alt="IrisMapper Pro" class="logo">
+            <h1>Admin Dashboard</h1>
+        </div>
+        <div class="header-right">
+            <span class="admin-badge">ADMIN</span>
+            <div class="user-menu">
+                <button class="user-menu-btn" id="userMenuBtn">
+                    <span id="adminEmail">Loading...</span>
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <path d="M3 5L6 8L9 5" stroke="currentColor" fill="none"/>
+                    </svg>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="/app" class="dropdown-item">
+                        <span>🔬</span> Test App
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <button id="logoutBtn" class="dropdown-item logout">
+                        <span>🚪</span> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <a href="#overview" class="nav-item active" data-section="overview">
+                    <span class="icon">📊</span>
+                    <span>Overview</span>
+                </a>
+                <a href="#users" class="nav-item" data-section="users">
+                    <span class="icon">👥</span>
+                    <span>Users</span>
+                </a>
+                <a href="#invites" class="nav-item" data-section="invites">
+                    <span class="icon">✉️</span>
+                    <span>Invites</span>
+                </a>
+                <a href="#analytics" class="nav-item" data-section="analytics">
+                    <span class="icon">📈</span>
+                    <span>Analytics</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <main class="content">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <h2>Dashboard Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3>Total Users</h3>
+                            <p class="stat-value" id="totalUsers">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <h3>Active Subscriptions</h3>
+                            <p class="stat-value" id="activeSubscriptions">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🎯</div>
+                        <div class="stat-content">
+                            <h3>Active Trials</h3>
+                            <p class="stat-value" id="activeTrials">-</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <h3>Monthly Revenue</h3>
+                            <p class="stat-value" id="monthlyRevenue">£-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <h3>Recent Activity</h3>
+                    <div id="activityList" class="activity-list">
+                        <p class="loading">Loading activity...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Section -->
+            <section id="users" class="content-section">
+                <div class="section-header">
+                    <h2>User Management</h2>
+                    <button class="btn-primary" id="inviteUserBtn">
+                        <span>✉️</span> Invite User
+                    </button>
+                </div>
+                
+                <div class="filters">
+                    <input type="text" id="userSearch" placeholder="Search users..." class="search-input">
+                    <select id="statusFilter" class="filter-select">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="trialing">Trial</option>
+                        <option value="canceled">Canceled</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Plan</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr>
+                                <td colspan="5" class="loading">Loading users...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Invites Section -->
+            <section id="invites" class="content-section">
+                <h2>Invite Users</h2>
+                <div class="invite-form-card">
+                    <h3>Send Free Access Invitation</h3>
+                    <form id="inviteForm">
+                        <div class="form-group">
+                            <label for="inviteEmail">Email Address</label>
+                            <input type="email" id="inviteEmail" required placeholder="user@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="accessType">Access Type</label>
+                            <select id="accessType" required>
+                                <option value="permanent">Permanent Free Access</option>
+                                <option value="extended_trial">90-Day Extended Trial</option>
+                                <option value="practitioner">Free Practitioner Plan</option>
+                                <option value="clinic">Free Clinic Plan</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="personalMessage">Personal Message (Optional)</label>
+                            <textarea id="personalMessage" rows="3" placeholder="Add a personal note to the invitation..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <span>📧</span> Send Invitation
+                        </button>
+                    </form>
+                </div>
+
+                <div class="invites-history">
+                    <h3>Recent Invitations</h3>
+                    <div id="invitesHistory" class="invites-list">
+                        <p class="loading">Loading invitations...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="content-section">
+                <h2>Analytics & Metrics</h2>
+                
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>User Growth</h3>
+                        <div class="chart-placeholder">
+                            <p>Chart coming soon</p>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Feature Usage</h3>
+                        <ul class="feature-list" id="featureUsage">
+                            <li>Loading...</li>
+                        </ul>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Conversion Metrics</h3>
+                        <div class="metrics-list" id="conversionMetrics">
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>System Health</h3>
+                        <div class="health-status" id="systemHealth">
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Invite Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <h3>✅ Invitation Sent!</h3>
+            <p id="successMessage">The invitation has been sent successfully.</p>
+            <button class="modal-btn" id="closeSuccessModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Error Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <h3>❌ Error</h3>
+            <p id="errorMessage">An error occurred.</p>
+            <button class="modal-btn" id="closeErrorModal">OK</button>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="js/firebase-config.js"></script>
+    
+    <!-- Admin Dashboard Logic -->
+    <script src="js/admin-dashboard.js"></script>
+</body>
+</html>

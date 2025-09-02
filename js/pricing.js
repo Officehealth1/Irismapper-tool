@@ -474,14 +474,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!brevoIframe) return;
 
     function setIframeHeight(nextHeightPx) {
-        const minHeight = 700;
+        const minHeight = 820; // Reduced slightly to account for container padding
         const safeHeight = Math.max(Number(nextHeightPx) || 0, minHeight);
         brevoIframe.style.height = safeHeight + 'px';
     }
 
-    // Initial height based on viewport (fallback)
+    // Initial height based on viewport (fallback) - reduced to account for padding
     const vw = window.innerWidth;
-    const initial = vw < 400 ? 1250 : vw < 600 ? 1160 : vw < 900 ? 1080 : 1000;
+    const initial = vw < 400 ? 1320 : vw < 600 ? 1220 : vw < 900 ? 1120 : 1020;
     setIframeHeight(initial);
 
     // Listen for messages from Brevo form for dynamic height updates
@@ -504,8 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (nextHeight) {
-                // Add a little buffer to avoid clipping shadows/tooltips
-                setIframeHeight(nextHeight + 40);
+                // Add extra buffer to ensure signup button is always visible
+                setIframeHeight(nextHeight + 100);
             }
         } catch (err) {
             // Silently ignore parsing errors
