@@ -72,6 +72,9 @@
         
         // Setup search and filters
         setupFilters();
+        
+        // Setup invite user button
+        setupInviteUserButton();
     }
     
     // Navigation between sections
@@ -269,25 +272,51 @@
             const accessType = document.getElementById('accessType').value;
             const message = document.getElementById('personalMessage').value;
             
+            // Show loading state
+            const submitBtn = inviteForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span>⏳</span> Sending...';
+            submitBtn.disabled = true;
+            
             try {
-                // For now, simulate sending invite
-                // In production, this would call a Netlify function
-                console.log('Sending invite to:', email, 'with access:', accessType);
+                // Call the Netlify function
+                const response = await fetch('/.netlify/functions/admin-invite-user', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        accessType: accessType,
+                        personalMessage: message,
+                        adminUid: currentUser.uid
+                    })
+                });
                 
-                // Show success modal
-                document.getElementById('successMessage').textContent = `Invitation sent to ${email}`;
-                document.getElementById('successModal').classList.add('show');
+                const result = await response.json();
                 
-                // Clear form
-                inviteForm.reset();
-                
-                // Reload invite history
-                loadInviteHistory();
+                if (response.ok && result.success) {
+                    // Show success modal
+                    document.getElementById('successMessage').textContent = `Invitation sent to ${email}${result.couponId ? ' with coupon code' : ''}`;
+                    document.getElementById('successModal').classList.add('show');
+                    
+                    // Clear form
+                    inviteForm.reset();
+                    
+                    // Reload invite history
+                    loadInviteHistory();
+                } else {
+                    throw new Error(result.error || 'Failed to send invitation');
+                }
                 
             } catch (error) {
                 console.error('Error sending invite:', error);
-                document.getElementById('errorMessage').textContent = 'Failed to send invitation';
+                document.getElementById('errorMessage').textContent = error.message || 'Failed to send invitation';
                 document.getElementById('errorModal').classList.add('show');
+            } finally {
+                // Reset button state
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
             }
         });
     }
@@ -296,12 +325,44 @@
     async function loadInviteHistory() {
         const invitesHistory = document.getElementById('invitesHistory');
         
-        // For now, show placeholder
-        invitesHistory.innerHTML = `
-            <div class="invite-item">
-                <p>Invite history will be available after backend implementation</p>
-            </div>
-        `;
+        try {
+            const db = firebase.firestore();
+            
+            // Get recent invites (last 10)
+            const invitesSnapshot = await db.collection('invites')
+                .orderBy('sentAt', 'desc')
+                .limit(10)
+                .get();
+            
+            let historyHTML = '';
+            
+            if (invitesSnapshot.empty) {
+                historyHTML = '<div class="invite-item"><p>No invitations sent yet</p></div>';
+            } else {
+                invitesSnapshot.forEach(doc => {
+                    const invite = doc.data();
+                    const sentDate = invite.sentAt ? new Date(invite.sentAt.seconds * 1000).toLocaleDateString('en-GB') : 'Unknown';
+                    const statusClass = invite.status === 'sent' ? 'status-sent' : 'status-pending';
+                    
+                    historyHTML += `
+                        <div class="invite-item">
+                            <div class="invite-details">
+                                <p><strong>${invite.email}</strong></p>
+                                <p>Access: ${invite.accessType} • Sent: ${sentDate}</p>
+                                ${invite.couponId ? `<p>Coupon: <code>${invite.couponId}</code></p>` : ''}
+                                <span class="status-badge ${statusClass}">${invite.status}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            invitesHistory.innerHTML = historyHTML;
+            
+        } catch (error) {
+            console.error('Error loading invite history:', error);
+            invitesHistory.innerHTML = '<div class="invite-item"><p>Error loading invite history</p></div>';
+        }
     }
     
     // Load analytics
@@ -385,10 +446,111 @@
         document.getElementById('errorModal').classList.remove('show');
     });
     
-    // Global function to view user (temporary)
-    window.viewUser = function(userId) {
-        console.log('View user:', userId);
-        // Future: Show user details modal
+    // Setup invite user button functionality
+    function setupInviteUserButton() {
+        const inviteUserBtn = document.getElementById('inviteUserBtn');
+        
+        if (inviteUserBtn) {
+            inviteUserBtn.addEventListener('click', () => {
+                // Switch to invites section
+                const invitesNavItem = document.querySelector('[data-section="invites"]');
+                const invitesSection = document.getElementById('invites');
+                
+                if (invitesNavItem && invitesSection) {
+                    // Remove active class from all nav items and sections
+                    document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+                    
+                    // Add active class to invites
+                    invitesNavItem.classList.add('active');
+                    invitesSection.classList.add('active');
+                    
+                    // Load invite history
+                    loadInviteHistory();
+                    
+                    // Scroll to top of content area
+                    document.querySelector('.content').scrollTop = 0;
+                }
+            });
+        }
+    }
+    
+    // Global function to view user details
+    window.viewUser = async function(userId) {
+        try {
+            const db = firebase.firestore();
+            const userDoc = await db.collection('users').doc(userId).get();
+            
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                showUserDetailsModal(userData, userId);
+            } else {
+                alert('User not found');
+            }
+        } catch (error) {
+            console.error('Error loading user details:', error);
+            alert('Error loading user details');
+        }
     };
+    
+    // Show user details modal
+    function showUserDetailsModal(userData, userId) {
+        // Create modal HTML
+        const modalHTML = `
+            <div id="userDetailsModal" class="modal show">
+                <div class="modal-content" style="max-width: 600px;">
+                    <h3>User Details</h3>
+                    <div class="user-details">
+                        <div class="detail-row">
+                            <label>Email:</label>
+                            <span>${userData.email || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Status:</label>
+                            <span class="status-badge ${getStatusClass(userData.subscriptionStatus)}">${userData.subscriptionStatus || 'none'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Plan:</label>
+                            <span>${userData.subscriptionTier || 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Role:</label>
+                            <span>${userData.role || 'user'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>Created:</label>
+                            <span>${userData.createdAt ? new Date(userData.createdAt.seconds * 1000).toLocaleDateString('en-GB') : 'Unknown'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <label>UID:</label>
+                            <span style="font-family: monospace; font-size: 0.8rem;">${userId}</span>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn-primary" onclick="closeUserDetailsModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    // Close user details modal
+    window.closeUserDetailsModal = function() {
+        const modal = document.getElementById('userDetailsModal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    // Get status class for styling
+    function getStatusClass(status) {
+        if (status === 'active') return 'status-active';
+        if (status === 'trialing') return 'status-trial';
+        if (status === 'admin') return 'status-admin';
+        return 'status-inactive';
+    }
     
 })();
