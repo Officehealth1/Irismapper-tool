@@ -405,18 +405,33 @@
         try {
             const db = firebase.firestore();
             
+            // Debounce function to prevent too many rapid updates
+            let updateTimeout;
+            const debouncedLoadAnalytics = () => {
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(() => {
+                    if (document.getElementById('analytics') && document.getElementById('analytics').classList.contains('active')) {
+                        loadAnalytics();
+                    }
+                }, 1000); // Wait 1 second before updating
+            };
+            
             // Listen for changes in analytics collection
             db.collection('analytics').doc('system_metrics').onSnapshot((doc) => {
                 if (doc.exists) {
                     console.log('Analytics updated in real-time');
-                    loadAnalytics(); // Reload analytics when data changes
+                    debouncedLoadAnalytics();
                 }
+            }, (error) => {
+                console.error('Error in analytics listener:', error);
             });
             
-            // Listen for changes in users collection
+            // Listen for changes in users collection (less frequent updates)
             db.collection('users').onSnapshot((snapshot) => {
                 console.log('Users collection updated in real-time');
-                loadAnalytics(); // Reload analytics when users change
+                debouncedLoadAnalytics();
+            }, (error) => {
+                console.error('Error in users listener:', error);
             });
             
             console.log('Real-time analytics listeners set up');
@@ -505,43 +520,41 @@
             const totalSessionTime = users.reduce((sum, user) => sum + (user.usageStats?.sessionTime || 0), 0);
             const avgSessionTime = users.length > 0 ? Math.round(totalSessionTime / users.length / (1000 * 60)) : 0;
             
-            // Update usage statistics
-            document.getElementById('totalImagesUploaded').textContent = totalImagesUploaded;
-            document.getElementById('totalExports').textContent = totalExports;
-            document.getElementById('totalAdjustments').textContent = totalAdjustments;
-            document.getElementById('avgSessionTime').textContent = `${avgSessionTime}m`;
-            
-            // Update feature usage
-            document.getElementById('mostUsedMap').textContent = metrics.featureUsageStats?.mostUsedMap || 'None';
-            document.getElementById('totalMapsUsed').textContent = metrics.featureUsageStats?.totalMapsUsed || 0;
-            document.getElementById('totalExportsFeature').textContent = metrics.featureUsageStats?.totalExports || 0;
-            document.getElementById('totalAdjustmentsFeature').textContent = metrics.featureUsageStats?.totalAdjustments || 0;
-            
-            // Calculate user behavior metrics
-            const exportRate = totalImagesUploaded > 0 ? Math.round((totalExports / totalImagesUploaded) * 100) : 0;
-            const avgImagesPerSession = users.length > 0 ? Math.round(totalImagesUploaded / users.length) : 0;
-            
-            // Update user behavior
-            document.getElementById('peakUsageTime').textContent = '2-4 PM'; // Placeholder - could be calculated from login times
-            document.getElementById('mostActiveDay').textContent = 'Monday'; // Placeholder - could be calculated from login data
-            document.getElementById('avgImagesPerSession').textContent = avgImagesPerSession;
-            document.getElementById('exportRate').textContent = `${exportRate}%`;
-            
-            // Update system health
-            document.getElementById('apiCallsToday').textContent = metrics.apiCalls?.todayTotal || 0;
-            const lastUpdated = metrics.lastUpdated ? metrics.lastUpdated.toDate().toLocaleString() : 'Never';
-            document.getElementById('lastUpdated').textContent = lastUpdated;
-            
-            // Update real-time activity
-            document.getElementById('usersOnline').textContent = activeUsers;
-            document.getElementById('activeSessions').textContent = activeUsers; // Same as online users for now
+            // Update usage statistics (only elements that exist)
+            const totalImagesElement = document.getElementById('totalImagesUploaded');
+            const totalExportsElement = document.getElementById('totalExports');
+            const totalAdjustmentsElement = document.getElementById('totalAdjustments');
+            const avgSessionElement = document.getElementById('avgSessionTime');
+            const apiCallsElement = document.getElementById('apiCallsToday');
+
+            if (totalImagesElement) totalImagesElement.textContent = totalImagesUploaded;
+            if (totalExportsElement) totalExportsElement.textContent = totalExports;
+            if (totalAdjustmentsElement) totalAdjustmentsElement.textContent = totalAdjustments;
+            if (avgSessionElement) avgSessionElement.textContent = `${avgSessionTime}m`;
+            if (apiCallsElement) apiCallsElement.textContent = metrics.apiCalls?.todayTotal || 0;
             
             console.log('Analytics loaded successfully');
             
         } catch (error) {
             console.error('Error loading analytics:', error);
-            // Show error in UI
-            document.getElementById('loginList').innerHTML = '<p>Error loading data</p>';
+            // Show error in UI safely
+            const loginListElement = document.getElementById('loginList');
+            if (loginListElement) {
+                loginListElement.innerHTML = '<p>Error loading data</p>';
+            }
+            
+            // Set default values for elements that exist
+            const elements = [
+                'todayLogins', 'activeUsers', 'totalLogins', 'totalImagesUploaded',
+                'totalExports', 'totalAdjustments', 'avgSessionTime', 'apiCallsToday'
+            ];
+            
+            elements.forEach(elementId => {
+                const element = document.getElementById(elementId);
+                if (element && element.textContent === '') {
+                    element.textContent = '0';
+                }
+            });
         }
     }
     
