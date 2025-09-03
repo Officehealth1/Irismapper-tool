@@ -1344,35 +1344,36 @@ body {
     border-radius: 12px;
     padding: 8px 8px 24px 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
+    overflow: visible;
+    height: auto;
 }
 
 .brevo-form-container iframe {
     width: 100% !important;
     max-width: 540px;
-    height: auto !important;
-    min-height: 850px;
+    height: 1100px;
+    min-height: 1100px;
     border: none;
     border-radius: 8px;
     background: transparent;
-    overflow: hidden;
+    overflow: visible;
 }
 
-/* Responsive fallback heights if auto-resize is unavailable */
+/* Responsive fallback heights to ensure full form visibility */
 @media (max-width: 399px) {
-    .brevo-form-container iframe { min-height: 1350px !important; }
+    .brevo-form-container iframe { min-height: 1450px !important; height: 1450px !important; }
 }
 
 @media (min-width: 400px) and (max-width: 599px) {
-    .brevo-form-container iframe { min-height: 1250px !important; }
+    .brevo-form-container iframe { min-height: 1350px !important; height: 1350px !important; }
 }
 
 @media (min-width: 600px) and (max-width: 899px) {
-    .brevo-form-container iframe { min-height: 1150px !important; }
+    .brevo-form-container iframe { min-height: 1250px !important; height: 1250px !important; }
 }
 
 @media (min-width: 900px) {
-    .brevo-form-container iframe { min-height: 1050px !important; }
+    .brevo-form-container iframe { min-height: 1150px !important; height: 1150px !important; }
 }
 
 .form-row {

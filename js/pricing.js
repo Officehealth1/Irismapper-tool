@@ -34,6 +34,7 @@ const closeModal = document.getElementById('closeModal');
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     updatePricingDisplay();
+    initializeBrevoFormHeight();
     
     // Period toggle
     periodButtons.forEach(btn => {
@@ -514,3 +515,66 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Test mode badge removed for production readiness; Stripe key will be provided separately.
+
+// Brevo Form Height Management
+function initializeBrevoFormHeight() {
+    const brevoIframe = document.getElementById('brevoForm');
+    if (!brevoIframe) return;
+    
+    // Ensure iframe loads with proper height
+    brevoIframe.addEventListener('load', () => {
+        // Apply a brief delay to allow form content to render
+        setTimeout(() => {
+            adjustBrevoFormHeight(brevoIframe);
+        }, 500);
+    });
+    
+    // Apply initial height if iframe is already loaded
+    if (brevoIframe.complete || brevoIframe.readyState === 'complete') {
+        setTimeout(() => {
+            adjustBrevoFormHeight(brevoIframe);
+        }, 100);
+    }
+    
+    // Listen for window resize to readjust if needed
+    window.addEventListener('resize', () => {
+        setTimeout(() => {
+            adjustBrevoFormHeight(brevoIframe);
+        }, 300);
+    });
+}
+
+function adjustBrevoFormHeight(iframe) {
+    if (!iframe) return;
+    
+    try {
+        // Get current viewport width to determine appropriate height
+        const screenWidth = window.innerWidth;
+        let targetHeight;
+        
+        if (screenWidth <= 399) {
+            targetHeight = 1450;
+        } else if (screenWidth <= 599) {
+            targetHeight = 1350;
+        } else if (screenWidth <= 899) {
+            targetHeight = 1250;
+        } else {
+            targetHeight = 1150;
+        }
+        
+        // Apply the height with a small buffer
+        iframe.style.height = `${targetHeight}px`;
+        iframe.style.minHeight = `${targetHeight}px`;
+        
+        // Ensure container can accommodate the iframe
+        const container = iframe.closest('.brevo-form-container');
+        if (container) {
+            container.style.height = 'auto';
+            container.style.overflow = 'visible';
+        }
+        
+        console.log(`Adjusted Brevo form height to ${targetHeight}px for screen width ${screenWidth}px`);
+    } catch (error) {
+        console.warn('Could not adjust Brevo form height:', error);
+    }
+}
