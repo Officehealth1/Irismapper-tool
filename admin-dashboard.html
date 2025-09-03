@@ -77,42 +77,61 @@
         <main class="content">
             <!-- Overview Section -->
             <section id="overview" class="content-section active">
-                <h2>Dashboard Overview</h2>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-content">
-                            <h3>Total Users</h3>
-                            <p class="stat-value" id="totalUsers">-</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">✅</div>
-                        <div class="stat-content">
-                            <h3>Active Subscriptions</h3>
-                            <p class="stat-value" id="activeSubscriptions">-</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🎯</div>
-                        <div class="stat-content">
-                            <h3>Active Trials</h3>
-                            <p class="stat-value" id="activeTrials">-</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-content">
-                            <h3>Monthly Revenue</h3>
-                            <p class="stat-value" id="monthlyRevenue">£-</p>
-                        </div>
+                <div class="section-header">
+                    <h2>Dashboard Overview</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="refreshOverview()">
+                            <span>🔄</span> Refresh
+                        </button>
                     </div>
                 </div>
 
-                <div class="recent-activity">
-                    <h3>Recent Activity</h3>
-                    <div id="activityList" class="activity-list">
-                        <p class="loading">Loading activity...</p>
+                <div class="overview-grid">
+                    <div class="stats-section">
+                        <h3>Key Metrics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">👥</div>
+                                <div class="stat-content">
+                                    <h4>Total Users</h4>
+                                    <p class="stat-value" id="totalUsers">-</p>
+                                    <small class="stat-change" id="userChange">+0 this week</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">✅</div>
+                                <div class="stat-content">
+                                    <h4>Active Subscriptions</h4>
+                                    <p class="stat-value" id="activeSubscriptions">-</p>
+                                    <small class="stat-change" id="subscriptionChange">+0 this month</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🎯</div>
+                                <div class="stat-content">
+                                    <h4>Active Trials</h4>
+                                    <p class="stat-value" id="activeTrials">-</p>
+                                    <small class="stat-change" id="trialChange">+0 this week</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">💰</div>
+                                <div class="stat-content">
+                                    <h4>Monthly Revenue</h4>
+                                    <p class="stat-value" id="monthlyRevenue">£-</p>
+                                    <small class="stat-change" id="revenueChange">+0% vs last month</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="activity-section">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-card">
+                            <div id="activityList" class="activity-list">
+                                <p class="loading">Loading activity...</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -121,105 +140,233 @@
             <section id="users" class="content-section">
                 <div class="section-header">
                     <h2>User Management</h2>
-                    <button class="btn-primary" id="inviteUserBtn">
-                        <span>✉️</span> Invite User
-                    </button>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="exportUsers()">
+                            <span>📊</span> Export
+                        </button>
+                        <button class="btn-primary" id="inviteUserBtn">
+                            <span>✉️</span> Invite User
+                        </button>
+                    </div>
                 </div>
                 
-                <div class="filters">
-                    <input type="text" id="userSearch" placeholder="Search users..." class="search-input">
-                    <select id="statusFilter" class="filter-select">
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="trialing">Trial</option>
-                        <option value="canceled">Canceled</option>
-                    </select>
+                <div class="users-controls">
+                    <div class="filters-card">
+                        <h4>Filter & Search</h4>
+                        <div class="filters">
+                            <div class="filter-group">
+                                <label for="userSearch">Search Users</label>
+                                <input type="text" id="userSearch" placeholder="Search by email..." class="search-input">
+                            </div>
+                            <div class="filter-group">
+                                <label for="statusFilter">Status</label>
+                                <select id="statusFilter" class="filter-select">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="trialing">Trial</option>
+                                    <option value="canceled">Canceled</option>
+                                    <option value="admin">Admin</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <label for="planFilter">Plan</label>
+                                <select id="planFilter" class="filter-select">
+                                    <option value="">All Plans</option>
+                                    <option value="practitioner">Practitioner</option>
+                                    <option value="clinic">Clinic</option>
+                                    <option value="free">Free</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="table-container">
-                    <table class="users-table">
-                        <thead>
-                            <tr>
-                                <th>Email</th>
-                                <th>Status</th>
-                                <th>Plan</th>
-                                <th>Joined</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="usersTableBody">
-                            <tr>
-                                <td colspan="5" class="loading">Loading users...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="table-section">
+                    <div class="table-header">
+                        <h4>Users List</h4>
+                        <div class="table-actions">
+                            <span class="user-count" id="userCount">0 users</span>
+                            <button class="btn-small" onclick="refreshUsers()">
+                                <span>🔄</span> Refresh
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Plan</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="5" class="loading">Loading users...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
             <!-- Invites Section -->
             <section id="invites" class="content-section">
-                <h2>Invite Users</h2>
-                <div class="invite-form-card">
-                    <h3>Send Free Access Invitation</h3>
-                    <form id="inviteForm">
-                        <div class="form-group">
-                            <label for="inviteEmail">Email Address</label>
-                            <input type="email" id="inviteEmail" required placeholder="user@example.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="accessType">Access Type</label>
-                            <select id="accessType" required>
-                                <option value="permanent">Permanent Free Access</option>
-                                <option value="extended_trial">90-Day Extended Trial</option>
-                                <option value="practitioner">Free Practitioner Plan</option>
-                                <option value="clinic">Free Clinic Plan</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="personalMessage">Personal Message (Optional)</label>
-                            <textarea id="personalMessage" rows="3" placeholder="Add a personal note to the invitation..."></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary">
-                            <span>📧</span> Send Invitation
+                <div class="section-header">
+                    <h2>Invite Users</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="refreshInvites()">
+                            <span>🔄</span> Refresh
                         </button>
-                    </form>
+                    </div>
                 </div>
 
-                <div class="invites-history">
-                    <h3>Recent Invitations</h3>
-                    <div id="invitesHistory" class="invites-list">
-                        <p class="loading">Loading invitations...</p>
+                <div class="invites-grid">
+                    <div class="invite-form-section">
+                        <div class="invite-form-card">
+                            <h3>Send Free Access Invitation</h3>
+                            <form id="inviteForm">
+                                <div class="form-group">
+                                    <label for="inviteEmail">Email Address</label>
+                                    <input type="email" id="inviteEmail" required placeholder="user@example.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="accessType">Access Type</label>
+                                    <select id="accessType" required>
+                                        <option value="permanent">Permanent Free Access</option>
+                                        <option value="extended_trial">90-Day Extended Trial</option>
+                                        <option value="practitioner">Free Practitioner Plan</option>
+                                        <option value="clinic">Free Clinic Plan</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="personalMessage">Personal Message (Optional)</label>
+                                    <textarea id="personalMessage" rows="3" placeholder="Add a personal note to the invitation..."></textarea>
+                                </div>
+                                <button type="submit" class="btn-primary">
+                                    <span>📧</span> Send Invitation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="invites-history-section">
+                        <div class="invites-history-card">
+                            <div class="history-header">
+                                <h3>Recent Invitations</h3>
+                                <div class="history-actions">
+                                    <span class="invite-count" id="inviteCount">0 invitations</span>
+                                </div>
+                            </div>
+                            <div class="invites-list-container">
+                                <div id="invitesHistory" class="invites-list">
+                                    <p class="loading">Loading invitations...</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
             <!-- Analytics Section -->
             <section id="analytics" class="content-section">
-                <h2>Analytics & Metrics</h2>
+                <div class="section-header">
+                    <h2>Analytics & Metrics</h2>
+                    <div class="header-actions">
+                        <button class="btn-secondary" onclick="exportAnalytics()">
+                            <span>📊</span> Export Data
+                        </button>
+                        <button class="btn-secondary" onclick="refreshAnalytics()">
+                            <span>🔄</span> Refresh
+                        </button>
+                    </div>
+                </div>
                 
-                <div class="analytics-grid">
-                    <div class="analytics-card">
-                        <h3>User Growth</h3>
-                        <div class="chart-placeholder">
-                            <p>Chart coming soon</p>
+                <div class="overview-grid">
+                    <div class="stats-section">
+                        <h3>User Activity</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">👥</div>
+                                <div class="stat-content">
+                                    <h4>Today's Logins</h4>
+                                    <p class="stat-value" id="todayLogins">0</p>
+                                    <small class="stat-change" id="loginChange">+0 vs yesterday</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">⚡</div>
+                                <div class="stat-content">
+                                    <h4>Active Users</h4>
+                                    <p class="stat-value" id="activeUsers">0</p>
+                                    <small class="stat-change" id="activeChange">Online now</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">📊</div>
+                                <div class="stat-content">
+                                    <h4>Total Logins</h4>
+                                    <p class="stat-value" id="totalLogins">0</p>
+                                    <small class="stat-change" id="totalChange">All time</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🖼️</div>
+                                <div class="stat-content">
+                                    <h4>Images Uploaded</h4>
+                                    <p class="stat-value" id="totalImagesUploaded">0</p>
+                                    <small class="stat-change" id="imageChange">+0 this week</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="analytics-card">
-                        <h3>Feature Usage</h3>
-                        <ul class="feature-list" id="featureUsage">
-                            <li>Loading...</li>
-                        </ul>
-                    </div>
-                    <div class="analytics-card">
-                        <h3>Conversion Metrics</h3>
-                        <div class="metrics-list" id="conversionMetrics">
-                            <p>Loading...</p>
+
+                    <div class="stats-section">
+                        <h3>Usage Statistics</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-icon">📤</div>
+                                <div class="stat-content">
+                                    <h4>Exports Made</h4>
+                                    <p class="stat-value" id="totalExports">0</p>
+                                    <small class="stat-change" id="exportChange">+0 this week</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">🎛️</div>
+                                <div class="stat-content">
+                                    <h4>Adjustments</h4>
+                                    <p class="stat-value" id="totalAdjustments">0</p>
+                                    <small class="stat-change" id="adjustmentChange">+0 this week</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">⏱️</div>
+                                <div class="stat-content">
+                                    <h4>Avg Session</h4>
+                                    <p class="stat-value" id="avgSessionTime">0m</p>
+                                    <small class="stat-change" id="sessionChange">Per user</small>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-icon">💚</div>
+                                <div class="stat-content">
+                                    <h4>System Health</h4>
+                                    <p class="stat-value" id="apiCallsToday">0</p>
+                                    <small class="stat-change" id="healthChange">API calls today</small>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="analytics-card">
-                        <h3>System Health</h3>
-                        <div class="health-status" id="systemHealth">
-                            <p>Loading...</p>
+
+                    <div class="activity-section">
+                        <h3>Recent Activity</h3>
+                        <div class="activity-card">
+                            <div id="loginList" class="activity-list">
+                                <p class="loading">Loading recent logins...</p>
+                            </div>
                         </div>
                     </div>
                 </div>

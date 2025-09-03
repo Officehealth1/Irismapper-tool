@@ -311,6 +311,13 @@ function updateHistogram() {
                 const value = parseFloat(slider.value);
                 valueDisplay.textContent = value;
             
+                // Track adjustment usage
+                trackFeatureUsage('adjustment', 1, { 
+                    adjustmentType: adjustment, 
+                    value: value,
+                    isDualView: isDualViewActive
+                });
+            
                 if (isDualViewActive) {
                     ['L', 'R'].forEach(eye => {
                         imageSettings[eye].adjustments[adjustment] = value;
@@ -1031,6 +1038,13 @@ function updateHistogram() {
 
             if (downloadResult.status === 'fulfilled') {
                 successMessage += 'High-quality image downloaded!';
+                
+                // Track successful export
+                trackFeatureUsage('imageExport', 1, { 
+                    projectName: projectName,
+                    isDualView: isDualViewActive,
+                    mapUsed: currentSVGFile
+                });
             } else if (downloadResult.status === 'rejected') {
                 successMessage += 'Failed to download image.';
                 hasErrors = true;
@@ -1168,6 +1182,10 @@ function updateHistogram() {
             option.dataset.mapFile = map; // Store original filename if needed later
             option.onclick = function() {
                 currentMap = map; // Use the original filename when setting currentMap
+                
+                // Track map selection
+                trackFeatureUsage('mapSelection', 1, { mapName: map });
+                
                 if (isDualViewActive) {
                     loadSVG(currentMap, 'L');
                     loadSVG(currentMap, 'R');
@@ -1755,6 +1773,10 @@ document.getElementById('autoLevels')?.addEventListener('click', () => {
     imageUpload.addEventListener('change', function(e) {
         const files = e.target.files;
         if (!files.length) return;
+        
+        // Track image upload
+        trackFeatureUsage('imageUpload', files.length);
+        
         let firstImageId = null;
         let firstImageDataUrl = null;
         for (let i = 0; i < files.length; i++) {
@@ -2685,5 +2707,67 @@ function convolve(src, dst, width, height, kernel) {
     }
 }
 
+// Feature usage tracking function
+async function trackFeatureUsage(action, value = 1, metadata = {}) {
+    try {
+        // Get current user
+        const user = firebase.auth().currentUser;
+        if (!user) return;
 
+        // Update user usage stats
+        if (window.updateUserUsageStats) {
+            await window.updateUserUsageStats(user.uid, action, value);
+        }
+
+        // Update analytics collection
+        const db = firebase.firestore();
+        const analyticsRef = db.collection('analytics').doc('system_metrics');
+        const now = new Date();
+
+        // Get current analytics data
+        const analyticsDoc = await analyticsRef.get();
+        const currentData = analyticsDoc.exists ? analyticsDoc.data() : {};
+
+        // Initialize structure if it doesn't exist
+        const updates = {
+            lastUpdated: firebase.firestore.Timestamp.fromDate(now),
+            featureUsageStats: {
+                totalMapsUsed: currentData.featureUsageStats?.totalMapsUsed || 0,
+                totalExports: currentData.featureUsageStats?.totalExports || 0,
+                totalAdjustments: currentData.featureUsageStats?.totalAdjustments || 0,
+                mostUsedMap: currentData.featureUsageStats?.mostUsedMap || ""
+            }
+        };
+
+        // Update specific counters based on action
+        switch (action) {
+            case 'imageUpload':
+                updates.featureUsageStats.totalMapsUsed = (currentData.featureUsageStats?.totalMapsUsed || 0) + value;
+                break;
+            case 'imageExport':
+                updates.featureUsageStats.totalExports = (currentData.featureUsageStats?.totalExports || 0) + value;
+                if (metadata.mapUsed) {
+                    updates.featureUsageStats.mostUsedMap = metadata.mapUsed;
+                }
+                break;
+            case 'adjustment':
+                updates.featureUsageStats.totalAdjustments = (currentData.featureUsageStats?.totalAdjustments || 0) + value;
+                break;
+            case 'mapSelection':
+                if (metadata.mapName) {
+                    updates.featureUsageStats.mostUsedMap = metadata.mapName;
+                }
+                break;
+        }
+
+        // Update the document
+        await analyticsRef.set(updates, { merge: true });
+
+        console.log(`Feature usage tracked: ${action}`, { value, metadata });
+
+    } catch (error) {
+        console.error('Error tracking feature usage:', error);
+        // Don't throw error - tracking should not break the app
+    }
+}
 

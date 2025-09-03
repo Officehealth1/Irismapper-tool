@@ -85,6 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             console.log('Login successful:', user.email);
             
+            // Track login activity
+            await trackUserLogin(user);
+            
             // Check if user is admin first
             const isAdmin = await checkAdminStatus(user);
             
@@ -193,4 +196,97 @@ document.addEventListener('DOMContentLoaded', function() {
             hideErrorModal();
         }
     });
+
+    // Track user login activity
+    async function trackUserLogin(user) {
+        try {
+            const db = firebase.firestore();
+            const now = new Date();
+            const deviceInfo = {
+                browser: navigator.userAgent,
+                platform: navigator.platform,
+                language: navigator.language,
+                timestamp: now
+            };
+
+            // Update user document with login tracking
+            const userRef = db.collection('users').doc(user.uid);
+            await userRef.update({
+                lastLoginAt: firebase.firestore.Timestamp.fromDate(now),
+                lastActiveAt: firebase.firestore.Timestamp.fromDate(now),
+                loginCount: firebase.firestore.FieldValue.increment(1),
+                deviceInfo: deviceInfo
+            });
+
+            // Add to login history (keep last 10 logins)
+            const userDoc = await userRef.get();
+            const userData = userDoc.data();
+            const loginHistory = userData.loginHistory || [];
+            loginHistory.push({
+                timestamp: firebase.firestore.Timestamp.fromDate(now),
+                deviceInfo: deviceInfo
+            });
+
+            // Keep only last 10 logins
+            if (loginHistory.length > 10) {
+                loginHistory.splice(0, loginHistory.length - 10);
+            }
+
+            await userRef.update({
+                loginHistory: loginHistory
+            });
+
+            // Update analytics collection
+            await updateAnalytics('login', user.email);
+
+            console.log('Login tracking completed for:', user.email);
+
+        } catch (error) {
+            console.error('Error tracking login:', error);
+            // Don't throw error - login should still work even if tracking fails
+        }
+    }
+
+    // Update analytics collection
+    async function updateAnalytics(action, userEmail) {
+        try {
+            const db = firebase.firestore();
+            const analyticsRef = db.collection('analytics').doc('system_metrics');
+            const now = new Date();
+            const today = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+            // Get current analytics data
+            const analyticsDoc = await analyticsRef.get();
+            const currentData = analyticsDoc.exists ? analyticsDoc.data() : {};
+
+            // Initialize structure if it doesn't exist
+            const updates = {
+                lastUpdated: firebase.firestore.Timestamp.fromDate(now),
+                apiCalls: {
+                    todayTotal: (currentData.apiCalls?.todayTotal || 0) + 1,
+                    checkSubscription: currentData.apiCalls?.checkSubscription || 0,
+                    createCheckout: currentData.apiCalls?.createCheckout || 0
+                }
+            };
+
+            // Update daily active users
+            if (action === 'login') {
+                const dailyActiveUsers = currentData.dailyActiveUsers || {};
+                const todayUsers = dailyActiveUsers[today] || new Set();
+                todayUsers.add(userEmail);
+                
+                updates.dailyActiveUsers = {
+                    ...dailyActiveUsers,
+                    [today]: Array.from(todayUsers)
+                };
+            }
+
+            // Update the document
+            await analyticsRef.set(updates, { merge: true });
+
+        } catch (error) {
+            console.error('Error updating analytics:', error);
+            // Don't throw error - tracking should not break the app
+        }
+    }
 });

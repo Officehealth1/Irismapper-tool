@@ -371,6 +371,9 @@
                     // User is signed in - update email display
                     userEmailElement.textContent = user.email || 'User';
                     console.log('User authenticated:', user.email);
+                    
+                    // Track app usage
+                    trackAppUsage(user);
                 } else {
                     // No user signed in - redirect to login
                     console.log('No user authenticated, redirecting to login');
@@ -475,6 +478,71 @@
                 e.stopPropagation();
             });
         });
+
+        // Track app usage and activity
+        async function trackAppUsage(user) {
+            try {
+                const db = firebase.firestore();
+                const now = new Date();
+                
+                // Update user's last active time
+                const userRef = db.collection('users').doc(user.uid);
+                await userRef.update({
+                    lastActiveAt: firebase.firestore.Timestamp.fromDate(now)
+                });
+
+                // Track session start
+                const sessionStart = now.getTime();
+                window.sessionStartTime = sessionStart;
+
+                // Track page visibility changes (when user switches tabs/minimizes)
+                document.addEventListener('visibilitychange', async function() {
+                    if (document.hidden) {
+                        // User left the app - track session duration
+                        const sessionDuration = now.getTime() - sessionStart;
+                        await updateUserUsageStats(user.uid, 'sessionTime', sessionDuration);
+                    } else {
+                        // User returned to app - update last active
+                        await userRef.update({
+                            lastActiveAt: firebase.firestore.Timestamp.fromDate(new Date())
+                        });
+                    }
+                });
+
+                // Track when user leaves the page
+                window.addEventListener('beforeunload', async function() {
+                    const sessionDuration = new Date().getTime() - sessionStart;
+                    await updateUserUsageStats(user.uid, 'sessionTime', sessionDuration);
+                });
+
+                console.log('App usage tracking initialized for:', user.email);
+
+            } catch (error) {
+                console.error('Error tracking app usage:', error);
+                // Don't throw error - app should still work even if tracking fails
+            }
+        }
+
+        // Update user usage statistics
+        async function updateUserUsageStats(userId, action, value = 1) {
+            try {
+                const db = firebase.firestore();
+                const userRef = db.collection('users').doc(userId);
+                
+                const updates = {
+                    [`usageStats.${action}`]: firebase.firestore.FieldValue.increment(value),
+                    'usageStats.lastActivity': firebase.firestore.Timestamp.fromDate(new Date())
+                };
+
+                await userRef.update(updates);
+
+            } catch (error) {
+                console.error('Error updating usage stats:', error);
+            }
+        }
+
+        // Make functions globally available for script.js
+        window.updateUserUsageStats = updateUserUsageStats;
     </script>
     
     <!-- Main JavaScript -->

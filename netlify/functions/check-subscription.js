@@ -23,6 +23,8 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Track API call
+    await trackAPICall('checkSubscription', event.queryStringParameters?.email || event.queryStringParameters?.userId);
     // Get user ID from query parameters or authorization header
     const userId = event.queryStringParameters?.userId;
     const email = event.queryStringParameters?.email;
@@ -202,3 +204,34 @@ exports.handler = async (event) => {
     };
   }
 };
+
+// Track API call analytics
+async function trackAPICall(apiName, userIdentifier) {
+  try {
+    const analyticsRef = db.collection('analytics').doc('system_metrics');
+    const now = admin.firestore.Timestamp.now();
+
+    // Get current analytics data
+    const analyticsDoc = await analyticsRef.get();
+    const currentData = analyticsDoc.exists ? analyticsDoc.data() : {};
+
+    // Initialize structure if it doesn't exist
+    const updates = {
+      lastUpdated: now,
+      apiCalls: {
+        todayTotal: (currentData.apiCalls?.todayTotal || 0) + 1,
+        checkSubscription: (currentData.apiCalls?.checkSubscription || 0) + 1,
+        createCheckout: currentData.apiCalls?.createCheckout || 0
+      }
+    };
+
+    // Update the document
+    await analyticsRef.set(updates, { merge: true });
+
+    console.log(`API call tracked: ${apiName} for user: ${userIdentifier}`);
+
+  } catch (error) {
+    console.error('Error tracking API call:', error);
+    // Don't throw error - API should still work even if tracking fails
+  }
+}

@@ -75,6 +75,10 @@
         
         // Setup invite user button
         setupInviteUserButton();
+        
+        // Setup real-time analytics
+        setupRealTimeAnalytics();
+        startAnalyticsAutoRefresh();
     }
     
     // Navigation between sections
@@ -132,6 +136,11 @@
             }
         });
     }
+    
+    // Global refresh function for overview
+    window.refreshOverview = function() {
+        loadOverviewStats();
+    };
     
     // Load overview statistics
     async function loadOverviewStats() {
@@ -329,6 +338,11 @@
         });
     }
     
+    // Global refresh function for invites
+    window.refreshInvites = function() {
+        loadInviteHistory();
+    };
+    
     // Load invite history
     async function loadInviteHistory() {
         const invitesHistory = document.getElementById('invitesHistory');
@@ -343,6 +357,7 @@
                 .get();
             
             let historyHTML = '';
+            let inviteCount = 0;
             
             if (invitesSnapshot.empty) {
                 historyHTML = '<div class="invite-item"><p>No invitations sent yet</p></div>';
@@ -362,16 +377,69 @@
                             </div>
                         </div>
                     `;
+                    inviteCount++;
                 });
             }
             
             invitesHistory.innerHTML = historyHTML;
+            
+            // Update invite count
+            const inviteCountElement = document.getElementById('inviteCount');
+            if (inviteCountElement) {
+                inviteCountElement.textContent = `${inviteCount} invitation${inviteCount !== 1 ? 's' : ''}`;
+            }
             
         } catch (error) {
             console.error('Error loading invite history:', error);
             invitesHistory.innerHTML = '<div class="invite-item"><p>Error loading invite history</p></div>';
         }
     }
+    
+    // Global refresh function for analytics
+    window.refreshAnalytics = function() {
+        loadAnalytics();
+    };
+    
+    // Setup real-time analytics updates
+    function setupRealTimeAnalytics() {
+        try {
+            const db = firebase.firestore();
+            
+            // Listen for changes in analytics collection
+            db.collection('analytics').doc('system_metrics').onSnapshot((doc) => {
+                if (doc.exists) {
+                    console.log('Analytics updated in real-time');
+                    loadAnalytics(); // Reload analytics when data changes
+                }
+            });
+            
+            // Listen for changes in users collection
+            db.collection('users').onSnapshot((snapshot) => {
+                console.log('Users collection updated in real-time');
+                loadAnalytics(); // Reload analytics when users change
+            });
+            
+            console.log('Real-time analytics listeners set up');
+            
+        } catch (error) {
+            console.error('Error setting up real-time analytics:', error);
+        }
+    }
+    
+    // Auto-refresh analytics every 30 seconds
+    function startAnalyticsAutoRefresh() {
+        setInterval(() => {
+            if (document.getElementById('analytics').classList.contains('active')) {
+                loadAnalytics();
+            }
+        }, 30000); // 30 seconds
+    }
+    
+    // Global export function for analytics
+    window.exportAnalytics = function() {
+        // TODO: Implement analytics export functionality
+        alert('Analytics export functionality coming soon!');
+    };
     
     // Load analytics
     async function loadAnalytics() {
@@ -380,37 +448,100 @@
             
             // Load analytics from the analytics collection
             const analyticsDoc = await db.collection('analytics').doc('system_metrics').get();
+            const metrics = analyticsDoc.exists ? analyticsDoc.data() : {};
             
-            if (analyticsDoc.exists) {
-                const metrics = analyticsDoc.data();
-                
-                // Update feature usage
-                const featureUsage = document.getElementById('featureUsage');
-                featureUsage.innerHTML = `
-                    <li>Total Maps Used: ${metrics.featureUsageStats?.totalMapsUsed || 0}</li>
-                    <li>Total Exports: ${metrics.featureUsageStats?.totalExports || 0}</li>
-                    <li>Total Adjustments: ${metrics.featureUsageStats?.totalAdjustments || 0}</li>
-                `;
-                
-                // Update conversion metrics
-                const conversionMetrics = document.getElementById('conversionMetrics');
-                const conversionRate = metrics.trialConversions?.conversionRate || 0;
-                conversionMetrics.innerHTML = `
-                    <p>Trials Started: ${metrics.trialConversions?.trialsStarted || 0}</p>
-                    <p>Trials Converted: ${metrics.trialConversions?.trialsConverted || 0}</p>
-                    <p>Conversion Rate: ${conversionRate}%</p>
-                `;
-                
-                // Update system health
-                const systemHealth = document.getElementById('systemHealth');
-                systemHealth.innerHTML = `
-                    <p class="health-good">✅ All systems operational</p>
-                    <p>API Calls Today: ${metrics.apiCalls?.todayTotal || 0}</p>
-                `;
+            // Load user data for detailed analytics
+            const usersSnapshot = await db.collection('users').get();
+            const users = [];
+            usersSnapshot.forEach(doc => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // Calculate login activity
+            const today = new Date().toISOString().split('T')[0];
+            const todayLogins = metrics.dailyActiveUsers?.[today]?.length || 0;
+            const totalLogins = users.reduce((sum, user) => sum + (user.loginCount || 0), 0);
+            const activeUsers = users.filter(user => {
+                if (!user.lastActiveAt) return false;
+                const lastActive = user.lastActiveAt.toDate();
+                const now = new Date();
+                const diffMinutes = (now - lastActive) / (1000 * 60);
+                return diffMinutes < 30; // Active if last seen within 30 minutes
+            }).length;
+            
+            // Update login activity
+            document.getElementById('todayLogins').textContent = todayLogins;
+            document.getElementById('activeUsers').textContent = activeUsers;
+            document.getElementById('totalLogins').textContent = totalLogins;
+            
+            // Load recent logins
+            const recentLogins = users
+                .filter(user => user.lastLoginAt)
+                .sort((a, b) => b.lastLoginAt.toDate() - a.lastLoginAt.toDate())
+                .slice(0, 5);
+            
+            const loginList = document.getElementById('loginList');
+            if (recentLogins.length > 0) {
+                loginList.innerHTML = recentLogins.map(user => {
+                    const loginTime = user.lastLoginAt.toDate().toLocaleString();
+                    return `
+                        <div class="activity-item">
+                            <span class="activity-icon">👤</span>
+                            <div class="activity-details">
+                                <p>${user.email}</p>
+                                <small>${loginTime}</small>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                loginList.innerHTML = '<p>No recent logins</p>';
             }
+            
+            // Calculate usage statistics
+            const totalImagesUploaded = users.reduce((sum, user) => sum + (user.usageStats?.imageUpload || 0), 0);
+            const totalExports = users.reduce((sum, user) => sum + (user.usageStats?.imageExport || 0), 0);
+            const totalAdjustments = users.reduce((sum, user) => sum + (user.usageStats?.adjustment || 0), 0);
+            const totalSessionTime = users.reduce((sum, user) => sum + (user.usageStats?.sessionTime || 0), 0);
+            const avgSessionTime = users.length > 0 ? Math.round(totalSessionTime / users.length / (1000 * 60)) : 0;
+            
+            // Update usage statistics
+            document.getElementById('totalImagesUploaded').textContent = totalImagesUploaded;
+            document.getElementById('totalExports').textContent = totalExports;
+            document.getElementById('totalAdjustments').textContent = totalAdjustments;
+            document.getElementById('avgSessionTime').textContent = `${avgSessionTime}m`;
+            
+            // Update feature usage
+            document.getElementById('mostUsedMap').textContent = metrics.featureUsageStats?.mostUsedMap || 'None';
+            document.getElementById('totalMapsUsed').textContent = metrics.featureUsageStats?.totalMapsUsed || 0;
+            document.getElementById('totalExportsFeature').textContent = metrics.featureUsageStats?.totalExports || 0;
+            document.getElementById('totalAdjustmentsFeature').textContent = metrics.featureUsageStats?.totalAdjustments || 0;
+            
+            // Calculate user behavior metrics
+            const exportRate = totalImagesUploaded > 0 ? Math.round((totalExports / totalImagesUploaded) * 100) : 0;
+            const avgImagesPerSession = users.length > 0 ? Math.round(totalImagesUploaded / users.length) : 0;
+            
+            // Update user behavior
+            document.getElementById('peakUsageTime').textContent = '2-4 PM'; // Placeholder - could be calculated from login times
+            document.getElementById('mostActiveDay').textContent = 'Monday'; // Placeholder - could be calculated from login data
+            document.getElementById('avgImagesPerSession').textContent = avgImagesPerSession;
+            document.getElementById('exportRate').textContent = `${exportRate}%`;
+            
+            // Update system health
+            document.getElementById('apiCallsToday').textContent = metrics.apiCalls?.todayTotal || 0;
+            const lastUpdated = metrics.lastUpdated ? metrics.lastUpdated.toDate().toLocaleString() : 'Never';
+            document.getElementById('lastUpdated').textContent = lastUpdated;
+            
+            // Update real-time activity
+            document.getElementById('usersOnline').textContent = activeUsers;
+            document.getElementById('activeSessions').textContent = activeUsers; // Same as online users for now
+            
+            console.log('Analytics loaded successfully');
             
         } catch (error) {
             console.error('Error loading analytics:', error);
+            // Show error in UI
+            document.getElementById('loginList').innerHTML = '<p>Error loading data</p>';
         }
     }
     
@@ -418,31 +549,60 @@
     function setupFilters() {
         const searchInput = document.getElementById('userSearch');
         const statusFilter = document.getElementById('statusFilter');
+        const planFilter = document.getElementById('planFilter');
         
         // Search functionality
         searchInput?.addEventListener('input', (e) => {
-            filterUsers(e.target.value, statusFilter?.value);
+            filterUsers(e.target.value, statusFilter?.value, planFilter?.value);
         });
         
         // Status filter
         statusFilter?.addEventListener('change', (e) => {
-            filterUsers(searchInput?.value, e.target.value);
+            filterUsers(searchInput?.value, e.target.value, planFilter?.value);
+        });
+        
+        // Plan filter
+        planFilter?.addEventListener('change', (e) => {
+            filterUsers(searchInput?.value, statusFilter?.value, e.target.value);
         });
     }
     
+    // Global refresh function for users
+    window.refreshUsers = function() {
+        loadUsers();
+    };
+    
+    // Global export function for users
+    window.exportUsers = function() {
+        // TODO: Implement user export functionality
+        alert('Export functionality coming soon!');
+    };
+    
     // Filter users table
-    function filterUsers(searchTerm, statusFilter) {
+    function filterUsers(searchTerm, statusFilter, planFilter) {
         const rows = document.querySelectorAll('#usersTableBody tr');
+        let visibleCount = 0;
         
         rows.forEach(row => {
             const email = row.cells[0]?.textContent.toLowerCase();
             const status = row.cells[1]?.textContent.toLowerCase();
+            const plan = row.cells[2]?.textContent.toLowerCase();
             
             const matchesSearch = !searchTerm || email.includes(searchTerm.toLowerCase());
             const matchesStatus = !statusFilter || status.includes(statusFilter.toLowerCase());
+            const matchesPlan = !planFilter || plan.includes(planFilter.toLowerCase());
             
-            row.style.display = matchesSearch && matchesStatus ? '' : 'none';
+            const isVisible = matchesSearch && matchesStatus && matchesPlan;
+            row.style.display = isVisible ? '' : 'none';
+            
+            if (isVisible) visibleCount++;
         });
+        
+        // Update user count
+        const userCountElement = document.getElementById('userCount');
+        if (userCountElement) {
+            userCountElement.textContent = `${visibleCount} user${visibleCount !== 1 ? 's' : ''}`;
+        }
     }
     
     // Modal handlers
@@ -535,6 +695,7 @@
                         </div>
                     </div>
                     <div class="modal-actions">
+                        <button class="btn-secondary" onclick="manageUserSubscription('${userId}')">Manage Subscription</button>
                         <button class="btn-primary" onclick="closeUserDetailsModal()">Close</button>
                     </div>
                 </div>
@@ -560,5 +721,213 @@
         if (status === 'admin') return 'status-admin';
         return 'status-inactive';
     }
+    
+    // Global function to manage user subscription
+    window.manageUserSubscription = async function(userId) {
+        try {
+            const db = firebase.firestore();
+            const userDoc = await db.collection('users').doc(userId).get();
+            
+            if (userDoc.exists) {
+                const userData = userDoc.data();
+                showSubscriptionManagementModal(userData, userId);
+            } else {
+                alert('User not found');
+            }
+        } catch (error) {
+            console.error('Error loading user for subscription management:', error);
+            alert('Error loading user details');
+        }
+    };
+    
+    // Show subscription management modal
+    function showSubscriptionManagementModal(userData, userId) {
+        const currentStatus = userData.subscriptionStatus || 'none';
+        const currentPlan = userData.subscriptionTier || 'none';
+        
+        // Create modal HTML
+        const modalHTML = `
+            <div id="subscriptionModal" class="modal show">
+                <div class="modal-content" style="max-width: 500px;">
+                    <h3>Manage Subscription</h3>
+                    <div class="user-info">
+                        <p><strong>User:</strong> ${userData.email}</p>
+                        <p><strong>Current Status:</strong> <span class="status-badge ${getStatusClass(currentStatus)}">${currentStatus}</span></p>
+                        <p><strong>Current Plan:</strong> ${currentPlan}</p>
+                    </div>
+                    
+                    <div class="subscription-actions">
+                        <h4>Subscription Actions</h4>
+                        
+                        <div class="action-group">
+                            <label>Extend Trial Period</label>
+                            <div class="action-controls">
+                                <input type="number" id="trialDays" placeholder="Days" min="1" max="365" value="7">
+                                <button class="btn-primary" onclick="extendTrial('${userId}')">Extend Trial</button>
+                            </div>
+                        </div>
+                        
+                        <div class="action-group">
+                            <label>Grant Free Access</label>
+                            <div class="action-controls">
+                                <select id="freeAccessType">
+                                    <option value="permanent">Permanent Free Access</option>
+                                    <option value="90days">90 Days Free</option>
+                                    <option value="30days">30 Days Free</option>
+                                </select>
+                                <button class="btn-primary" onclick="grantFreeAccess('${userId}')">Grant Access</button>
+                            </div>
+                        </div>
+                        
+                        <div class="action-group">
+                            <label>Cancel Subscription</label>
+                            <div class="action-controls">
+                                <input type="text" id="cancelReason" placeholder="Reason for cancellation">
+                                <button class="btn-danger" onclick="cancelSubscription('${userId}')">Cancel Subscription</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button class="btn-secondary" onclick="closeSubscriptionModal()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+    }
+    
+    // Close subscription management modal
+    window.closeSubscriptionModal = function() {
+        const modal = document.getElementById('subscriptionModal');
+        if (modal) {
+            modal.remove();
+        }
+    };
+    
+    // Extend trial function
+    window.extendTrial = async function(userId) {
+        const days = document.getElementById('trialDays').value;
+        if (!days || days < 1) {
+            alert('Please enter a valid number of days');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/.netlify/functions/admin-manage-subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'extend_trial',
+                    userId: userId,
+                    days: parseInt(days),
+                    adminUid: currentUser.uid
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                alert(`Trial extended by ${days} days successfully!`);
+                closeSubscriptionModal();
+                // Refresh user details if modal is still open
+                if (document.getElementById('userDetailsModal')) {
+                    viewUser(userId);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to extend trial');
+            }
+            
+        } catch (error) {
+            console.error('Error extending trial:', error);
+            alert('Error extending trial: ' + error.message);
+        }
+    };
+    
+    // Grant free access function
+    window.grantFreeAccess = async function(userId) {
+        const accessType = document.getElementById('freeAccessType').value;
+        
+        try {
+            const response = await fetch('/.netlify/functions/admin-manage-subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'grant_free_access',
+                    userId: userId,
+                    accessType: accessType,
+                    adminUid: currentUser.uid
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                alert(`Free access granted successfully!`);
+                closeSubscriptionModal();
+                // Refresh user details if modal is still open
+                if (document.getElementById('userDetailsModal')) {
+                    viewUser(userId);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to grant free access');
+            }
+            
+        } catch (error) {
+            console.error('Error granting free access:', error);
+            alert('Error granting free access: ' + error.message);
+        }
+    };
+    
+    // Cancel subscription function
+    window.cancelSubscription = async function(userId) {
+        const reason = document.getElementById('cancelReason').value;
+        if (!reason.trim()) {
+            alert('Please provide a reason for cancellation');
+            return;
+        }
+        
+        if (!confirm('Are you sure you want to cancel this user\'s subscription?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/.netlify/functions/admin-manage-subscription', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    action: 'cancel_subscription',
+                    userId: userId,
+                    reason: reason,
+                    adminUid: currentUser.uid
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok && result.success) {
+                alert('Subscription cancelled successfully!');
+                closeSubscriptionModal();
+                // Refresh user details if modal is still open
+                if (document.getElementById('userDetailsModal')) {
+                    viewUser(userId);
+                }
+            } else {
+                throw new Error(result.error || 'Failed to cancel subscription');
+            }
+            
+        } catch (error) {
+            console.error('Error cancelling subscription:', error);
+            alert('Error cancelling subscription: ' + error.message);
+        }
+    };
     
 })();
