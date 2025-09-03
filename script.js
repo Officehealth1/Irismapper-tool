@@ -2756,6 +2756,13 @@ async function trackFeatureUsage(action, value = 1, metadata = {}) {
             case 'mapSelection':
                 if (metadata.mapName) {
                     updates.featureUsageStats.mostUsedMap = metadata.mapName;
+                    
+                    // Track individual map counts
+                    updates.mapUsageStats = currentData.mapUsageStats || {};
+                    updates.mapUsageStats[metadata.mapName] = (currentData.mapUsageStats?.[metadata.mapName] || 0) + 1;
+                    
+                    // Track total map changes
+                    updates.totalMapChanges = (currentData.totalMapChanges || 0) + 1;
                 }
                 break;
         }

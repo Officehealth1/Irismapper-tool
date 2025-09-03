@@ -533,6 +533,9 @@
             if (avgSessionElement) avgSessionElement.textContent = `${avgSessionTime}m`;
             if (apiCallsElement) apiCallsElement.textContent = metrics.apiCalls?.todayTotal || 0;
             
+            // Update Top Maps display
+            updateTopMapsDisplay(metrics);
+            
             console.log('Analytics loaded successfully');
             
         } catch (error) {
@@ -546,8 +549,14 @@
             // Set default values for elements that exist
             const elements = [
                 'todayLogins', 'activeUsers', 'totalLogins', 'totalImagesUploaded',
-                'totalExports', 'totalAdjustments', 'avgSessionTime', 'apiCallsToday'
+                'totalExports', 'totalAdjustments', 'avgSessionTime'
             ];
+            
+            // Handle Top Maps display separately
+            const topMapsElement = document.getElementById('topMapsDisplay');
+            const mapChangesElement = document.getElementById('mapChangesCount');
+            if (topMapsElement) topMapsElement.innerHTML = '<div style="font-size: 14px; color: #586069;">No data available</div>';
+            if (mapChangesElement) mapChangesElement.textContent = 'No changes yet';
             
             elements.forEach(elementId => {
                 const element = document.getElementById(elementId);
@@ -555,6 +564,69 @@
                     element.textContent = '0';
                 }
             });
+        }
+    }
+    
+    // Format map names for display
+    function formatMapName(mapFileName) {
+        if (!mapFileName) return 'Unknown Map';
+        
+        const parts = mapFileName.split('_');
+        const mapName = parts[0]; // e.g., "Jensen", "IrisLAB", "Angerer"
+        const langCode = parts.find(p => p === 'DE' || p === 'EN' || p === 'FR');
+        
+        let language = '';
+        switch (langCode) {
+            case 'DE': language = 'German'; break;
+            case 'EN': language = 'English'; break;
+            case 'FR': language = 'French'; break;
+            default: language = 'Unknown';
+        }
+        
+        return `${mapName} Map (${language})`;
+    }
+    
+    // Update Top Maps display
+    function updateTopMapsDisplay(metrics) {
+        const topMapsElement = document.getElementById('topMapsDisplay');
+        const mapChangesElement = document.getElementById('mapChangesCount');
+        
+        if (!topMapsElement || !mapChangesElement) return;
+        
+        try {
+            const mapUsageStats = metrics.mapUsageStats || {};
+            const totalMapChanges = metrics.totalMapChanges || 0;
+            
+            // Convert to array and sort by usage count
+            const mapEntries = Object.entries(mapUsageStats)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3); // Top 3
+            
+            if (mapEntries.length === 0) {
+                topMapsElement.innerHTML = '<div style="font-size: 14px; color: #586069;">No map usage data</div>';
+                mapChangesElement.textContent = 'No changes yet';
+                return;
+            }
+            
+            // Calculate percentages
+            const totalSelections = Object.values(mapUsageStats).reduce((sum, count) => sum + count, 0);
+            
+            // Format top maps display
+            const topMapsHtml = mapEntries.map(([mapName, count], index) => {
+                const percentage = totalSelections > 0 ? Math.round((count / totalSelections) * 100) : 0;
+                const formattedName = formatMapName(mapName);
+                return `<div style="font-size: 12px; margin: 2px 0; color: #24292e;">
+                    ${index + 1}. ${formattedName} ${count} (${percentage}%)
+                </div>`;
+            }).join('');
+            
+            topMapsElement.innerHTML = topMapsHtml;
+            mapChangesElement.textContent = `+${totalMapChanges} changes total`;
+            
+        } catch (error) {
+            console.error('Error updating top maps display:', error);
+            topMapsElement.innerHTML = '<div style="font-size: 14px; color: #586069;">Error loading maps</div>';
+            mapChangesElement.textContent = 'Error loading data';
         }
     }
     
