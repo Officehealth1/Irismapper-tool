@@ -108,6 +108,25 @@ exports.handler = async (event) => {
       handleCodeInApp: true,
     });
 
+    // Build direct app URLs with extracted params (avoid client losing query on redirect)
+    const verificationURL = new URL(verificationLink);
+    const verifyParams = verificationURL.searchParams;
+    const verifyOob = verifyParams.get('oobCode');
+    const verifyApiKey = verifyParams.get('apiKey');
+    const verifyMode = verifyParams.get('mode') || 'verifyEmail';
+    const appVerificationUrl = verifyOob
+      ? `${siteUrl}/verify-email?mode=${encodeURIComponent(verifyMode)}&oobCode=${encodeURIComponent(verifyOob)}${verifyApiKey ? `&apiKey=${encodeURIComponent(verifyApiKey)}` : ''}`
+      : `${siteUrl}/verify-email`;
+
+    const resetURL = new URL(passwordResetLink);
+    const resetParams = resetURL.searchParams;
+    const resetOob = resetParams.get('oobCode');
+    const resetApiKey = resetParams.get('apiKey');
+    const resetMode = resetParams.get('mode') || 'resetPassword';
+    const appResetUrl = resetOob
+      ? `${siteUrl}/reset-password?mode=${encodeURIComponent(resetMode)}&oobCode=${encodeURIComponent(resetOob)}${resetApiKey ? `&apiKey=${encodeURIComponent(resetApiKey)}` : ''}`
+      : `${siteUrl}/reset-password`;
+
     // Send transactional email with SendGrid
     const fromEmail = process.env.SENDGRID_FROM_EMAIL;
     if (!process.env.SENDGRID_API_KEY || !fromEmail) {
@@ -115,7 +134,7 @@ exports.handler = async (event) => {
     }
 
     const subject = 'Activate your 14-day IrisMapper Pro trial';
-    const textBody = `Welcome to IrisMapper Pro!\n\nPlease verify your email to activate your 14-day trial:\n${verificationLink}\n\nAfter verifying, set your password here:\n${passwordResetLink}\n\nIf you didn\'t request this, you can ignore this email.`;
+    const textBody = `Welcome to IrisMapper Pro!\n\nPlease verify your email to activate your 14-day trial:\n${appVerificationUrl}\n\nAfter verifying, set your password here:\n${appResetUrl}\n\nIf you didn\'t request this, you can ignore this email.\n\nIf the above links do not work, you can also try these alternate links:\nVerify (fallback): ${verificationLink}\nSet Password (fallback): ${passwordResetLink}`;
     const htmlBody = `
       <!DOCTYPE html>
       <html>
@@ -124,16 +143,16 @@ exports.handler = async (event) => {
             <h2 style="color: #4A90E2; margin-top: 0;">Welcome to IrisMapper Pro</h2>
             <p>Thanks for starting your 14-day trial. Please verify your email, then set your password to access the app.</p>
             <div style="margin: 20px 0;">
-              <a href="${verificationLink}" style="background: #0dc5a1; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Verify Email</a>
+              <a href="${appVerificationUrl}" style="background: #0dc5a1; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Verify Email</a>
             </div>
             <p>If the button doesn’t work, copy and paste this link:</p>
-            <p style="word-break: break-all; color: #555;">${verificationLink}</p>
+            <p style="word-break: break-all; color: #555;">${appVerificationUrl}</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
             <div style="margin: 20px 0;">
-              <a href="${passwordResetLink}" style="background: #4A90E2; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Set Password</a>
+              <a href="${appResetUrl}" style="background: #4A90E2; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Set Password</a>
             </div>
             <p>If the button doesn’t work, copy and paste this link:</p>
-            <p style="word-break: break-all; color: #555;">${passwordResetLink}</p>
+            <p style="word-break: break-all; color: #555;">${appResetUrl}</p>
             <p style="margin-top: 28px; font-size: 12px; color: #888;">If you didn’t request this, you can ignore this email.</p>
           </div>
         </body>

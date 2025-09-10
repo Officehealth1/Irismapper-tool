@@ -14,12 +14,27 @@ document.addEventListener('DOMContentLoaded', function() {
     const continueBtn = document.getElementById('continueBtn');
     const retryBtn = document.getElementById('retryBtn');
 
-    // Get URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const mode = urlParams.get('mode');
-    const oobCode = urlParams.get('oobCode');
-    const apiKey = urlParams.get('apiKey');
-    const continueUrl = urlParams.get('continueUrl');
+    // Get URL parameters (from search or hash as fallback)
+    function getParams() {
+        const search = new URLSearchParams(window.location.search);
+        let m = search.get('mode');
+        let code = search.get('oobCode');
+        let key = search.get('apiKey');
+        let cont = search.get('continueUrl');
+        if (!m || !code) {
+            const hash = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+            if (hash) {
+                const hashParams = new URLSearchParams(hash);
+                m = m || hashParams.get('mode');
+                code = code || hashParams.get('oobCode');
+                key = key || hashParams.get('apiKey');
+                cont = cont || hashParams.get('continueUrl');
+            }
+        }
+        return { mode: m, oobCode: code, apiKey: key, continueUrl: cont };
+    }
+
+    const { mode, oobCode, apiKey, continueUrl } = getParams();
 
     // Security check - must have valid parameters
     if (!oobCode || mode !== 'verifyEmail') {
