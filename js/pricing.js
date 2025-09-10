@@ -174,7 +174,7 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Handle subscription
+// Handle subscription (now starts email-only 14-day trial)
 async function handleSubscribe() {
     try {
         const email = emailInput.value.trim();
@@ -197,46 +197,32 @@ async function handleSubscribe() {
         startTrialBtn.classList.add('loading');
         startTrialBtn.textContent = 'Creating trial...';
         
-        // Get the selected price ID
-        const priceId = pricing[currentTier][currentPeriod].id;
-        
-        // Call your Netlify function to create checkout session
-        // Using simplified version for testing without Firebase
-        const response = await fetch('/.netlify/functions/create-checkout-simple', {
+        // Start no-card 14-day trial
+        const response = await fetch('/.netlify/functions/start-trial', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                plan: currentPeriod,
-                tier: currentTier,
                 email: email,
-                successUrl: window.location.origin + '/success',
-                cancelUrl: window.location.origin + '/'
+                tier: currentTier
             })
         });
-        
+
         const data = await response.json();
-        
-        if (data.error) {
-            throw new Error(data.error);
+
+        if (!response.ok || data.error) {
+            throw new Error(data.error || 'Failed to start trial');
         }
-        
-        // Hide modal before redirecting
+
+        // Hide modal and show confirmation
         hideEmailModal();
-        
-        // Redirect to Stripe Checkout
-        if (data.url) {
-            window.location.href = data.url;
-        } else if (data.sessionId) {
-            // Alternative: Use Stripe.js to redirect
-            const result = await stripe.redirectToCheckout({
-                sessionId: data.sessionId
-            });
-            
-            if (result.error) {
-                throw result.error;
-            }
+        showNotification('success', 'Check your email', 'We sent a verification link to activate your 14-day trial.');
+
+        // In development, the API may return links for quick testing
+        if (data.verificationLink || data.passwordResetLink) {
+            console.log('DEV: verificationLink =>', data.verificationLink);
+            console.log('DEV: passwordResetLink =>', data.passwordResetLink);
         }
         
     } catch (error) {

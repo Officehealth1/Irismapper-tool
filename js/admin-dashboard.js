@@ -273,6 +273,16 @@
     // Setup invite form
     function setupInviteForm() {
         const inviteForm = document.getElementById('inviteForm');
+        const accessTypeSelect = document.getElementById('accessType');
+        const planSelection = document.getElementById('planSelection');
+        const billingPeriod = document.getElementById('billingPeriod');
+        
+        // Show/hide additional fields based on access type
+        accessTypeSelect.addEventListener('change', (e) => {
+            const isDiscount = e.target.value.startsWith('discount_');
+            planSelection.style.display = isDiscount ? 'block' : 'none';
+            billingPeriod.style.display = isDiscount ? 'block' : 'none';
+        });
         
         inviteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -280,6 +290,8 @@
             const email = document.getElementById('inviteEmail').value;
             const accessType = document.getElementById('accessType').value;
             const message = document.getElementById('personalMessage').value;
+            const selectedPlan = document.getElementById('selectedPlan').value;
+            const selectedPeriod = document.getElementById('selectedPeriod').value;
             
             // Show loading state
             const submitBtn = inviteForm.querySelector('button[type="submit"]');
@@ -298,7 +310,9 @@
                         email: email,
                         accessType: accessType,
                         personalMessage: message,
-                        adminUid: currentUser.uid
+                        adminUid: currentUser.uid,
+                        selectedPlan: selectedPlan,
+                        selectedPeriod: selectedPeriod
                     })
                 });
                 
@@ -310,18 +324,21 @@
                     if (result.couponId) {
                         successMessage += ` with coupon code: ${result.couponId}`;
                     }
+                    if (result.checkoutUrl) {
+                        successMessage += ` with direct checkout link`;
+                    }
                     if (result.trackingError) {
                         successMessage += ` (Note: Email sent but tracking failed)`;
                     }
                     
                     document.getElementById('successMessage').textContent = successMessage;
-                    document.getElementById('successModal').classList.add('show');
-                    
-                    // Clear form
-                    inviteForm.reset();
-                    
-                    // Reload invite history
-                    loadInviteHistory();
+                document.getElementById('successModal').classList.add('show');
+                
+                // Clear form
+                inviteForm.reset();
+                
+                // Reload invite history
+                loadInviteHistory();
                 } else {
                     throw new Error(result.error || 'Failed to send invitation');
                 }
@@ -368,15 +385,15 @@
                     const statusClass = invite.status === 'sent' ? 'status-sent' : 'status-pending';
                     
                     historyHTML += `
-                        <div class="invite-item">
+            <div class="invite-item">
                             <div class="invite-details">
                                 <p><strong>${invite.email}</strong></p>
                                 <p>Access: ${invite.accessType} • Sent: ${sentDate}</p>
                                 ${invite.couponId ? `<p>Coupon: <code>${invite.couponId}</code></p>` : ''}
                                 <span class="status-badge ${statusClass}">${invite.status}</span>
                             </div>
-                        </div>
-                    `;
+            </div>
+        `;
                     inviteCount++;
                 });
             }

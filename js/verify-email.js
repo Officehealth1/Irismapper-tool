@@ -61,11 +61,17 @@ document.addEventListener('DOMContentLoaded', function() {
             await firebase.auth().applyActionCode(oobCode);
             console.log('Email verification applied successfully');
             
-            // Show success state
+            // Show success state immediately
             showSuccess(email);
-            
-            // Start countdown and redirect
-            startCountdown();
+
+            // Attempt auto-login via custom token then redirect to app
+            try {
+                await attemptAutoLogin(email);
+            } catch (autoErr) {
+                console.warn('Auto-login failed, falling back to countdown:', autoErr);
+                // Fallback: start countdown to login
+                startCountdown();
+            }
             
         } catch (error) {
             console.error('Email verification failed:', error);
@@ -165,6 +171,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.location.href = continueUrl || '/login';
             }
         }, 1000);
+    }
+
+    // Auto-login using Netlify function that issues Firebase custom token
+    async function attemptAutoLogin(email) {
+        try {
+            const resp = await fetch('/.netlify/functions/create-auto-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            const data = await resp.json();
+            if (!resp.ok || !data.success || !data.customToken) {
+                throw new Error(data.error || 'Failed to obtain login token');
+            }
+
+            // Sign in with custom token
+            await firebase.auth().signInWithCustomToken(data.customToken);
+
+            // Redirect straight to app
+            window.location.href = '/app';
+        } catch (err) {
+            throw err;
+        }
     }
 
     // Add enter key support for retry

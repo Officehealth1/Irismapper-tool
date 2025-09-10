@@ -242,6 +242,28 @@
                                         <option value="extended_trial">90-Day Extended Trial</option>
                                         <option value="practitioner">Free Practitioner Plan</option>
                                         <option value="clinic">Free Clinic Plan</option>
+                                        <option value="discount_20">20% Discount</option>
+                                        <option value="discount_30">30% Discount</option>
+                                        <option value="discount_50">50% Discount</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Plan Selection (shown only for discount options) -->
+                                <div class="form-group" id="planSelection" style="display: none;">
+                                    <label for="selectedPlan">Plan</label>
+                                    <select id="selectedPlan">
+                                        <option value="practitioner">Practitioner</option>
+                                        <option value="clinic">Clinic</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Billing Period Selection (shown only for discount options) -->
+                                <div class="form-group" id="billingPeriod" style="display: none;">
+                                    <label for="selectedPeriod">Billing Period</label>
+                                    <select id="selectedPeriod">
+                                        <option value="monthly">Monthly</option>
+                                        <option value="yearly">Yearly</option>
+                                        <option value="2year">2 Years</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
