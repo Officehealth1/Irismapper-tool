@@ -91,18 +91,17 @@ exports.handler = async (event) => {
 
     // Prepare email verification link (Admin SDK does NOT send emails by itself)
     const siteUrl = (process.env.SITE_URL || 'https://irismapper.com').replace(/\/$/, '');
-    const continueUrl = `${siteUrl}/verify-email`;
 
-    // Generate a verification link so user can activate account
+    // Generate a verification link that goes directly to our domain (no Firebase redirect)
     const verificationLink = await admin.auth().generateEmailVerificationLink(normalizedEmail, {
-      url: continueUrl,
-      handleCodeInApp: true,
+      url: `${siteUrl}/verify-email`,
+      handleCodeInApp: false, // This prevents Firebase from processing the link first
     });
 
     // Also generate a password reset link so user can set their password after verifying (for testing convenience)
     const passwordResetLink = await admin.auth().generatePasswordResetLink(normalizedEmail, {
       url: `${siteUrl}/setup-password`,
-      handleCodeInApp: true,
+      handleCodeInApp: false, // This prevents Firebase from processing the link first
     });
 
     // NOTE: We are not sending the link here via email provider; Firebase sends it.
