@@ -96,16 +96,16 @@ exports.handler = async (event) => {
     // Prepare email verification link (Admin SDK generates URL; we will send via SendGrid)
     const siteUrl = (process.env.SITE_URL || 'https://irismapper.com').replace(/\/$/, '');
 
-    // Generate a verification link that goes directly to our domain (no Firebase redirect)
+    // Generate a verification link that redirects to our page with oobCode parameters
     const verificationLink = await admin.auth().generateEmailVerificationLink(normalizedEmail, {
       url: `${siteUrl}/verify-email`,
-      handleCodeInApp: false, // This prevents Firebase from processing the link first
+      handleCodeInApp: true,
     });
 
     // Also generate a password reset link so user can set their password after verifying
     const passwordResetLink = await admin.auth().generatePasswordResetLink(normalizedEmail, {
-      url: `${siteUrl}/setup-password`,
-      handleCodeInApp: false, // This prevents Firebase from processing the link first
+      url: `${siteUrl}/reset-password`,
+      handleCodeInApp: true,
     });
 
     // Send transactional email with SendGrid
