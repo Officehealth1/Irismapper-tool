@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const sgMail = require('@sendgrid/mail');
 
 // Initialize Firebase Admin (only once)
 if (!admin.apps.length) {
@@ -12,6 +13,9 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+
+// Configure SendGrid
+sgMail.setApiKey(process.env.SENDGRID_API_KEY || '');
 
 exports.handler = async (event) => {
   // Handle CORS preflight
@@ -89,7 +93,7 @@ exports.handler = async (event) => {
       });
     }
 
-    // Prepare email verification link (Admin SDK does NOT send emails by itself)
+    // Prepare email verification link (Admin SDK generates URL; we will send via SendGrid)
     const siteUrl = (process.env.SITE_URL || 'https://irismapper.com').replace(/\/$/, '');
 
     // Generate a verification link that goes directly to our domain (no Firebase redirect)
@@ -98,14 +102,51 @@ exports.handler = async (event) => {
       handleCodeInApp: false, // This prevents Firebase from processing the link first
     });
 
-    // Also generate a password reset link so user can set their password after verifying (for testing convenience)
+    // Also generate a password reset link so user can set their password after verifying
     const passwordResetLink = await admin.auth().generatePasswordResetLink(normalizedEmail, {
       url: `${siteUrl}/setup-password`,
       handleCodeInApp: false, // This prevents Firebase from processing the link first
     });
 
-    // NOTE: We are not sending the link here via email provider; Firebase sends it.
-    // The generated link can be used with your ESP if needed.
+    // Send transactional email with SendGrid
+    const fromEmail = process.env.SENDGRID_FROM_EMAIL;
+    if (!process.env.SENDGRID_API_KEY || !fromEmail) {
+      throw new Error('Email service not configured. Missing SENDGRID_API_KEY or SENDGRID_FROM_EMAIL');
+    }
+
+    const subject = 'Activate your 14-day IrisMapper Pro trial';
+    const textBody = `Welcome to IrisMapper Pro!\n\nPlease verify your email to activate your 14-day trial:\n${verificationLink}\n\nAfter verifying, set your password here:\n${passwordResetLink}\n\nIf you didn\'t request this, you can ignore this email.`;
+    const htmlBody = `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; color: #333; line-height: 1.6;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2 style="color: #4A90E2; margin-top: 0;">Welcome to IrisMapper Pro</h2>
+            <p>Thanks for starting your 14-day trial. Please verify your email, then set your password to access the app.</p>
+            <div style="margin: 20px 0;">
+              <a href="${verificationLink}" style="background: #0dc5a1; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Verify Email</a>
+            </div>
+            <p>If the button doesn’t work, copy and paste this link:</p>
+            <p style="word-break: break-all; color: #555;">${verificationLink}</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <div style="margin: 20px 0;">
+              <a href="${passwordResetLink}" style="background: #4A90E2; color: #fff; padding: 12px 18px; border-radius: 6px; text-decoration: none; display: inline-block;">Set Password</a>
+            </div>
+            <p>If the button doesn’t work, copy and paste this link:</p>
+            <p style="word-break: break-all; color: #555;">${passwordResetLink}</p>
+            <p style="margin-top: 28px; font-size: 12px; color: #888;">If you didn’t request this, you can ignore this email.</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await sgMail.send({
+      to: normalizedEmail,
+      from: fromEmail,
+      subject,
+      text: textBody,
+      html: htmlBody,
+    });
 
     return {
       statusCode: 200,
